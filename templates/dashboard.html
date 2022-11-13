@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-content" style="min-height:1539px; width:1450px; margin-left: auto; margin-right: auto;">
+    {% comment %} <div class="page-bar">
+        <div class="page-title-breadcrumb">
+            <div class=" pull-left">
+                <div class="page-title">{{u_name}}</div>
+            </div>
+            
+            <ol class="breadcrumb page-breadcrumb pull-right">
+                <li><i class="fa fa-home"></i>&nbsp;<a class="parent-item" href="/dashboard">Home</a>&nbsp;<i
+                        class="fa fa-angle-right"></i>
+                </li>
+            </ol>
+        </div>
+    </div> {% endcomment %}
+    {% if messages %}
+    {% for message in messages %}
+<div class="container-fluid p-0">
+  <div class="alert {{ message.tags }} alert-dismissible" role="alert" >
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="">&times;close</span>
+      <i class="fa fa-close"></i>
+    </button>
+    {{ message }}
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+<div class="row">
+    <div class="col-sm-12 col-md-12 col-xl-12">
+        <div class="card-box">
+            <div class="card-head">
+                <header>Campaign List</header>
+                <button id="sdntmenu" class="mdl-button mdl-js-button mdl-button--icon pull-right"
+                    data-upgraded=",MaterialButton">
+                    <i class="material-icons">more_vert</i>
+                </button>
+                <div class="mdl-menu__container is-upgraded">
+                    <div class="mdl-menu__outline mdl-menu--bottom-right"></div>
+                    <ul class="mdl-menu mdl-menu--bottom-right mdl-js-menu mdl-js-ripple-effect mdl-js-ripple-effect--ignore-events"
+                        data-mdl-for="sdntmenu" data-upgraded=",MaterialMenu,MaterialRipple">
+                        <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
+                            data-upgraded=",MaterialRipple"><i class="material-icons">assistant_photo</i>Action<span
+                                class="mdl-menu__item-ripple-container"><span class="mdl-ripple"></span></span></li>
+                        <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
+                            data-upgraded=",MaterialRipple"><i class="material-icons">print</i>Another action<span
+                                class="mdl-menu__item-ripple-container"><span class="mdl-ripple"></span></span></li>
+                        <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
+                            data-upgraded=",MaterialRipple"><i class="material-icons">favorite</i>Something else
+                            here<span class="mdl-menu__item-ripple-container"><span
+                                    class="mdl-ripple"></span></span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card-body ">
+
+                <div class="row">
+                    <div class="col-md-6 col-sm-6 col-6">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModalCenter" id="normalCamp"> Add New Campaign<i class="fa fa-plus"></i> </button>
+                        </div>
+                        <div class="btn-group">
+                            <a href="/deleteAll?name=Camp" id="" class="btn btn btn-outline-danger">
+                                Delete All
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-scrollable">
+                    <h4 class="card-header"> Normal Campaign </h4>
+                    <div id="example4_wrapper" class="dataTables_wrapper container-fluid dt-bootstrap4 no-footer">
+                        
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <table
+                                    class="table table-striped table-bordered table-hover table-checkable order-column valign-middle dataTable no-footer"
+                                    id="example4" role="grid" aria-describedby="example4_info">
+                                    <thead>
+                                        <tr role="row">
+                                            <th class="sorting_asc" tabindex="0" aria-controls="example4"
+                                                rowspan="1" colspan="1" aria-sort="ascending"
+                                                aria-label="#: activate to sort column descending"
+                                                style="width: 63.6px;"></th>
+                                            <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                colspan="1" aria-label="Title: activate to sort column ascending"
+                                                style="width: 180.863px;">Name</th>
+                                            <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                colspan="1" aria-label="Title: activate to sort column ascending"
+                                                style="width: 180.863px;">Description</th>
+                                            <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                colspan="1" aria-label="Title: activate to sort column ascending"
+                                                style="width: 180.863px;">Records</th>
+                                            <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                colspan="1" aria-label="Title: activate to sort column ascending"
+                                                style="width: 180.863px;">Status</th>
+                                            
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for c in data %}
+                                        <tr class="odd" role="row">
+                                            <td class="sorting_1"><input type="checkbox" name="{{ c.id }}" id="{{ c.id }}"></td>
+                                            <td>{{ c.CampaignName }} </td>
+                                            <td>{{ c.Description }} </td>
+                                            <td>{{ c.record_count }} </td>
+                                            <td>{{ c.CampaignStatus }} </td>
+                                            <td>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<a href="/composerList?unique={{c.id}}"><button type="button" class="btn deepPink-bgcolor">Record</button></a> 
+                                                &nbsp; <a href="/AddComposer?unique={{c.id}}"><button type="button" class="btn btn-primary"><i class="fa fa-plus"></i> Add </button></a>
+                                                &nbsp; <a href="#" id="{{c.id}}" class="deleteCamp"><button type="button" class="btn btn-secondary"><i class="fa fa-minus"></i> Delete </button></a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 col-sm-6 col-6">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModalCenter" id="advanceCamp"> Add Advance Campaign <i class="fa fa-plus"></i></button>
+                        </div>
+                        <div class="btn-group">
+                            <a href="/deleteAll?name=Camp" id="" class="btn btn btn-outline-danger">
+                                Delete All
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-scrollable">
+                    <h4 class="card-header"> Advance Campaign </h4>
+                    <div id="example4_wrapper" class="dataTables_wrapper container-fluid dt-bootstrap4 no-footer">
+                        
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <table
+                                    class="table table-striped table-bordered table-hover table-checkable order-column valign-middle dataTable no-footer"
+                                    id="example4" role="grid" aria-describedby="example4_info">
+                                    <thead>
+                                        <tr role="row">
+                                            <th class="sorting_asc" tabindex="0" aria-controls="example4"
+                                                rowspan="1" colspan="1" aria-sort="ascending"
+                                                aria-label="#: activate to sort column descending"
+                                                style="width: 63.6px;"></th>
+                                            <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                colspan="1" aria-label="Title: activate to sort column ascending"
+                                                style="width: 180.863px;">Name</th>
+                                            <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                colspan="1" aria-label="Title: activate to sort column ascending"
+                                                style="width: 180.863px;">Description</th>
+                                            <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                colspan="1" aria-label="Title: activate to sort column ascending"
+                                                style="width: 180.863px;">Records</th>
+                                            <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                colspan="1" aria-label="Title: activate to sort column ascending"
+                                                style="width: 180.863px;">Status</th>
+                                            
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for c in advData %}
+                                        <tr class="odd" role="row">
+                                            <td class="sorting_1"><input type="checkbox" name="{{ c.id }}" id="{{ c.id }}"></td>
+                                            <td>{{ c.CampaignName }} </td>
+                                            <td>{{ c.Description }} </td>
+                                            <td>{{ c.record_count }} </td>
+                                            <td>{{ c.CampaignStatus }} </td>
+                                            <td>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<a href="/advanceRecord?unique={{c.id}}"><button type="button" class="btn deepPink-bgcolor">Record</button></a> 
+                                                &nbsp; <a href="/advanceTemplate?unique={{c.id}}"><button type="button" class="btn btn-primary"><i class="fa fa-plus"></i> Add </button></a>
+                                                &nbsp; <a href="#" id="{{c.id}}" class="delAdvanceCamp"><button type="button" class="btn btn-secondary"><i class="fa fa-minus"></i> Delete </button></a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLongTitle">Set all Templates</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            <form action="#" method="post" id="form_modal" class="form-horizontal"
+                            novalidate="novalidate" enctype="multipart/form-data">{% csrf_token %}
+                            <div class="form-group">
+                                <label for="simpleFormName">Campaign Name</label>
+                                <input name='camp-name' type="text" class="form-control" id="simpleFormName">
+                            </div>
+                            <div class="form-group">
+                                <label for="simpleFormPassword">Description</label>
+                                <input name="desc" type="text-area" class="form-control" id="simpleFormNum">
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-primary">Submit</button>
+                              </div>
+            </form>
+        </div>
+        
+      </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function(){
+        $("#advanceCamp").on("click", function(){
+            $("#form_modal").attr("action", "/advanceCamp");
+            $("#exampleModalLongTitle").text("Advance Campaign");
+        });
+
+        $("#normalCamp").on("click", function(){
+            $("#form_modal").attr("action", "/addCamp/");
+            $("#exampleModalLongTitle").text("Normal Campaign");
+        });
+        
+        $(".deleteCamp").on("click", function(){
+            if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true){
+                $.ajax({
+                "async": true,
+                "crossDomain": true,
+                url: "/delete?name=Camp&cid="+ $(this).attr("id"),
+                type: 'GET',
+                success: function(res) {
+                    console.log(res);
+                    window.location.reload();
+                }
+            });
+            }
+        })
+    })
+</script>
+{% endblock %}

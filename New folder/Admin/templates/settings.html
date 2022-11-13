@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-content" style="min-height:1539px; width:1450px; margin-left: auto; margin-right: auto;">
+    <div class="page-bar">
+        <div class="page-title-breadcrumb">
+            <div class=" pull-left">
+                <div class="page-title">Settings</div>
+            </div>
+            <ol class="breadcrumb page-breadcrumb pull-right">
+                <li><i class="fa fa-home"></i>&nbsp;<a class="parent-item" href="/dashboard">Home</a>&nbsp;<i
+                        class="fa fa-angle-right"></i>
+                </li>
+                <li class="active">Settings</li>
+            </ol>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12 col-md-12 col-xl-12">
+            <div class="card-box">
+                <div class="card-head">
+                    
+                    <button id="sdntmenu" class="mdl-button mdl-js-button mdl-button--icon pull-right"
+                        data-upgraded=",MaterialButton">
+                        <i class="material-icons">more_vert</i>
+                    </button>
+                    <div class="mdl-menu__container is-upgraded">
+                        <div class="mdl-menu__outline mdl-menu--bottom-right"></div>
+                        <ul class="mdl-menu mdl-menu--bottom-right mdl-js-menu mdl-js-ripple-effect mdl-js-ripple-effect--ignore-events"
+                            data-mdl-for="sdntmenu" data-upgraded=",MaterialMenu,MaterialRipple">
+                            <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
+                                data-upgraded=",MaterialRipple"><i class="material-icons">assistant_photo</i>Action<span
+                                    class="mdl-menu__item-ripple-container"><span class="mdl-ripple"></span></span></li>
+                            <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
+                                data-upgraded=",MaterialRipple"><i class="material-icons">print</i>Another action<span
+                                    class="mdl-menu__item-ripple-container"><span class="mdl-ripple"></span></span></li>
+                            <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
+                                data-upgraded=",MaterialRipple"><i class="material-icons">favorite</i>Something else
+                                here<span class="mdl-menu__item-ripple-container"><span
+                                        class="mdl-ripple"></span></span></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card-body ">
+                    <div class="table-scrollable">
+                        <div id="example4_wrapper" class="dataTables_wrapper container-fluid dt-bootstrap4 no-footer">
+                            <div class="row" style="margin-bottom: 10px;">
+                                <div class="col-md-2 col-sm-12">
+                                    <div class="btn-group">
+                                        <div class="btn-group">
+                                            <a href="/addSettings" class="btn btn-primary">
+                                                    Add Whatsapp Number
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                               
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <table
+                                        class="table table-striped table-bordered table-hover table-checkable order-column valign-middle dataTable no-footer"
+                                        id="example4" role="grid" aria-describedby="example4_info">
+                                        <thead>
+                                            <tr role="row" style="text-align:center">
+                                                <th class="sorting_asc" tabindex="0" aria-controls="example4"
+                                                    rowspan="1" colspan="1" aria-sort="ascending"
+                                                    aria-label="#: activate to sort column descending"
+                                                    style="width: 63.6px;"></th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;">Phone ID</th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;">Whasapp Business Name</th>
+                                            
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;">Whatsapp Phone No</th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;">Business ID</th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;"></th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;"></th>
+                                                
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for c in data %}
+                                            <tr style="text-align:center" class="odd" role="row">
+                                                <td class="sorting_1"><input type="checkbox" name="{{ c.id }}" id=""></td>
+                                                <td class="sorting_1">{{ c.phone_id }}</td>
+                                                <td class="sorting_1">{{ c.provider_name }}</td>
+                                                <td class="sorting_1"><p>{{ c.phone_no }}<p></td>
+                                                <td class="sorting_1"><p>{{ c.business_id }}<p></td>
+                                                <td><a href="/editSettings?sid={{c.id}}" class="btn btn-round btn-warning"> Edit </button></td>
+                                                <td><a href="/delete_setting?sid={{c.id}}" class="btn btn-round btn-danger"> Delete </button></td>
+                                                    
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                        
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+  
+ 
+
+<script>
+    
+    $(document).ready(function () {
+           
+        let text;
+        $(".strt").on("click", function(){
+            text = $(this).attr('name');
+        });
+
+        
+
+        $("#Shoot").on("click", function(){
+            let api;
+            if ($("#single_receiver").is(":checked")){
+                api = "SARV";
+            }
+            else if ($("#multiple_receiver").is(":checked")){
+                api = "other";
+            }
+            else if($("#WA_receiver").is(":checked")){
+                api = "WA";
+            }
+            console.log(text, api);
+            $.ajax({
+            type: 'GET',
+            url: `/startCamp?id=${text}&api=${api}`,
+            success: function(result){
+                location.replace(result["url"])
+            }
+            });
+        });
+
+        $("#ShootAll").on("click", function(){
+            let api;
+            if ($("#AllS_receiver").is(":checked")){
+                api = "SARV";
+            }
+            else if ($("#MulS_receiver").is(":checked")){
+                api = "other";
+            }
+            console.log(api);
+            $.ajax({
+            type: 'GET',
+            url: `/start_all?api=${api}`,
+            success: function(result){
+                location.replace(result["url"])
+            }
+            });
+        });
+
+        $(".txt-toggle").on("click", function(){ 
+            var p = $(this).siblings("#text");
+            if (p.hasClass("hide-text")){
+                $(this).text("Hide");
+                p.removeClass('hide-text');
+                p.addClass('show-text');
+                console.log(p.css("display",""));
+            }
+            else if(p.hasClass('show-text')){
+                $(this).text("Show");
+                p.removeClass('show-text');
+                p.addClass('hide-text');
+                console.log(p.css("display","none"));
+            }
+        })
+        $('#dltBtn').on('click', function () {
+            if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true) {
+                var selected = [];
+                $('#example4 tbody tr').each(function () {
+                    var t = $(this).children("td").children("input");
+                    if (t.is(":checked")) {
+                        selected.push(t.attr('name'));
+                    }
+                });
+                var json = { name: "delete", data: selected }
+                console.log(json);
+                $.ajax({
+                    type: 'POST',
+                    url: "/deleteRec/",
+                    data: JSON.stringify(json),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: 'json',
+                    success: function (result) {
+                        window.location.reload();
+                    },
+                })
+            }
+        });
+
+    });
+</script>
+{% endblock %}

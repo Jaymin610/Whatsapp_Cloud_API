@@ -1,0 +1,390 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="page-content" style="min-height:1539px; width:1450px; margin-left: auto; margin-right: auto;">
+    {% comment %} <div class="page-bar">
+        <div class="page-title-breadcrumb">
+            <div class=" pull-left">
+                <div class="page-title">{{ Campaign }}</div>
+            </div>
+            <ol class="breadcrumb page-breadcrumb pull-right">
+                <li><i class="fa fa-home"></i>&nbsp;<a class="parent-item" href="/dashboard">Home</a>&nbsp;<i
+                        class="fa fa-angle-right"></i>
+                </li>
+                <li class="active">Inbox</li>
+            </ol>
+        </div>
+    </div> {% endcomment %}
+    <div class="row">
+        <div class="col-sm-12 col-md-12 col-xl-12">
+            <div class="card-box">
+                <div class="card-head">
+                    <header>Inbox</header>
+                    
+                    <button id="sdntmenu" class="mdl-button mdl-js-button mdl-button--icon pull-right"
+                        data-upgraded=",MaterialButton">
+                        <i class="material-icons">more_vert</i>
+                    </button>
+                    <div class="mdl-menu__container is-upgraded">
+                        <div class="mdl-menu__outline mdl-menu--bottom-right"></div>
+                        <ul class="mdl-menu mdl-menu--bottom-right mdl-js-menu mdl-js-ripple-effect mdl-js-ripple-effect--ignore-events"
+                            data-mdl-for="sdntmenu" data-upgraded=",MaterialMenu,MaterialRipple">
+                            <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
+                                data-upgraded=",MaterialRipple"><i class="material-icons">assistant_photo</i>Action<span
+                                    class="mdl-menu__item-ripple-container"><span class="mdl-ripple"></span></span></li>
+                            <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
+                                data-upgraded=",MaterialRipple"><i class="material-icons">print</i>Another action<span
+                                    class="mdl-menu__item-ripple-container"><span class="mdl-ripple"></span></span></li>
+                            <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
+                                data-upgraded=",MaterialRipple"><i class="material-icons">favorite</i>Something else
+                                here<span class="mdl-menu__item-ripple-container"><span
+                                        class="mdl-ripple"></span></span></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card-body ">
+                    <div class="table-scrollable">
+                        <div id="example4_wrapper" class="dataTables_wrapper container-fluid dt-bootstrap4 no-footer">
+                            <form class="mb-15" id="advance-srch">
+                                <div class="row mb-6">
+                                    <div class="col-lg-3 mb-lg-0 mb-6">
+                                        <label>Sender:</label>
+                                        <input type="text" class="form-control datatable-input" data-col-index="0" name="sender">
+                                    </div>
+                                    <div class="col-lg-3 mb-lg-0 mb-6">
+                                        <label>Message:</label>
+                                        <input type="text" class="form-control datatable-input" data-col-index="1" name="message">
+                                    </div>
+                                    <div class="col-lg-3 mb-lg-0 mb-6">
+                                        <label>Receiver:</label>
+                                        <select class="form-control datatable-input" data-col-index="2" name="receiver">
+                                            <option value="">Select</option>
+                                            {% for p in provider %}
+                                            <option value="{{p.phone_no}}">{{ p.provider_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <!-- <div class="col-lg-3 mb-lg-0 mb-6">
+                                        <label>Agent:</label>
+                                        <input type="text" class="form-control datatable-input" placeholder="Agent ID or name" data-col-index="4">
+                                    </div> -->
+                                </div>
+                                <div class="row mb-8">
+                                    <div class="col-lg-3 mb-lg-0 mb-6">
+                                        <label></label>
+                                        <div class="input-daterange input-group" id="kt_datepicker">
+                                            <input type="date" class="form-control datatable-input" name="start" placeholder="From" data-col-index="5" id="from-date">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">
+                                                    <i class="la la-ellipsis-h"></i>
+                                                </span>
+                                            </div>
+                                            <input type="date" class="form-control datatable-input" name="end" placeholder="To" data-col-index="5" id="to-date">
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-3 mb-lg-0 mb-6">
+                                        <label>Status:</label>
+                                        <select class="form-control datatable-input" data-col-index="6" name="status">
+                                            <option value="">Select</option>
+                                        <option value="Sent">Sent</option><option value="read">Read</option>
+                                        </select>
+                                    </div>
+                                    <!-- <div class="col-lg-3 mb-lg-0 mb-6">
+                                        <label>Type:</label>
+                                        <select class="form-control datatable-input" data-col-index="7">
+                                            <option value="">Select</option>
+                                        <option value="1">Online</option><option value="2">Retail</option><option value="3">Direct</option></select>
+                                    </div> -->
+                                </div>
+                                <br>
+                                <div class="row mt-8">
+                                    <div class="col-lg-12">
+                                    <button class="btn btn-primary btn-primary--icon" id="kt_search" type="button">
+                                        <span>
+                                            <i class="la la-search"></i>
+                                            <span>Search</span>
+                                        </span>
+                                    </button>&nbsp;&nbsp; 
+                                    <button class="btn btn-secondary btn-secondary--icon" id="kt_reset">
+                                        <span>
+                                            <i class="la la-close"></i>
+                                            <span>Reset</span>
+                                        </span>
+                                    </button></div>
+                                </div>
+                            </form>
+                            <div class="row" style="margin-bottom: 10px; margin-top: 10px;">
+                                <div class="col-sm-12 col-md-3">
+                                    <div class="btn-group">
+                                        <div class="btn-group">
+                                            <a href="/export_excel/?table=Inbox" id="downloadBtn" class="btn btn-default">
+                                                Download Record
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-sm-12">
+                                    <div class="btn-group">
+                                        <div class="btn-group">
+                                            <button type="button" id="dltBtn" class="btn btn-danger">
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="btn-group">
+                                        <div class="btn-group">
+                                            <a href="/deleteAll?name=submessage" class="btn btn-warning">
+                                                Delete All
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <table class="table table-striped table-bordered table-hover table-checkable order-column valign-middle dataTable no-footer"
+                                        id="example4" role="grid" aria-describedby="example4_info">
+                                        <thead>
+                                            <tr role="row" style="text-align:center">
+                                                <th class="sorting_asc" tabindex="0" aria-controls="example4"
+                                                    rowspan="1" colspan="1" aria-sort="ascending"
+                                                    aria-label="#: activate to sort column descending"
+                                                    style="width: 63.6px;"></th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;">Reply</th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;">Send time</th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;">From</th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;">Log</th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;">Status</th>
+                                                
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for c in messages %}
+                                            <tr style="text-align:center" class="odd" role="row">
+                                                <td class="sorting_1"><input type="checkbox" name="{{ c.id }}" id=""></td>
+                                                <td class="sorting_1">{{ c.reply }}</td>
+                                                <td class="sorting_1">{{ c.send_time }}</td>
+                                                <td class="sorting_1"><p>{{ c.reply_number }}<p></td>
+                                                <td><button type="button" class="btn btn-round btn-warning txt-toggle" data-toggle="modal" data-target="#exampleModalCenter2"> Show </button><p id="req" class="hide-text" style="display: none;">{{ c.request }}<p><p id="res" class="hide-text" style="display: none;">{{ c.response }}<p></p></td>
+                                                <td class="sorting_1"> <img src='../static/assets/img/{{c.status}}.png' width="20%" height="20%" alt=""> </td>
+                                                    
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                        
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal data-toggle="modal" data-target="#exampleModalCenter"-->
+<div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLongTitle">Set all Templates</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            <form action="/setAllTemp/" method="post" id="form_sample_modal" class="form-horizontal"
+                            novalidate="novalidate" enctype="multipart/form-data">
+                <div class="form-group row">
+                    <label class="control-label col-md-3">Whatsapp user
+                        <span class="required" aria-required="true"> * </span>
+                    </label>
+                    
+                    <div class="col-md-5">
+                        <select name="provider" class="form-control input-height" id="provider">
+                            <option value="">Select...</option>
+                            {% for d in providers %}
+                            <option value='{{d.phone_no}}'>{{ d.provider_name }} [{{d.phone_no}}]</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="control-label col-md-3">Template Name
+                        <span class="required" aria-required="true"> * </span>
+                    </label>
+                    <div class="col-md-5">
+                        <select name="template" class="form-control input-height" id="template">
+                            <option value="">Select...</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary" id="Shoot" data-dismiss="modal">Submit</button>
+        </div>
+      </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="exampleModalCenter2" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+<div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content" style="width: 700px;">
+    <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLongTitle">Response</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="modal-body" id="status">
+        <div id="req-show"><h4><strong>Request</strong></h4><p id="req-txt"></p></div>
+        <div id="res-show"><h4><b>Response</b></h4><p id="res-txt"></p></div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Ok</button>
+    </div>
+    </div>
+</div>
+</div>
+<link rel="stylesheet" href="//cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
+<script src="//cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $("#from-date").on("change", function(){
+            var _href = $("#downloadBtn").attr("href");
+            $("#downloadBtn").attr("href", _href + "&from="+$(this).val())
+        });
+        $("#to-date").on("change", function(){
+            var _href = $("#downloadBtn").attr("href");
+            $("#downloadBtn").attr("href", _href + "&to="+$(this).val())
+        });
+        $('#example4').DataTable({'iDisplayLength': 1000});
+        $('#kt_search').on("click", function(){
+            $.ajax({
+                url: "/searchTable/?name=inbox",
+                type: "POST",
+                data: $("#advance-srch").serialize(),
+                success: function(response){
+                    $('tbody').remove();
+                    $('#example4').append('<tbody></tbody>');
+                    jQuery.each(response, function(i, v){
+                        console.log(i, v);
+                        $('tbody').append(`<tr style="text-align:center" class="odd" role="row">
+                                                <td class="sorting_1"><input type="checkbox" name="${i}" id=""></td>
+                                                <td class="sorting_1">${ v['Sender'] }</td>
+                                                <td class="sorting_1">${ v['message'] }</td>
+                                                <td class="sorting_1">${ v['received_time'] }</td>
+                                                <td class="sorting_1">${ v['reply'] }</td>
+                                                <td class="sorting_1"><p>${ v['from'] }<p></td>
+                                                    <!-- /startCamp?id=${ i } -->
+                                                <td><a href="/send_message_panel?id=${i}"> <button name="${ i }" type="button" class="btn btn-round btn-primary strt"> Reply </button></a><p></p></td>
+                                                <td><button type="button" class="btn btn-round btn-warning txt-toggle" data-toggle="modal" data-target="#exampleModalCenter2"> Show </button><p id="req" class="hide-text" style="display: none;">${ v.req }<p><p id="res" class="hide-text" style="display: none;">${ v.res }<p></p></td>
+                                                <td class="sorting_1"> <img src='../static/assets/img/${v.status}.png' width="20%" height="20%" alt=""> </td>
+                                                    
+                                            </tr>`)
+                    });
+                    
+                }
+            });
+        });
+        let text;
+        $(".strt").on("click", function(){
+            text = $(this).attr('name');
+            url = "/startCamp?id=" + text
+            $.ajax({
+                "async": true,
+                "crossDomain": true,
+                url: url,
+                type: 'GET',
+                success: function(res) {
+                    $('#status img').remove();
+                    $('#status p').remove();
+                    $('#status').append(`<img src="${res['img']}" width="10%" alt=""><p>${res['text']}</p>`);
+                    $("#exampleModalCenter2").modal('show');
+                }
+            });
+            console.log(text);
+        });
+
+        $("#provider").on("change", function(){
+            var p_name = $("#provider option:selected").val();
+            p_name = p_name.trim()
+            let url = "/fetch_Temp?phone="+p_name;
+            $.ajax({
+                "async": true,
+                "crossDomain": true,
+                url: url,
+                type: 'GET',
+                success: function(res) {
+                    $.each(res["data"], function(k, v){
+                        $("#template").append(`<option value='${v[0]}-${v[1]}'>${v[0]} 
+                            [${v[1]}]</option>`);
+                    })
+                }
+            });
+            console.log(p_name);
+        });
+
+        $("#Shoot").on("click", function(){
+            $.ajax({
+                type: 'POST',
+                url: "/setAllTemp/",
+                dataType : 'json',
+                data: $("#form_sample_modal").serialize(),
+                success: function(res) {
+                    window.location.reload();
+                }
+            });
+        });
+
+
+        $(".txt-toggle").on("click", function(){ 
+            var q = $(this).siblings("#req");
+            var s = $(this).siblings("#res");
+        
+            if (q.hasClass("hide-text")){
+                $("#req-txt").text(q.text());
+                $("#res-txt").text(s.text());
+            }
+        })
+        $('#dltBtn').on('click', function () {
+            if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true) {
+                var selected = [];
+                $('#example4 tbody tr').each(function () {
+                    var t = $(this).children("td").children("input");
+                    if (t.is(":checked")) {
+                        selected.push(t.attr('name'));
+                    }
+                });
+                var json = { name: "submessage", data: selected }
+                console.log(json);
+                $.ajax({
+                    type: 'POST',
+                    url: "/deleteRec/",
+                    data: JSON.stringify(json),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: 'json',
+                    success: function (result) {
+                        window.location.reload();
+                    },
+                })
+            }
+        });
+
+    });
+</script>
+{% endblock %}

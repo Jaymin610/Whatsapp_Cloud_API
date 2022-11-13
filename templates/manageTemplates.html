@@ -1,0 +1,314 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-content" style="min-height:1539px; width:1450px; margin-left: auto; margin-right: auto;">
+    {% comment %} <div class="page-bar">
+        <div class="page-title-breadcrumb">
+            <div class=" pull-left">
+                <div class="page-title">{{ User }}</div>
+            </div>
+            <ol class="breadcrumb page-breadcrumb pull-right">
+                <li><i class="fa fa-home"></i>&nbsp;<a class="parent-item" href="/dashboard">Home</a>&nbsp;<i
+                        class="fa fa-angle-right"></i>
+                </li>
+                <li class="active">manage Templates</li>
+            </ol>
+        </div>
+    </div> {% endcomment %}
+    {% if messages %}
+    {% for message in messages %}
+<div class="container-fluid p-0">
+  <div class="alert {{ message.tags }} alert-dismissible" role="alert" >
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="">&times;close</span>
+      <i class="fa fa-close"></i>
+    </button>
+    {{ message }}
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+    <div class="row">
+        <div class="col-sm-12 col-md-12 col-xl-12">
+            <div class="card-box">
+                <div class="card-head">
+                    
+                    <button id="sdntmenu" class="mdl-button mdl-js-button mdl-button--icon pull-right"
+                        data-upgraded=",MaterialButton">
+                        <i class="material-icons">more_vert</i>
+                    </button>
+                    <div class="mdl-menu__container is-upgraded">
+                        <div class="mdl-menu__outline mdl-menu--bottom-right"></div>
+                        <ul class="mdl-menu mdl-menu--bottom-right mdl-js-menu mdl-js-ripple-effect mdl-js-ripple-effect--ignore-events"
+                            data-mdl-for="sdntmenu" data-upgraded=",MaterialMenu,MaterialRipple">
+                            <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
+                                data-upgraded=",MaterialRipple"><i class="material-icons">assistant_photo</i>Action<span
+                                    class="mdl-menu__item-ripple-container"><span class="mdl-ripple"></span></span></li>
+                            <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
+                                data-upgraded=",MaterialRipple"><i class="material-icons">print</i>Another action<span
+                                    class="mdl-menu__item-ripple-container"><span class="mdl-ripple"></span></span></li>
+                            <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
+                                data-upgraded=",MaterialRipple"><i class="material-icons">favorite</i>Something else
+                                here<span class="mdl-menu__item-ripple-container"><span
+                                        class="mdl-ripple"></span></span></li>
+                        </ul>
+                    </div>
+                </div>
+                
+	  
+                <div class="card-body ">
+                    <div class="table-scrollable">
+                        <div id="example4_wrapper" class="dataTables_wrapper container-fluid dt-bootstrap4 no-footer">
+                            <div class="row" style="margin-bottom: 10px;">
+                                
+                                
+                                <div class="col-md-3 col-sm-12">
+                                    <select name="provider" class="form-control input-height" id="provider">
+                                        <option value="">Select...</option>
+                                        {% for p in prods %}
+                                        <option value='{{p.phone_no}}'>{{p.provider_name }} [{{p.phone_no}}]</option>
+                                        {% endfor %}
+                                        
+                                    </select>
+                                </div>
+                                <div class="col-md-2 col-sm-12">
+                                    <div class="btn-group" id="update_temp">
+                                        <div class="btn-group btn btn-success" class="">
+                                                    Update Templates
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <table
+                                        class="table table-striped table-bordered table-hover table-checkable order-column valign-middle dataTable no-footer"
+                                        id="example4" role="grid" aria-describedby="example4_info">
+                                        <thead>
+                                            <tr role="row" style="text-align:center">
+                                                <th class="sorting_asc" tabindex="0" aria-controls="example4"
+                                                    rowspan="1" colspan="1" aria-sort="ascending"
+                                                    aria-label="#: activate to sort column descending"
+                                                    style="width: 63.6px;"></th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;">Template ID</th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;">Template Name</th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;">Language</th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;">Status</th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;">Media uploded</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for d in data %}
+                                            <tr style="text-align:center" class="odd" role="row">
+                                                <td class="sorting_1"><input type="checkbox" name="{{ d.id }}" id=""></td>
+                                                <td class="sorting_1">{{ d.temp_id }}</td>
+                                                <td class="sorting_1">{{ d.temp_name }}</td>
+                                                <td class="sorting_1">{{ d.lang_code }}</td>
+                                                <td class="sorting_1"><p>{{ d.status }}<p></td>
+                                                <td class="sorting_1"><p>{% if d.med_id %} <img src='../static/assets/img/Sent.png' width="20%" height="20%" alt=""> {% endif %}<p></td>
+                                                
+                                                <td><a href="#">{% if d.is_media %}
+                                                    <button onclick="upload(this)" id="{{ d.temp_id }}" type="button" class="btn btn-primary upload" data-toggle="modal" data-target="#exampleModalCenter">
+                                                        Upload 
+                                                </button>{% endif %}</a></td>
+                                                    
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                        
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal data-toggle="modal" data-target="#exampleModalCenter"-->
+<div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLongTitle">Upload Media</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            <form action="/manageTemplate/" method="post" enctype="multipart/form-data" id="form_sample_modal" class="form-horizontal"
+                            novalidate="novalidate">
+                <div class="form-group row">
+                    <input type="input" name="temp_id" id="temp_id" style="display: none;">
+                    <label class="control-label col-md-3">Media Upload 
+                        <span class="required" aria-required="true"> * </span></label>
+                    <div class="col-md-5">
+                        <div class="form-check">
+                            <label class="form-check-label">
+                            <input type="radio" class="form-check-input" name="plateform" id="facebook" value="facebook" >
+                            Facebook PlateForm
+                            </label>
+                        </div>
+                        <div class="form-check">
+                        <label class="form-check-label">
+                            <input type="radio" class="form-check-input" name="plateform" id="bonrix" value="bonrix">
+                            On our PlateForm
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="control-label col-md-3">
+                    </label>
+                    <div class="col-md-5">
+                        <input type="file" name="media_obj" id="media_obj">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+            </form>
+        </div>
+        
+      </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="exampleModalCenter2" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+<div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLongTitle">Response</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="modal-body" id="status" style="display: flex;">
+        <!-- <p style="width: 490px;"></p> -->
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Ok</button>
+    </div>
+    </div>
+</div>
+</div>
+<!-- <link rel="stylesheet" href="//cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css"> -->
+<!-- <script src="C:\Whatsapp_Cloud_API_Server\user\static\assets\plugins\jquery\jquery.min.js"></script> -->
+<script>
+    
+    function upload(t) {
+        console.log($(t).attr('id'));
+        document.getElementById('temp_id').value = $(t).attr('id');
+        // temp_id.
+        // $("#").attr("value", $(this).attr('id'));
+    }
+    $(document).ready(function () {
+        // $('#example4').datatable();
+        $('.upload').on("click", function(){
+            console.log("Hii");
+            
+        })
+        $("#update_temp").on("click", function(){
+            var p_name = $("#provider option:selected").val();
+            p_name = p_name.trim()
+            
+            let url = "/refresh_temp?pname="+p_name;
+            $.ajax({
+                "async": true,
+                "crossDomain": true,
+                url: url,
+                type: 'GET',
+                success: function(res) { 
+                    if (res["alert"]){
+                        alert(res['alert']);
+                    }
+                    else{location.reload();}
+                    
+                    // $('tbody').remove();
+                    // $('#example4').append('<tbody></tbody>');
+                    // jQuery.each(res["response"], function(i,v){
+                    // let load = `<tr style="text-align:center" class="odd" role="row">
+                    //                             <td class="sorting_1"><input type="checkbox" name="" id=""></td>
+                    //                             <td class="sorting_1">${ v['id'] }</td>
+                    //                             <td class="sorting_1">${ v['name'] }</td>
+                    //                             <td class="sorting_1">${ v['language'] }</td>
+                    //                             <td class="sorting_1"><p>${v['components'][0]['format'] == 'IMAGE' || v['components'][0]['format'] == 'DOCUMENT' ? true : false}<p></td>
+                    //                             <td class="sorting_1"><p>${ v['status'] }<p></td>
+                    //                             <td>`
+                    //     if (v['components'][0]['format'] == 'IMAGE' || v['components'][0]['format'] == 'DOCUMENT' ? true : false){load+=`<button onclick="upload(this)" id="${ v['id'] }" type="button" class="upload btn btn-primary" data-toggle="modal" data-target="#exampleModalCenter">
+                    //         Upload  </button></td></tr>`}
+                    //     else{load+='</td></tr>'}
+                    //     $('tbody').append(load)
+                    //                             })
+                }
+            });
+        })
+        $("#provider").on("change", function(){
+            var p_name = $("#provider option:selected").val();
+            p_name = p_name.trim()
+            
+            let url = "/searchTable?name=template&provider="+p_name;
+            $.ajax({
+                "async": true,
+                "crossDomain": true,
+                url: url,
+                type: 'GET',
+                success: function(response) {
+                    $('tbody').remove();
+                    $('#example4').append('<tbody></tbody>');
+                    jQuery.each(response, function(i, v){
+                        let load = `<tr style="text-align:center" class="odd" role="row">
+                                                <td class="sorting_1"><input type="checkbox" name="${ i }" id=""></td>
+                                                <td class="sorting_1">${ v.temp_id }</td>
+                                                <td class="sorting_1">${ v.temp_name }</td>
+                                                <td class="sorting_1">${ v.lang_code }</td>
+                                                <td class="sorting_1"><p>${ v.is_media }<p></td>
+                                                <td class="sorting_1"><p>${ v.status }<p></td>
+                                                <td>`
+                        if (v.is_media){load+=`<button name="${ i }" type="button" class="btn btn-round btn-primary strt"> Upload </button></td></tr>`}
+                        else{load+='</td></tr>'}
+                        $('tbody').append(load)
+                    });
+                }
+            });
+            console.log(p_name);
+        });
+        $('#dltBtn').on('click', function () {
+            if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true) {
+                var selected = [];
+                $('#example4 tbody tr').each(function () {
+                    var t = $(this).children("td").children("input");
+                    if (t.is(":checked")) {
+                        selected.push(t.attr('name'));
+                    }
+                });
+                var json = { name: "record", data: selected }
+                console.log(json);
+                $.ajax({
+                    type: 'POST',
+                    url: "/deleteRec/",
+                    data: JSON.stringify(json),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: 'json',
+                    success: function (result) {
+                        window.location.reload();
+                    },
+                })
+            }
+        });
+
+    });
+</script>
+{% endblock %}

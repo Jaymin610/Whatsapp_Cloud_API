@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-content" style="min-height:1539px; width:1450px; margin-left: auto; margin-right: auto;">
+    <div class="page-bar">
+        <div class="page-title-breadcrumb">
+            <div class=" pull-left">
+                <div class="page-title">{{u_name}}</div>
+            </div>
+            <ol class="breadcrumb page-breadcrumb pull-right">
+                <li><i class="fa fa-home"></i>&nbsp;<a class="parent-item" href="/dashboard">Home</a>&nbsp;<i
+                        class="fa fa-angle-right"></i>
+                </li>
+            </ol>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12 col-md-12 col-xl-12">
+            <div class="card-box">
+                <div class="card-head">
+                    <header>Users</header>
+                    <button id="sdntmenu" class="mdl-button mdl-js-button mdl-button--icon pull-right"
+                        data-upgraded=",MaterialButton">
+                        <i class="material-icons">more_vert</i>
+                    </button>
+                    <div class="mdl-menu__container is-upgraded">
+                        <div class="mdl-menu__outline mdl-menu--bottom-right"></div>
+                        <ul class="mdl-menu mdl-menu--bottom-right mdl-js-menu mdl-js-ripple-effect mdl-js-ripple-effect--ignore-events"
+                            data-mdl-for="sdntmenu" data-upgraded=",MaterialMenu,MaterialRipple">
+                            <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
+                                data-upgraded=",MaterialRipple"><i class="material-icons">assistant_photo</i>Action<span
+                                    class="mdl-menu__item-ripple-container"><span class="mdl-ripple"></span></span></li>
+                            <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
+                                data-upgraded=",MaterialRipple"><i class="material-icons">print</i>Another action<span
+                                    class="mdl-menu__item-ripple-container"><span class="mdl-ripple"></span></span></li>
+                            <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
+                                data-upgraded=",MaterialRipple"><i class="material-icons">favorite</i>Something else
+                                here<span class="mdl-menu__item-ripple-container"><span
+                                        class="mdl-ripple"></span></span></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card-body ">
+  
+                    <div class="row">
+                        <div class="col-md-6 col-sm-6 col-6">
+                            <div class="btn-group">
+                                <a href="/addCamp/" id="addRow" class="btn btn-primary">
+                                    Add New Campaign<i class="fa fa-plus"></i>
+                                </a>
+                            </div>
+                            <div class="btn-group">
+                                <a href="/deleteAll?name=Camp" id="" class="btn btn-danger">
+                                    Delete All
+                               </a>
+                            </div>
+                            <div class="btn-group">
+                                <a href="/settings" id="" class="btn btn-success">
+                                    settings
+                               </a>
+                            </div>
+                            <div class="btn-group">
+                                <a href="/showMessages"><button type="button" class="btn btn-secondary"><i class="fa fa-envelope"></i> Inbox </button></a>
+                            </div>
+                            <div class="btn-group">
+                                <a href="/outBox"><button type="button" class="btn btn-light"><i class="fa fa-paper-plane"></i> SMS Outbox </button></a>
+                            </div>
+                            
+                        </div>
+                        <div class="col-md-6 col-sm-6 col-6">
+                            <div class="btn-group">
+                                <div class="btn-group">
+                                    <a href="/generateToken"><button type="button" class="btn btn-dark"><i class="fa fa-link"></i> Generate API Token </button></a>
+                                </div>
+                            </div>
+                            <div class="btn-group">
+                                <div class="btn-group">
+                                    <a href="/manageTemplate"><button type="button" class="btn btn-info"><i class="fa fa-list"></i> Manage Templates </button></a>
+                                </div>
+                            </div>
+                            <div class="btn-group">
+                                <div class="btn-group">
+                                    <a href="/customerStat"><button type="button" class="btn btn-success"> Conversations </button></a>
+                                </div>
+                            </div>
+                            <div class="btn-group pull-right">
+                                <a href="/logout" id="" class="btn btn-warning">
+                                    Logout
+                                </a>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    <div class="table-scrollable">
+                        <div id="example4_wrapper" class="dataTables_wrapper container-fluid dt-bootstrap4 no-footer">
+                            
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <table
+                                        class="table table-striped table-bordered table-hover table-checkable order-column valign-middle dataTable no-footer"
+                                        id="example4" role="grid" aria-describedby="example4_info">
+                                        <thead>
+                                            <tr role="row">
+                                                <th class="sorting_asc" tabindex="0" aria-controls="example4"
+                                                    rowspan="1" colspan="1" aria-sort="ascending"
+                                                    aria-label="#: activate to sort column descending"
+                                                    style="width: 63.6px;"></th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;">Name</th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;">Email</th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;">Phone Number</th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;">Active Status</th>
+                                                
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for c in Data %}
+                                            <tr class="odd" role="row">
+                                                <td class="sorting_1"><input type="checkbox" name="{{ c.id }}" id="{{ c.id }}"></td>
+                                                <td>{{ c.user_name }} </td>
+                                                <td>{{ c.email }} </td>
+                                                <td>{{ c.phone_no }} </td>
+                                                <td>{{ c.is_active }} </td>
+                                                <td>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<a href="#"><button type="button" class="btn deepPink-bgcolor">Settings</button></a> 
+                                                    &nbsp; <a href="#"><button type="button" class="btn btn-primary"><i class="fa fa-plus"></i> Templates </button></a>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function(){
+        $("#deleteCamp").on("click", function(){
+            if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true){
+                $.ajax({
+                "async": true,
+                "crossDomain": true,
+                url: "/delete?name=Camp&cid="+ $(this).attr("class"),
+                type: 'GET',
+                success: function(res) {
+                    console.log(res);
+                    window.location.reload();
+                }
+            });
+            }
+        })
+    })
+</script>
+{% endblock %}

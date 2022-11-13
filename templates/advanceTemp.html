@@ -1,0 +1,513 @@
+{% extends 'base.html' %}
+{% block content %}
+
+    <div class="page-content" style="min-height:1579px">
+        <div class="page-bar">
+            <div class="page-title-breadcrumb">
+                <div class=" pull-left">
+                    <div class="page-title">Advance Template</div>
+                </div>
+                <ol class="breadcrumb page-breadcrumb pull-right">
+                    <li><i class="fa fa-home"></i>&nbsp;<a class="parent-item" href="/dashboard">Home</a>&nbsp;<i
+                            class="fa fa-angle-right"></i>
+                    </li>
+                    <li class="active">Advance Template</li>
+                </ol>
+            </div>
+        </div>
+        <div class="row">
+            
+            <div class="col-md-12 col-sm-12">
+                <div class="card card-box">
+                    <div class="card-head">
+                        <header>Details </header>
+                    </div>
+                    <div class="card-body row" id="bar-parent">
+                        <div class="col-md-8">
+                            <form action="/advanceTemplate?unique={{id}}" method="post" id="form_sample_1" class="form-horizontal"
+                            novalidate="novalidate" enctype="multipart/form-data">{% csrf_token %}
+                            <div class="form-group row" style="display: none;">
+                                <div class="col-md-5">
+                                    <input class="form-control" type="Number" id="id" value={{id}} name="id">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="control-label col-md-3">Receiver 
+                                    </label>
+                                <div class="col-md-5">
+                                    <div class="form-check">
+                                      <label class="form-check-label">
+                                        <input type="radio" class="form-check-input" name="compType" id="single_receiver" value="single" >
+                                        single
+                                      </label>
+                                    </div>
+                                    <div class="form-check">
+                                    <label class="form-check-label">
+                                        <input type="radio" class="form-check-input" name="compType" id="multiple_receiver" value="multiple">
+                                        Multiple
+                                      </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group row" style="display: none;">
+                                <label class="control-label col-md-3">Excel Data
+                                    <span class="required" aria-required="true"> * </span>
+                                </label>
+                                <div class="col-md-5">
+                                    <!-- <inppload Excel File></inppload> -->
+                                    <input class="form-control" type="file" id="formFile" name="myfile">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group row" style="display: none;">
+                                <label class="control-label col-md-3">Mobile Number Column
+                                    <span class="required" aria-required="true"> * </span>
+                                </label>
+                                <div class="col-md-5" id="mob-select">
+                                    <select class="form-control" name="col_Num" id="col_Num">
+                                        <option value="">Select...</option>
+                                    </select>
+                                    <!-- <input class="form-control" type="text" id="col_Num" name="col_Num"> -->
+                                </div>
+                            </div>
+                            <div class="form-group row" style="display: none;">
+                                <label class="control-label col-md-3">Mobile Number
+                                    <span class="required" aria-required="true"> * </span>
+                                </label>
+                                <div class="col-md-5">
+                                    <input class="form-control" type="tel" id="mobile" name="mobile">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="control-label col-md-3 checkbox checkbox-icon-black p-0">
+                                    <label for="checkbox1">
+                                        Add country code
+                                    </label>
+                                </div>
+                                <div class="col-md-5">
+                                    <input id="country_check" type="checkbox" name="country_check[]" value="yes">
+                                    <input style="display: none;" type="checkbox" name="country_check[]" value="mandatory"checked>
+                                </div>
+                            </div>
+                            <div class="form-group row" style="display: none;">
+                                <label class="control-label col-md-3">Select Code
+                                    <span class="required" aria-required="true"> * </span>
+                                </label>
+                                <div class="col-md-5">
+                                    <select name="country_val" class="form-control input-height" id="country_val">
+                                        <option value="">Select...</option>
+                                        <option value="91">India (91)</option>
+                                        {% for r in codes %}
+                                        <option value="">{{r}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group row">
+                                <label class="control-label col-md-3">Whatsapp user
+                                    <span class="required" aria-required="true"> * </span>
+                                </label>
+                                
+                                <div class="col-md-5">
+                                    <select name="provider" class="form-control input-height" id="provider">
+                                        <option value="">Select...</option>
+                                        {% for d in data %}
+                                        <option value='{{d.phone_no}}'>{{ d.provider_name }} [{{d.phone_no}}]</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="temp_look">
+                                <label class="control-label col-md-3">Template Name
+                                    <span class="required" aria-required="true"> * </span>
+                                </label>
+                                <div class="col-md-5" style="display: flex;">
+                                    <select name="template" class="form-control input-height" id="template">
+                                        <option value="">Select...</option>
+                                    </select>
+                                    &nbsp;
+                                </div>
+                                <img src="../static/assets/img/refresh.png" id="refresh" alt="" width="16px" height="16px" style="margin-top: 15px; cursor: pointer;">
+                            </div>
+
+                            <div class="form-group row" id="numberofVar">        
+                            </div>
+                            <div class="form-group row">
+                                <label class="control-label col-md-3">Composer
+                                    <span class="required" aria-required="true"> * </span>
+                                </label>
+                                <div class="col-md-5">
+                                    <textarea name="Description" id="text-area" placeholder="Add Composer"
+                                        class="form-control" rows="3"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <div class="row">
+                                    <div class="offset-md-3 col-md-9">
+                                        <button id='prw' type="button" class="btn btn-info">Preview</button>
+                                        <button type="submit" class="btn btn-danger">Process</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                        </div>
+                        
+                        <div class="col-md-4" style="position: relative; overflow: hidden; width: auto;">
+                            
+                            <ul class="chat nice-chat small-slimscroll-style" style="overflow: hidden; width: auto;">
+                                <li class="in">
+                                    <div class="message">
+                                        <span class="arrow"></span> <a class="name" href="#" id="api_provider_name"></a> <span class="datetime">at Mar 12, 2014 6:12</span> 
+                                        <span class="body" id="toup-temp-look">
+                                            <div id="toup-header" style="font-weight: bold;"></div>
+                                            <div id="toup-body"></div>
+                                            <div id="toup-footer" style="font-weight: lighter;"></div>
+                                            <div id="toup-butttons">
+                                                <span id="toup-buttton1" class="btn btn-light"></span>
+                                                <span id="toup-buttton2" class="btn btn-light"></span>
+                                            </div>
+                                        </span>
+                                    </div>
+                                </li>
+                            </ul>
+                            <ul class="chat nice-chat small-slimscroll-style" style="overflow: hidden; width: auto;">
+                                <li class="in">
+                                    <div class="message">
+                                        <span class="arrow"></span> <a class="name" href="#" id="api_provider_name"></a> <span class="datetime">at Mar 12, 2014 6:12</span> 
+                                        <span class="body" id="temp-look">
+                                            <div id="header" style="font-weight: bold;"></div>
+                                            <div id="body"></div>
+                                            <div id="footer" style="font-weight: lighter;"></div>
+                                            <div id="butttons">
+                                                <span id="buttton1" class="btn btn-light"></span>
+                                                <span id="buttton2" class="btn btn-light"></span>
+                                            </div>
+                                        </span>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    
+                     
+                </div>
+                
+            </div>
+           
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="exampleModalCenter2" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLongTitle">Response</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body" id="status" style="display: flex;">
+            
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary"  data-dismiss="modal">Ok</button>
+        </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var header_var = ["\{\{1\}\}", "\{\{2\}\}", "\{\{3\}\}"];
+    var body_var = ["\{\{1\}\}", "\{\{2\}\}", "\{\{3\}\}"]; 
+    function dynamicVar(type, ind, ele) {
+
+            let text = $(type).text();
+            if (type == "#header"){
+                let rep = header_var[ind-1];
+                new_text = text.replaceAll(rep, `\{\{ ${$(ele).val()} \}\}`);
+                header_var[ind-1] = `\{\{ ${$(ele).val()} \}\}`
+            }
+            else if(type == "#body"){
+                let rep = body_var[ind-1];
+                new_text = text.replaceAll(rep, `\{\{ ${$(ele).val()} \}\}`);
+                body_var[ind-1] = `\{\{ ${$(ele).val()} \}\}`
+            }
+            $(type).text(new_text);
+        }
+    $(document).ready(function () {
+        
+        $("#buttton1").hide();
+        $("#buttton2").hide();
+        $("#toup-buttton1").hide();
+        $("#toup-buttton2").hide();
+        let check;
+        var csv_header = [];
+        var options;
+        
+        $("#formFile").on("change", function(){
+            var fileSelect = document.getElementById('formFile');
+            var file = fileSelect.files[0];
+            var data = new FormData();
+            data.append("myfile", file);
+            $.ajax({
+                type: 'POST',
+                url: "/getHeaderExcel",
+                processData: false,
+                contentType: false,
+                mimeType: 'multipart/form-data',
+                data: data,
+                success: function(response){
+                    response = JSON.parse(response);
+                    csv_header = response['data'];
+                    csv_header.forEach(element => {
+                        options += `<option value="${element}">${element}</option>`
+                    })
+                    $("#col_Num").append(options)
+                }
+            })
+            
+        })
+        
+        $('.form-check-label').on("change", function () {
+            var value = $(this).children('input').val();
+            var excel = $("#form_sample_1").children(".form-group")[2];
+            var colname = $("#form_sample_1").children(".form-group")[3];
+            var mobnum = $("#form_sample_1").children(".form-group")[4];
+
+            if (value == "single") {
+                excel.style.display = "none";
+                colname.style.display = "none";
+                mobnum.style.display = "";
+                check = "single";
+            }
+            else if (value == "multiple") {
+                excel.style.display = "";
+                colname.style.display = "";
+                mobnum.style.display = "none";
+                check = "multiple";
+            }
+        });
+
+        $('#refresh').on("click", function(){
+            var p_name = $("#provider option:selected").val();
+            $.ajax({
+                "async": true,
+                "crossDomain": true,
+                url: "/refresh_temp?pname="+p_name,
+                type: 'GET',
+                success: function(res) {
+                    console.log(res)
+                    }
+            })
+        });
+        
+        $("#provider").on("change", function(){
+            var p_name = $("#provider option:selected").val();
+            p_name = p_name.trim()
+            $("#api_provider_name").text(p_name);
+            let url = "/admin/fetch_Temp?phone="+p_name;
+            $.ajax({
+                "async": true,
+                "crossDomain": true,
+                url: url,
+                type: 'GET',
+                success: function(res) {
+                    $.each(res["data"], function(k, v){
+                        $("#template").append(`<option value='${v[2]}'>${v[0]} 
+                            [${v[1]}]</option>`);
+                    })
+                }
+            });
+            console.log(p_name);
+        });
+        
+        $('#country_check').on('click', function(){
+            var select_ele = $("#form_sample_1").children(".form-group")[6];
+            
+            if ($('#country_check').is(':checked')) {
+                $('#country_check').attr('value', "yes");
+                select_ele.style.display = "";
+                console.log($('#country_check').val());
+            }
+            else{
+                $('#country_check').attr('value', "no");
+                select_ele.style.display = "none";
+                console.log($('#country_check').val());
+            }
+        });
+        
+        let numofBVar = 0;
+        let numofHVar = 0;
+        
+        $("#template").on("change", function(){
+            $(".numberofVar").remove();
+            var p_name = $("#template option:selected").val();
+            p_name = p_name.trim()
+            let url = "/admin/get_tempJson?id="+p_name;
+            $.ajax({
+                "async": true,
+                "crossDomain": true,
+                url: url,
+                type: 'GET',
+                success: function(res) {
+                    $("#buttton1").hide();
+                    $("#buttton2").hide();
+                    console.log(res["temp_look"]);
+                    $("#temp-look #header").text("");
+                    $("#temp-look #body").text("");
+                    $("#temp-look #footer").text("");
+                    $("#toup-temp-look #toup-header").text("");
+                    $("#toup-temp-look #toup-body").text("");
+                    $("#toup-temp-look #toup-footer").text("");
+                    $(".datetime").text(res['date_time']);
+                    $("#temp-look #butttons #buttton1").text("");
+                    $("#temp-look #butttons #buttton2").text("");
+                    $("#toup-temp-look #toup-butttons #toup-buttton1").text("");
+                    $("#toup-temp-look #toup-butttons #toup-buttton2").text("");
+                    $.each(res["temp_look"], function(k, v) {
+                        if (k == "HEADER"){
+                            $("#header").append(v);
+                            $("#toup-header").append(v);
+                        }
+                        if (k == "BODY"){
+                            
+                            $("#body").append(v);
+                            $("#toup-body").append(v);
+                        }
+                        if (k == "FOOTER"){
+                            $("#footer").append(v);
+                            $("#toup-footer").append(v);
+                        }
+                        if (k == "BUTTONS1"){
+                            $("#buttton1").show();
+                            $("#toup-buttton1").show();
+                            $("#buttton1").text(v);
+                            $("#toup-buttton1").text(v);
+                        }
+                        if (k == "BUTTONS2"){
+                            $("#buttton2").show();
+                            $("#toup-buttton2").show();
+                            $("#buttton2").append(v);
+                            $("#toup-buttton2").append(v);
+                        }
+
+                    });
+                    
+                    
+                    numofBVar = res["countb"];
+                    if (check == "single"){
+                        numofBVar.reverse().forEach(element => {
+                        ele = element.replaceAll("{", "")
+                        ele = ele.replaceAll("}", "")
+                        $(".form-actions").prepend(`
+                        <div class="form-group row numberofVar">
+                        <label class="control-label col-md-3"> Body-${element}
+                            <span class="required" aria-required="true"> * </span>
+                        </label>
+                                <div class="col-md-5">
+                                    <input type="text" class="form-control" onkeyup="dynamicVar('#body',`+ele+`, this)" name="body-variable[]" placeholder="${element}">
+                                </div></div>`)
+                        });
+                        if (res['counth']){
+                            numberofHVar = res['counth'];
+                            numberofHVar.reverse().forEach(element => {
+                                ele = element.replaceAll("{", "")
+                                ele = ele.replaceAll("}", "")
+                                $(".form-actions").prepend(`
+                                <div class="form-group row numberofVar">
+                                <label class="control-label col-md-3"> Head-${element}
+                                    <span class="required" aria-required="true"> * </span>
+                                </label>
+                                        <div class="col-md-5">
+                                            <input type="text" class="form-control" onkeyup="dynamicVar('#header',`+ele+`, this)" name="header-variable[]" placeholder="${element}">
+                                        </div></div>`)
+                            })
+                        };  
+                    }
+                    else if(check == "multiple"){
+                        console.log(numofBVar)
+                        numofBVar.reverse().forEach(element => {
+                        ele = element.replaceAll("{", "")
+                        ele = ele.replaceAll("}", "")
+                        $(".form-actions").prepend(`
+                        <div class="form-group row numberofVar">
+                        <label class="control-label col-md-3"> Body-${element}
+                            <span class="required" aria-required="true"> * </span>
+                        </label>
+                                <div class="col-md-5">
+                                    <select name="body-variable[]" onchange="dynamicVar('#body',`+ele+`, this)" class="form-control input-height" placeholder="${element}">
+                                    ${options}
+                                    </select>
+                                </div></div>`)
+                        });
+                        if (res['counth']){
+                            numberofHVar = res['counth'];
+                            numberofHVar.reverse().forEach(element => {
+                                ele = element.replaceAll("{", "")
+                                ele = ele.replaceAll("}", "")
+                                $(".form-actions").prepend(`
+                                <div class="form-group row numberofVar">
+                        <label class="control-label col-md-3"> Head-${element}
+                            <span class="required" aria-required="true"> * </span>
+                        </label>
+                                <div class="col-md-5">
+                                    <select name="header-variable[]" onchange="dynamicVar('#header',`+ele+`, this)" class="form-control input-height" placeholder="${element}">
+                                    ${options}
+                                    </select>
+                                </div></div>`)
+                            })
+                        };  
+                    }
+                    
+                    
+                }
+                    
+            });
+            console.log(p_name);
+        });
+        
+
+        $('#prw').on("click", function () {
+            var b_vars = $('[name="body-variable[]"]').map(function(idx, elem) {return $(elem).val();}).get();
+            var h_vars = $('[name="header-variable[]"]').map(function(idx, elem) {return $(elem).val();}).get();
+            
+            console.log(h_vars, b_vars)
+            
+            var fileSelect = document.getElementById('formFile');
+            var file = fileSelect.files[0];
+            var data = new FormData();
+            data.append("myfile", file);
+            data.append("compType", check);
+            // data.append("Description", $('#text-area').val());
+            data.append("mobile", $('#mobile').val());
+            data.append("id", $('#id').val());
+            data.append("col_Num", $('#col_Num').val());
+            data.append("template", $('#template').val());
+            data.append("country_val", $('#country_val').val());
+            data.append("provider", $('#provider').val());
+            data.append("country_check[]", [$('#country_check').val()]);
+            data.append("body-variable[]", b_vars);
+            data.append("header-variable[]", h_vars);
+            
+            $.ajax({
+                type: 'POST',
+                url: "/advancePreview",
+                processData: false,
+                contentType: false,
+                mimeType: 'multipart/form-data',
+                data: data,
+                success: function(res) {
+                    res = JSON.parse(res);
+                    $('#status img').remove();
+                    $('#status p').remove();
+                    $('#status').append(`<img src="${res['img']}" width="10%" alt=""><p>${res['text']}</p>`);
+                    $("#exampleModalCenter2").modal('show');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

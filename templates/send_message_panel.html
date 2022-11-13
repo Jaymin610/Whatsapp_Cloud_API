@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-bar">
+    {% comment %} <div class="page-title-breadcrumb">
+        <div class=" pull-left">
+            <div class="page-title">Settings</div>
+        </div>
+        <ol class="breadcrumb page-breadcrumb pull-right">
+            <li><i class="fa fa-home"></i>&nbsp;<a class="parent-item" href="/dashboard">Home</a>&nbsp;<i
+                    class="fa fa-angle-right"></i>
+            </li>
+            <li class="active">Settings</li>
+        </ol>
+    </div>
+</div> {% endcomment %}
+<div class="card card-box">
+    <div class="card-head">
+        <header>Campaign Details</header>
+        <button id="panel-button" class="mdl-button mdl-js-button mdl-button--icon pull-right"
+            data-upgraded=",MaterialButton">
+            <i class="material-icons">more_vert</i>
+        </button>
+        <div class="mdl-menu__container is-upgraded">
+            <div class="mdl-menu__outline mdl-menu--bottom-right"></div>
+            <ul class="mdl-menu mdl-menu--bottom-right mdl-js-menu mdl-js-ripple-effect mdl-js-ripple-effect--ignore-events"
+                data-mdl-for="panel-button" data-upgraded=",MaterialMenu,MaterialRipple">
+                <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1" data-upgraded=",MaterialRipple"><i
+                        class="material-icons">assistant_photo</i>Action<span
+                        class="mdl-menu__item-ripple-container"><span class="mdl-ripple"></span></span></li>
+                <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1" data-upgraded=",MaterialRipple"><i
+                        class="material-icons">print</i>Another action<span
+                        class="mdl-menu__item-ripple-container"><span class="mdl-ripple"></span></span></li>
+                <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1" data-upgraded=",MaterialRipple"><i
+                        class="material-icons">favorite</i>Something else here<span
+                        class="mdl-menu__item-ripple-container"><span class="mdl-ripple"></span></span></li>
+            </ul>
+        </div>
+    </div>
+    <div class="card-body " id="bar-parent">
+        <form action="/send_message/" method='post' id="form_sample_1">
+            <input type="text" name="phone" id="" value="{{phone}}" style="display: none;">
+            <input type="text" name="id" id="" value="{{id}}" style="display: none;">
+            <div class="form-group row">
+                <label class="control-label col-md-3">Method
+                </label>
+                <div class="col-md-5">
+                    <div class="form-check">
+                        <label class="form-check-label">
+                            <input type="radio" class="form-check-input" name="method" id="SAR" value="Temp">
+                            Template
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <label class="form-check-label">
+                            <input type="radio" class="form-check-input" name="method" id="oth" value="Mes">
+                            Text Message
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group row" style="display: none;">
+                <label class="control-label col-md-3">Template Name
+                </label>
+                <div class="col-md-5">
+                    <select name="template" class="form-control input-height" id="template">
+                    </select>
+                </div>
+            </div>
+            <!-- style="display: none;" -->
+            <div class="form-group row" style="display: none;">
+                <label for="simpleFormPassword" class="control-label col-md-3">Enter your Message</label>
+                <div class="col-md-5">
+                    <textarea name="message" id="" cols="30" rows="10" class="form-control"></textarea>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    </div>
+</div>
+<script>
+    $(document).ready(function () {
+        let url = "/fetch_Temp?phone={{phone}}";
+        $.ajax({
+            "async": true,
+            "crossDomain": true,
+            url: url,
+            type: 'GET',
+            success: function(res) {
+                $.each(res["data"], function(k, v){
+                    $("#template").append(`<option value='${v[0]}-${v[1]}'>${v[0]} 
+                        [${v[1]}]</option>`);
+                })
+            }
+        });
+        
+        $('.form-check-label').on("change", function () {
+            console.log($("#form_sample_1").children(".form-group"))
+            var value = $(this).children('input').val();
+            var template = $("#form_sample_1").children(".form-group")[1];
+            var message = $("#form_sample_1").children(".form-group")[2];
+
+            if (value == "Temp") {
+                message.style.display = "none";
+                template.style.display = "";
+            }
+            else if (value == "Mes") {
+                message.style.display = "";
+                template.style.display = "none";
+            }
+        });
+    })
+</script>
+{% endblock %}

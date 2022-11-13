@@ -1,0 +1,246 @@
+{% extends 'Ad_base.html' %}
+{% block content %}
+    <div class="page-content" style="min-height:1579px">
+        <div class="row">
+            <div class="col-md-12 col-sm-12">
+                <div class="card card-box">
+                    <div class="card-head">
+                        <header>Details </header>
+                        <button id="panel-button" class="mdl-button mdl-js-button mdl-button--icon pull-right"
+                            data-upgraded=",MaterialButton">
+                            <i class="material-icons">more_vert</i>
+                        </button>
+                        <div class="mdl-menu__container is-upgraded">
+                            <div class="mdl-menu__outline mdl-menu--bottom-right"></div>
+                            <ul class="mdl-menu mdl-menu--bottom-right mdl-js-menu mdl-js-ripple-effect mdl-js-ripple-effect--ignore-events"
+                                data-mdl-for="panel-button" data-upgraded=",MaterialMenu,MaterialRipple">
+                                <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
+                                    data-upgraded=",MaterialRipple"><i
+                                        class="material-icons">assistant_photo</i>Action<span
+                                        class="mdl-menu__item-ripple-container"><span class="mdl-ripple"></span></span>
+                                </li>
+                                <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
+                                    data-upgraded=",MaterialRipple"><i class="material-icons">print</i>Another
+                                    action<span class="mdl-menu__item-ripple-container"><span
+                                            class="mdl-ripple"></span></span></li>
+                                <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
+                                    data-upgraded=",MaterialRipple"><i class="material-icons">favorite</i>Something else
+                                    here<span class="mdl-menu__item-ripple-container"><span
+                                            class="mdl-ripple"></span></span></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-body" id="bar-parent">
+                        <form action="/admin/create_Temp" method="post" id="form_sample_1" class="form-horizontal"
+                            novalidate="novalidate" enctype="multipart/form-data"> {% csrf_token %}
+                            <div class="form-group row mb-6">
+                                <div class="col-lg-3 mb-lg-0 mb-6">
+                                    <label class="">Whatsapp user
+                                        <span class="required" aria-required="true"> * </span>
+                                    </label>
+                                        <select name="provider" class="form-control input-height" id="from-provider">
+                                            <option value="">Select...</option>
+                                            {% for d in prod %}
+                                            <option value='{{d.phone_no}}'>{{ d.provider_name }} [{{d.phone_no}}]</option>
+                                            {% endfor %}
+                                        </select>
+                                </div>
+                                <div class="col-lg-3 mb-lg-0 mb-6">
+                                    <label class="control-label ">Whatsapp user
+                                        <span class="required" aria-required="true"> * </span>
+                                    </label>
+                                        <select name="to-provider" class="form-control input-height" id="to-provider">
+                                            <option value="">Select...</option>
+                                            {% for d in prod %}
+                                            <option value='{{d.phone_no}}'>{{ d.provider_name }} [{{d.phone_no}}]</option>
+                                            {% endfor %}
+                                        </select>
+                                
+                                </div>
+                            </div>
+                            <div class="form-group row mb-6">
+                                <div class="col-lg-3 mb-lg-0 mb-6" id="ahiya">
+                                    <label>Template Name
+                                        <span class="required" aria-required="true"> * </span>
+                                    </label>
+                                    <select name="template" class="form-control input-height" id="from-template">
+                                        <option value="">Select...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 mb-lg-0 mb-6">
+                                <label class="control-label ">Status:
+                                </label>
+                                <span id="stat-img"></span>
+                            </div>
+                            <div class="form-group row mb-6">
+                                <div class="col-lg-3 mb-lg-0 mb-6">
+                                    <label>Template Data
+                                        <span class="required" aria-required="true"> * </span>
+                                    </label>
+                                    <textarea name="temp-json" id="temp-json" cols="70" rows="15"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <div class="row">
+                                    <div class="offset-md-3 col-md-9">
+                                        <button type="submit" class="btn btn-danger">Copy Temp</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                     
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="exampleModalCenter2" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLongTitle">Response</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body" id="status" style="display: flex;">
+            
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Ok</button>
+        </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        
+        let check;
+        $('.form-check-label').on("change", function () {
+            console.log($("#form_sample_1").children(".form-group"))
+            var value = $(this).children('input').val();
+            var excel = $("#form_sample_1").children(".form-group")[2];
+            var colname = $("#form_sample_1").children(".form-group")[3];
+            var mobnum = $("#form_sample_1").children(".form-group")[4];
+
+            if (value == "single") {
+                excel.style.display = "none";
+                colname.style.display = "none";
+                mobnum.style.display = "";
+                check = "single";
+            }
+            else if (value == "multiple") {
+                excel.style.display = "";
+                colname.style.display = "";
+                mobnum.style.display = "none";
+                check = "multiple";
+            }
+        });
+
+        $('#refresh').on("click", function(){
+            $.ajax({
+                "async": true,
+                "crossDomain": true,
+                url: "/refresh_temp/",
+                type: 'GET',
+                success: function(res) {
+                    console.log(res)
+                    }
+            })
+        });
+        
+        $("#from-provider").on("change", function(){
+            var p_name = $("#from-provider option:selected").val();
+            p_name = p_name.trim()
+            let url = "/admin/fetch_Temp?phone="+p_name;
+            $.ajax({
+                "async": true,
+                "crossDomain": true,
+                url: url,
+                type: 'GET',
+                success: function(res) {
+                    $("#from-template option").remove();
+                    $("#from-template").append(`<option value="">Select...</option>`);
+                    $.each(res["data"], function(k, v){
+                        $("#from-template").append(`<option value='${v[2]}'>${v[0]} 
+                            [${v[1]}]</option>`);
+                    })
+                }
+            });
+            console.log(p_name);
+        });
+        $("#from-template").on("change", function(){
+            var p_name = $("#from-template option:selected").val();
+            
+            p_name = p_name.trim()
+            let url = "/admin/get_tempJson?id="+p_name;
+            $.ajax({
+                "async": true,
+                "crossDomain": true,
+                url: url,
+                type: 'GET',
+                success: function(res) {
+                    console.log(res["data"]);
+                    let mydata = JSON.stringify(res['data'],undefined, 4);
+                    $("#temp-json").text(`${mydata}`);
+                    $("#stat-img").text(res['status'])
+                }
+            });
+            console.log(p_name);
+        });
+        $('#country_check').on('click', function(){
+            var select_ele = $("#form_sample_1").children(".form-group")[6];
+            
+            if ($('#country_check').is(':checked')) {
+                $('#country_check').attr('value', "yes");
+                select_ele.style.display = "";
+                console.log($('#country_check').val());
+            }
+            else{
+                $('#country_check').attr('value', "no");
+                select_ele.style.display = "none";
+                console.log($('#country_check').val());
+            }
+        });
+
+
+        $('#prw').on("click", function () {
+            var fileSelect = document.getElementById('formFile');
+            var file = fileSelect.files[0];
+            var data = new FormData();
+            data.append("myfile", file);
+            data.append("compType", check);
+            data.append("Description", $('#text-area').val());
+            data.append("mobile", $('#mobile').val());
+            data.append("id", $('#id').val());
+            data.append("col_Num", $('#col_Num').val());
+            data.append("template", $('#template').val());
+            data.append("country_val", $('#country_val').val());
+            data.append("provider", $('#provider').val());
+            data.append("country_check[]", [$('#country_check').val()]);
+
+            $.ajax({
+                type: 'POST',
+                url: "/preview/",
+                processData: false,
+                contentType: false,
+                mimeType: 'multipart/form-data',
+                data: data,
+                success: function(res) {
+                    res = JSON.parse(res);
+                    $('#status img').remove();
+                    $('#status p').remove();
+                    $('#status').append(`<img src="${res['img']}" width="10%" alt=""><p>${res['text']}</p>`);
+                    $("#exampleModalCenter2").modal('show');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

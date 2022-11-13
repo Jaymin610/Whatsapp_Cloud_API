@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<form method="post" action="{{action}}">{% csrf_token %}
+  <div class="form-group" style="display: none;">
+    <input name="sid" type="text" class="form-control" value="{{sid}}">
+  </div>
+  <div class="form-group">
+    <label for="exampleInputEmail1">Phone ID</label>
+    <input name="phone_id" type="text" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="Phone Number ID" value="{{data.phone_id}}">
+  </div>
+  {% comment %} <div class="form-group">
+    <label for="pname">Provider Name</label>
+    <input name="p_name" type="text" class="form-control" id="pname" placeholder="Whatsapp Business Name" value="{{data.provider_name}}">
+  </div> {% endcomment %}
+  <div class="form-group">
+    <label for="phoneNo">Phone No</label>
+    <input name="phone_no" type="text" class="form-control" id="phoneNo" placeholder="Whatsapp Phone Number" value="{{data.phone_no}}">
+  </div>
+  <div class="form-group">
+    <label for="token">Token</label>
+    <input name="token" type="text" class="form-control" id="token" placeholder="Access Token" value="{{data.token}}">
+  </div>
+  <div class="form-group">
+    <label for="b_id">Business ID</label>
+    <input name="b_id" type="text" class="form-control" id="b_id" placeholder="Whatsapp Business ID" value="{{data.business_id}}">
+  </div>
+  <button type="submit" class="btn btn-primary">Submit</button>
+  <a href="{{set}}" class="btn btn-danger">Cancel</a>
+</form>
+{% endblock %}

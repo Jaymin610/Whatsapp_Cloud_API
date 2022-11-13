@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-bar">
+    <div class="page-title-breadcrumb">
+        <div class=" pull-left">
+            <div class="page-title">Add Campaign</div>
+        </div>
+        <ol class="breadcrumb page-breadcrumb pull-right">
+            <li><i class="fa fa-home"></i>&nbsp;<a class="parent-item" href="/dashboard">Home</a>&nbsp;<i class="fa fa-angle-right"></i>
+            </li>
+            <li class="active">Add Campaign</li>
+        </ol>
+    </div>
+</div>
+<div class="card card-box">
+    <div class="card-head">
+        <header>Campaign Details</header>
+         <button id="panel-button" class="mdl-button mdl-js-button mdl-button--icon pull-right" data-upgraded=",MaterialButton">
+               <i class="material-icons">more_vert</i>
+            </button>
+            <div class="mdl-menu__container is-upgraded"><div class="mdl-menu__outline mdl-menu--bottom-right"></div><ul class="mdl-menu mdl-menu--bottom-right mdl-js-menu mdl-js-ripple-effect mdl-js-ripple-effect--ignore-events" data-mdl-for="panel-button" data-upgraded=",MaterialMenu,MaterialRipple">
+               <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1" data-upgraded=",MaterialRipple"><i class="material-icons">assistant_photo</i>Action<span class="mdl-menu__item-ripple-container"><span class="mdl-ripple"></span></span></li>
+               <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1" data-upgraded=",MaterialRipple"><i class="material-icons">print</i>Another action<span class="mdl-menu__item-ripple-container"><span class="mdl-ripple"></span></span></li>
+               <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1" data-upgraded=",MaterialRipple"><i class="material-icons">favorite</i>Something else here<span class="mdl-menu__item-ripple-container"><span class="mdl-ripple"></span></span></li>
+            </ul></div>
+    </div>
+    <div class="card-body " id="bar-parent">
+        <form action="/addCamp/" method='post'>
+            <div class="form-group">
+                <label for="simpleFormName">Campaign Name</label>
+                <input name='camp-name' type="text" class="form-control" id="simpleFormName">
+            </div>
+            <div class="form-group">
+                <label for="simpleFormPassword">Description</label>
+                <input name="desc" type="text-area" class="form-control" id="simpleFormNum">
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    </div>
+</div>
+<script>
+    if ('{{error}}' == 'Yes') {
+        alert("Campaign Already Exists.")
+    }
+</script>
+{% endblock %}

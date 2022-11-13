@@ -1,0 +1,109 @@
+<html>
+{% load static %}
+<!-- Mirrored from radixtouch.in/templates/admin/smart/source/light/login.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 09 Apr 2018 06:05:12 GMT -->
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <meta name="description" content="Responsive Admin Template" />
+    <meta name="author" content="SmartUniversity" />
+    <title>Bonrix Software System</title>
+    <!-- google font -->
+    <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" rel="stylesheet" type="text/css" />
+	<!-- icons -->
+    <link href="{% static 'fonts/font-awesome/css/font-awesome.min.css' %}" rel="stylesheet" type="text/css"/>
+	<link href="{% static 'fonts/material-design-icons/material-icon.css' %}" rel="stylesheet" type="text/css" />
+    <!-- bootstrap -->
+	<link href="{% static 'assets/plugins/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- style -->
+    <link rel="stylesheet" href="{% static 'assets/css/pages/extra_pages.css' %}">
+	<!-- favicon -->
+    <link rel="shortcut icon" href="http://radixtouch.in/templates/admin/smart/source/assets/img/favicon.ico" />
+</head>
+<body>
+    <div class="form-title">
+    <h1>Login Pannel</h1>
+</div>
+<!-- Login Form-->
+<div class="login-form text-center">
+    <div class="form formLogin">
+        <h2>Login to your account</h2>
+        <form action="/" method="post"> {% csrf_token %}
+            <input name="email" type="email" placeholder="Email Address" required/>
+            <input name="password" type="password" placeholder="Password" required/>
+            <div class="remember text-left">
+                <div class="checkbox checkbox-primary">
+                    <input id="checkbox2" type="checkbox" checked>
+                    <label for="checkbox2">
+                        Remember me
+                    </label>
+                </div>
+            </div>
+            <button type="submit">Submit</button>
+        </form>
+        <div class="toggle"><i class="fa fa-user-plus" style="display: none;"></i>Register
+        </div>
+        <div class="forgetPassword"><a href="javascript:void(0)">Forgot your password?</a>
+        </div>
+    </div>
+    <!-- <div class="toggle"><i class="fa fa-user-plus" style="display: none;"></i>Register
+    </div> -->
+    <div class="form formRegister">
+        <h2>Create an account</h2>
+        <form action="/register" method="post" id="regi_form"> {% csrf_token %}
+            <input name="u-name" type="text" placeholder="Contact Name" required/>
+            <input name="email" type="email" placeholder="Email Address" required/>
+            <input name="password" type="password" placeholder="Password" required/>
+            <input name="phoneno" type="tel" placeholder="Phone Number" required/>
+            <button type="button" id="register">Register</button>
+        </form>
+        <div class="toggle"><i class="fa fa-times" style="display: none;"></i> Back to Login
+        </div>
+    </div>
+    <div class="form formReset">
+        <h2>Reset your password?</h2>
+        <form action="/resetPass/" method="POST">{% csrf_token %}
+            <input type="email" placeholder="Email Address" name="email"/>
+            <button>Send Verification Email</button>
+        </form>
+    </div>
+    
+</div>
+    <!-- start js include path -->
+    <script src="{% static 'assets/plugins/jquery/jquery.min.js' %}" ></script>
+
+    <script src="{% static 'assets/js/pages/extra-pages/pages.js' %}" ></script>
+    <!-- end js include path -->
+</body>
+{% if messages %}
+
+<script>
+    {% for message in messages %}
+    alert('{{message}}')
+    {% endfor %}
+</script>
+
+{% endif %}
+
+<script>
+    $(document).ready(function(){
+        $("#register").on("click", function(){
+            console.log("CLicked")
+            $.ajax({
+                "async": true,
+                "crossDomain": true,
+                url: '/register/',
+                type: 'POST',
+                data: $("#regi_form").serialize(),
+                success: function(response) {
+                    if (response['msg']){alert(response['msg']);}
+                    else{window.location.reload()}
+                    
+                }
+            });
+        })
+        
+    })
+</script>
+
+</html>

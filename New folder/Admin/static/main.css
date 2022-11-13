@@ -1,0 +1,64 @@
+.container1 {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-top: 3%;
+}
+
+.hidden-table{
+  display: none;
+}
+
+
+#broadcast-btn{
+  margin-left: -91px;
+}
+#tickmark{
+  width: 10px;
+}
+
+
+.display {
+  margin: 0 auto;
+  width: 100%;
+  clear: both;
+  border-collapse: collapse;
+  table-layout: fixed;          
+  word-wrap:break-word;        
+}
+
+
+
+.content {
+  width: 350px;
+}
+.add-form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+
+.hide {
+  display: none;
+  position: absolute;
+  z-index: 999;
+}
+.baseDiv{
+  height: 30px;
+  background-color: white;
+}
+
+.myDIV:hover + .hide {
+  position: relative;
+  display: block;
+}
+
+.myDIV:hover + .hide + .baseDiv {
+  display: none;
+  position: absolute;
+  z-index: 999;
+}
+  
