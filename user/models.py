@@ -191,6 +191,13 @@ class What_Bot(models.Model):
 
 class Bot_Auto_Reply(models.Model):
     receive_message = models.CharField(max_length=1000, null=True)
-    reply_message = models.CharField(max_length=1000, null=True)
+    reply_message = models.JSONField(null=True)
+    bot = models.ForeignKey(What_Bot, on_delete=models.CASCADE, null=True)
+    provider = models.ForeignKey(WA_MSG_Provider, on_delete=models.CASCADE, null=True)
+
+
+class CustomerBotStop(models.Model):
+    user_number = models.CharField(max_length=15, null=True)
+    provider_name = models.CharField(max_length=100, null=True)
     bot = models.ForeignKey(What_Bot, on_delete=models.CASCADE, null=True)
     provider = models.ForeignKey(WA_MSG_Provider, on_delete=models.CASCADE, null=True)

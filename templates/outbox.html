@@ -115,8 +115,15 @@
                                 <div class="col-sm-12 col-md-3">
                                     <div class="btn-group">
                                         <div class="btn-group">
-                                            <a href="/export_excel/?table=outbox" id="downloadBtn" class="btn btn-default">
-                                                Download Record
+                                            <a href="#" id="download-record" class="btn btn-default">
+                                                Download Selected
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="btn-group">
+                                        <div class="btn-group">
+                                            <a href="#" id="downloadBtn" class="btn btn-default">
+                                                Download All
                                             </a>
                                         </div>
                                     </div>
@@ -148,7 +155,7 @@
                                                 <th class="sorting_asc" tabindex="0" aria-controls="example4"
                                                     rowspan="1" colspan="1" aria-sort="ascending"
                                                     aria-label="#: activate to sort column descending"
-                                                    style="width: 63.6px;"></th>
+                                                    style="width: 63.6px;"><input type="checkbox" onclick="toggle(this)" ></th>
                                                     <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
                                                     colspan="1" aria-label="Title: activate to sort column ascending"
                                                     style="width: 180.863px;">To</th>
@@ -176,7 +183,7 @@
                                         <tbody>
                                             {% for c in messages %}
                                             <tr style="text-align:center" class="odd" role="row">
-                                                <td class="sorting_1"><input type="checkbox" name="{{ c.id }}" id=""></td>
+                                                <td class="sorting_1"><input type="checkbox" name="row-check" id="{{ c.id }}"></td>
                                                 <td class="sorting_1">{{ c.to_number }}</td>
                                                 <td class="sorting_1">{{ c.message }}</td>
                                                 <td class="sorting_1">{{ c.send_time }}</td>
@@ -212,7 +219,7 @@
         </div>
         <div class="modal-body">
             <form action="/setAllTemp/" method="post" id="form_sample_modal" class="form-horizontal"
-                            novalidate="novalidate" enctype="multipart/form-data">
+                            novalidate="novalidate" enctype="multipart/form-data">{% csrf_token %}
                 <div class="form-group row">
                     <label class="control-label col-md-3">Whatsapp user
                         <span class="required" aria-required="true"> * </span>
@@ -269,6 +276,12 @@
 </div>
   
 <script>
+    function toggle(source) {
+        checkboxes = document.getElementsByName('row-check');
+        for(var i=0, n=checkboxes.length;i<n;i++) {
+        checkboxes[i].checked = source.checked;
+        }
+        }
     $(document).ready(function () {
         
         $("#from-date").on("change", function(){
@@ -289,7 +302,7 @@
                     $('#example4').append('<tbody></tbody>');
                     jQuery.each(response, function(i, c){
                         $('tbody').append(`<tr style="text-align:center" class="odd" role="row">
-                                                <td class="sorting_1"><input type="checkbox" name="${ i }" id=""></td>
+                                                <td class="sorting_1"><input type="checkbox" name="row-check" id="${ i }"></td>
                                                 <td class="sorting_1"><p>${ c.To }<p></td>
                                                 <td class="sorting_1">${ c.message }</td>
                                                 <td class="sorting_1">${ c.send_time }</td>
@@ -334,6 +347,53 @@
                     },
                 })
             }
+        });
+        $("#downloadBtn").on("click", function(){
+            var selected = [];
+            checkboxes = $('[name="row-check"]').map(function(idx, elem) {return $(elem).attr('id');}).get();;
+            for(var i=0, n=checkboxes.length;i<n;i++) {
+                selected.push(checkboxes[i]);
+            }
+            var json = { name: "outbox", data: selected }
+            $.ajax({
+                    type: 'POST',
+                    url: "/export_selected_excel",
+                    headers: {'X-CSRFToken': csrftoken},
+                    data: JSON.stringify(json),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: 'json',
+                    success: (data) =>{
+                        window.location.replace(data['url'])
+                    },
+                    error:(data) =>{
+                        console.log(error)
+                    }                
+                })
+        })
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        $('#download-record').on('click', function () {
+            var selected = [];
+            $('#example4 tbody tr').each(function () {
+                var t = $(this).children("td").children("input");
+                if (t.is(":checked")) {
+                    selected.push(t.attr('id'));
+                }
+            });
+            var json = { name: "outbox", data: selected }
+            $.ajax({
+                    type: 'POST',
+                    url: "/export_selected_excel",
+                    headers: {'X-CSRFToken': csrftoken},
+                    data: JSON.stringify(json),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: 'json',
+                    success: (data) =>{
+                        window.location.replace(data['url'])
+                    },
+                    error:(data) =>{
+                        console.log(error)
+                    }                
+                })
         });
 
     });

@@ -54,5 +54,9 @@ urlpatterns = [
     path('button_status', views.button_status, name='button_status'),
     path('toggle_bot', views.toggle_Bot_Stat, name='toggle_Bot_Stat'),
     path('addMesPair', views.addMesPair, name='addMesPair'),
+    path('export_selected_excel', views.export_selected_excel, name='export_selected_excel'),
+    path('getExcel', views.getExcel, name='getExcel'),
+    path('customerBotState', views.customerBotState, name='customerBotState'),
+    path('stopBot', views.stopBot, name='stopBot'),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

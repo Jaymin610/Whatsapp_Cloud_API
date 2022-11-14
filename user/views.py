@@ -538,6 +538,8 @@ def deleteRec(request):
         data = data
         for id in data:
             SubMessageLog.objects.get(id=id).delete()
+    if name == "startbot":
+        CustomerBotStop.objects.filter(pk__in=data).delete()
 
     return JsonResponse({"Name": "DeleteFunction"})
 
@@ -1162,7 +1164,6 @@ def export_excel(request):
                 to_d = str(request.GET['to']).split('-')
                 from_d = datetime.datetime(int(from_d[0]), int(from_d[1]), int(from_d[2]), tzinfo=timezone.utc)
                 to_d = datetime.datetime(int(to_d[0]), int(to_d[1]), int(to_d[2]), tzinfo=timezone.utc)
-                # tzinfo = timezone.utc
                 data = OutBox.objects.filter(user_id=request.COOKIES['id'], send_time__gte=from_d, send_time__lte=to_d)
             except Exception as e:
                 data = OutBox.objects.filter(user_id=request.COOKIES['id'])
@@ -1207,6 +1208,122 @@ def export_excel(request):
                 ws.write(row_num, 6, my_row.conversation_status, font_style)
         wb.save(response)
         return response
+
+selected_Ecxel_file = ""
+
+def export_selected_excel(request):
+    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        result = json.load(request)
+        table_name = result["name"]
+        # content-type of response
+        response = HttpResponse(content_type='application/ms-excel')
+        print(table_name)
+        # decide file name
+        response['Content-Disposition'] = f'attachment; filename="{table_name}.xls"'
+
+        # creating workbook
+        wb = xlwt.Workbook(encoding='utf-8')
+
+        # adding sheet
+        ws = wb.add_sheet("sheet1")
+
+        # Sheet header, first row
+        row_num = 0
+
+        font_style = xlwt.XFStyle()
+        # headers are bold
+        font_style.font.bold = True
+
+        # get your data, from database or from a text file...
+        if table_name == "Record":
+            # column header names, you can use your own headers here
+            columns = ['Mobile', 'Sender', 'Template', 'Whatsapp Request', 'Whatsapp Response']
+
+            # write column headers in sheet
+            for col_num in range(len(columns)):
+                ws.write(row_num, col_num, columns[col_num], font_style)
+
+            # Sheet body, remaining rows
+            font_style = xlwt.XFStyle()
+            data = Data_Summary.objects.filter(pk__in=result['data'])  # dummy method to fetch data.
+            for my_row in data:
+                row_num = row_num + 1
+                ws.write(row_num, 0, my_row.mobile, font_style)
+                ws.write(row_num, 1, my_row.sender_name, font_style)
+                ws.write(row_num, 2, my_row.template, font_style)
+                ws.write(row_num, 3, my_row.voiceshoot_req, font_style)
+                ws.write(row_num, 4, my_row.voiceshoot_res, font_style)
+        elif table_name == "Inbox":
+            data = MessageLog.objects.filter(pk__in=result['data'])
+            print(data)
+            # column header names, you can use your own headers here
+            columns = ['Sender', 'Received message', 'Received Time', 'Reply_Number' 'Reply']
+
+            # write column headers in sheet
+            for col_num in range(len(columns)):
+                ws.write(row_num, col_num, columns[col_num], font_style)
+
+            # Sheet body, remaining rows
+            font_style = xlwt.XFStyle()
+
+            for my_row in data:
+                row_num = row_num + 1
+                ws.write(row_num, 0, my_row.sender_number, font_style)
+                ws.write(row_num, 1, my_row.received_msg, font_style)
+                ws.write(row_num, 2, str(my_row.received_time), font_style)
+                ws.write(row_num, 3, my_row.reply_number, font_style)
+                ws.write(row_num, 4, my_row.reply, font_style)
+                # ws.write(row_num, 5, my_row.send_time, font_style)
+        elif table_name == "outbox":
+            data = OutBox.objects.filter(pk__in=result['data'])
+            print(data)
+            # column header names, you can use your own headers here
+            columns = ['To', 'Message', 'Send Time', 'Reply_Number' 'Request', 'Response']
+
+            # write column headers in sheet
+            for col_num in range(len(columns)):
+                ws.write(row_num, col_num, columns[col_num], font_style)
+
+            # Sheet body, remaining rows
+            font_style = xlwt.XFStyle()
+
+            for my_row in data:
+                row_num = row_num + 1
+                ws.write(row_num, 0, my_row.to_number, font_style)
+                ws.write(row_num, 1, my_row.message, font_style)
+                ws.write(row_num, 2, str(my_row.send_time), font_style)
+                ws.write(row_num, 3, my_row.reply_number, font_style)
+                ws.write(row_num, 4, my_row.request, font_style)
+                ws.write(row_num, 5, my_row.response, font_style)
+        elif table_name == "conv_table":
+            data = Conversation_Status.objects.filter(pk__in=result['data'])
+            # column header names, you can use your own headers here
+            columns = ['To Mobile', 'From', 'Message', 'Template', 'Send Time', 'Received Time', "Status"]
+
+            # write column headers in sheet
+            for col_num in range(len(columns)):
+                ws.write(row_num, col_num, columns[col_num], font_style)
+
+            # Sheet body, remaining rows
+            font_style = xlwt.XFStyle()
+              # dummy method to fetch data.
+            for my_row in data:
+                row_num = row_num + 1
+                ws.write(row_num, 0, my_row.to, font_style)
+                ws.write(row_num, 1, my_row.provider, font_style)
+                ws.write(row_num, 2, my_row.inbox_msg, font_style)
+                ws.write(row_num, 3, my_row.template, font_style)
+                ws.write(row_num, 4, str(my_row.send_time), font_style)
+                ws.write(row_num, 5, str(my_row.received_time), font_style)
+                ws.write(row_num, 6, my_row.conversation_status, font_style)
+        wb.save(response)
+        global selected_Ecxel_file
+        selected_Ecxel_file = response
+        return JsonResponse({"url":"/getExcel"})
+
+
+def getExcel(request):
+    return selected_Ecxel_file
 
 
 def refresh_temp(request):
@@ -1264,7 +1381,7 @@ def fetch_Temp(request):
     j = 0
 
     for i in temps:
-        yl[j] = [i.temp_name, i.lang_code, i.is_media]
+        yl[j] = [i.temp_name, i.lang_code, i.is_media, i.temp_id]
         j += 1
     return JsonResponse({"data": yl})
 
@@ -1307,7 +1424,12 @@ def receive_msg(request):
         except:
             print("Provider not found", rec_phone_id)
             return JsonResponse({"status": "Provider not found"})
-
+        
+        check_bot_exist = What_Bot.objects.filter(provider_id=entry.id)
+        if check_bot_exist and (not CustomerBotStop.objects.filter(user_number=number, provider_id=entry.id)) :
+            if check_bot_exist[0].is_on:
+                check_bot_set(entry.user_id, entry.id, number, message)
+        
         pid, p_num = entry.id, entry.phone_no
 
         CallBack_Data.objects.create(Received=data, received_time=t, user_id=entry.user_id, msg_id=incom_msg_id)
@@ -2276,6 +2398,12 @@ def delete_oldData():
         i.delete()
 
 
+def customerBotState(request):
+    bot_id = request.GET['bid']
+    p_id = request.GET['pid']
+    data = CustomerBotStop.objects.filter(provider_id=p_id)
+    return render(request, "customerBotState.html", {"data":data})
+
 def botSettings(request):
     if request.method == "POST":
         msg_prods = WA_MSG_Provider.objects.get(phone_no=request.POST['provider'])
@@ -2301,23 +2429,124 @@ def button_status(request):
 
 
 def addMesPair(request):
+    phone = ""
     if request.method == "POST":
         rec = str(request.POST["rec_mes"]).split(",")
-        rep = request.POST["reply_mes"]
+        rec = [x.strip() for x in rec]
+        
         bot_id = request.POST["bot_id"]
-        bot = What_Bot.objects.get(pk=bot_id)
-        Bot_Auto_Reply.objects.create(receive_message=rec, reply_message=rep, bot_id=bot_id, provider_id=bot.provider_id)
-        print(rec, rep, bot_id)
+        phone = request.POST['phone']
+        data = Bot_Auto_Reply.objects.filter(bot_id=bot_id)
+        checked_list = []
+        for d in data:
+            for r in rec:
+                if r in d.receive_message:
+                    checked_list.append(r)
+        
+        if not checked_list:
+            rep = request.POST["reply_mes"]
+            rep_opt = request.POST['reply_option']
+            
+            bot = What_Bot.objects.get(pk=bot_id)
+            Bot_Auto_Reply.objects.create(receive_message=rec, reply_message={rep_opt:rep}, bot_id=bot_id, provider_id=bot.provider_id)
+            print(rec, rep, bot_id)
+        else:
+            messages.error(request, "Message Already exist")
+            print()
     else:
         bot_id = request.GET["bid"]
+        pid = request.GET['pid']
+        phone = WA_MSG_Provider.objects.get(pk=pid).phone_no
     bot_reply = Bot_Auto_Reply.objects.filter(bot_id=bot_id)
-    return render(request, "Bot_Messages.html", {"data": bot_reply})
+    return render(request, "Bot_Messages.html", {"data": bot_reply, "pid":phone, "bid":bot_id})
     
+
+def stopBot(request):
+    user_num = request.GET['user']
+    provider = request.GET['provider']
+    p = WA_MSG_Provider.objects.get(phone_no=provider)
+    data = CustomerBotStop.objects.filter(user_number=user_num, provider_name=p.provider_name)
+    if not data:
+        CustomerBotStop.objects.create(user_number=user_num, provider_name=p.provider_name, provider_id=p.id)
+    return redirect("/showMessages")
 
 
 def toggle_Bot_Stat(request):
     bot_id = request.GET['bot_id']
     bot = What_Bot.objects.get(pk=bot_id)
+    if bot.is_on:
+        bot.is_on = False
+    elif not bot.is_on:
+        bot.is_on = True
+    bot.save()
     print(bot.is_on)
     return HttpResponse()
 
+
+def check_bot_set(user, provider, to, message):
+    bot = Bot_Auto_Reply.objects.filter(provider_id=provider)
+    for b in bot:
+        rec_list = b.receive_message
+        if message in rec_list:
+            api = Voice_API.objects.get(u_ID_id=user)
+            if "text" in b.reply_message.keys():
+                payload = json.dumps({
+                "messaging_product": "whatsapp",
+                "recipient_type": "individual",
+                "to": f"{to}",
+                "type": "text",
+                "text": {
+                    "preview_url": False,
+                    "body": f"{b.reply_message['text']}"
+                }
+                })
+            if "template" in b.reply_message.keys():
+                record = Templates.objects.get(temp_id=b.reply_message["template"])
+                if record.is_media:
+                    if record.med_id is None:
+                        return "Please upload media from template management", ""
+                    else:
+                        js = json.loads(record.med_id)
+                        payload = json.dumps({
+                            "messaging_product": "whatsapp",
+                            "recipient_type": "individual",
+                            "to": f"{to}",
+                            "type": "template",
+                            "template": {
+                                "name": f"{record.temp_name}",
+                                "language": {
+                                    "code": f"{record.lang_code}"
+                                },
+                                "components": [
+                                    {
+                                        "type": "header",
+                                        "parameters": [
+                                            {
+                                                "type": "image",
+                                                "image": {"link": f"{js['link']}"} if js["type"] == "what" else {
+                                                    "id": f"{js['med_obj']}"}
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        })
+                else:
+                    payload = json.dumps({
+                        "messaging_product": "whatsapp",
+                        "recipient_type": "individual",
+                        "to": f"{to}",
+                        "type": "template",
+                        "template": {
+                            "name": f"{record.temp_name}",
+                            "language": {
+                                "code": f"{record.lang_code}"
+                            },
+                        }
+                    })
+                
+            response = requests.post(url=api.message_API, headers=api.header, data=payload)
+            print(response.text)
+            break
+    else:
+        print("No settings")

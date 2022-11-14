@@ -1,5 +1,18 @@
 {% extends 'base.html' %}
 {% block content %}
+{% if messages %}
+    {% for message in messages %}
+<div class="container-fluid p-0">
+  <div class="alert {{ message.tags }} alert-dismissible" role="alert" >
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="">&times;close</span>
+      <i class="fa fa-close"></i>
+    </button>
+    {{ message }}
+  </div>
+</div>
+{% endfor %}
+{% endif %}
 <div class="page-content" style="min-height:1539px; width:1450px; margin-left: auto; margin-right: auto;">
     {% comment %} <div class="page-bar">
         <div class="page-title-breadcrumb">
@@ -21,25 +34,10 @@
             <div class="card-box">
                 <div class="card-head">
                     <header>Bot Auto Messages</header>
-                    <button id="sdntmenu" class="mdl-button mdl-js-button mdl-button--icon pull-right"
-                        data-upgraded=",MaterialButton">
-                        <i class="material-icons">more_vert</i>
-                    </button>
-                    <div class="mdl-menu__container is-upgraded">
-                        <div class="mdl-menu__outline mdl-menu--bottom-right"></div>
-                        <ul class="mdl-menu mdl-menu--bottom-right mdl-js-menu mdl-js-ripple-effect mdl-js-ripple-effect--ignore-events"
-                            data-mdl-for="sdntmenu" data-upgraded=",MaterialMenu,MaterialRipple">
-                            <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
-                                data-upgraded=",MaterialRipple"><i class="material-icons">assistant_photo</i>Action<span
-                                    class="mdl-menu__item-ripple-container"><span class="mdl-ripple"></span></span></li>
-                            <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
-                                data-upgraded=",MaterialRipple"><i class="material-icons">print</i>Another action<span
-                                    class="mdl-menu__item-ripple-container"><span class="mdl-ripple"></span></span></li>
-                            <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
-                                data-upgraded=",MaterialRipple"><i class="material-icons">favorite</i>Something else
-                                here<span class="mdl-menu__item-ripple-container"><span
-                                        class="mdl-ripple"></span></span></li>
-                        </ul>
+                    <div class="btn-group pull-right">
+                        <a href="/botSettings" id="" class="btn btn-primary">
+                            Back
+                        </a>
                     </div>
                 </div>
                 
@@ -55,6 +53,7 @@
                                             </a>
                                         </div>
                                     </div>
+                                    <button type="button" name="{{ c.id }}" class="btn btn-round btn-dark addPair" data-toggle="modal" data-target="#exampleModalCenter2"> Add message Pair </button>
                                 </div>
                             </div>
                             <div class="row">
@@ -97,8 +96,102 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="exampleModalCenter2" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true" >
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content" style="width: 700px;">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle">Response</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form action="/addMesPair" method="post" id="form_modal" class="form-horizontal"
+                                novalidate="novalidate" enctype="multipart/form-data">{% csrf_token %}
+                                <input type="text" name="bot_id" id="inp-bot-id" style="display: none;" value="{{bid}}">
+                                <input type="text" name="phone" style="display: none;" value="{{pid}}">
+                                <div class="form-group row">
+                                    <label class="control-label col-md-3">Receiver 
+                                        </label>
+                                    <div class="col-md-5">
+                                        <div class="form-check">
+                                          <label class="form-check-label">
+                                            <input type="radio" class="form-check-input" name="mes_type" id="default" value="default" >
+                                            Default
+                                          </label>
+                                        </div>
+                                        <div class="form-check">
+                                        <label class="form-check-label">
+                                            <input type="radio" class="form-check-input" name="mes_type" id="custom" value="custom">
+                                            Custom
+                                          </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="simpleFormName">Received Message</label>
+                                    <input name='rec_mes' type="text" class="form-control" id="simpleFormName">
+                                </div>
+                                <div class="form-group">
+                                    <label for="simpleFormPassword">Reply Type</label>
+                                    <select name="reply_option" class="form-control input-height" id="reply_option">
+                                        <option value="">Select...</option>
+                                        <option value='text'>Text</option>
+                                        <option value='template'>Template</option>   
+                                        <option value='catalogue'>Catalogue</option>   
+                                    </select>
+                                </div>
+                                <div class="form-group" id="reply_field">
+                                    
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                    <button type="submit" class="btn btn-primary">Submit</button>
+                                </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
     $(document).ready(function(){
+
+        $('.form-check-label').on("change", function () {
+            var value = $(this).children('input').val();
+            if (value == "default"){
+                $("[name='rec_mes']").attr("readonly", true);
+                $("[name='rec_mes']").val("*");
+            }
+            else if(value == "custom"){
+                $("[name='rec_mes']").attr("readonly", false);
+            }
+        });
+
+        $("#reply_option").on("change", function () {
+            let option = $("#reply_option option:selected").val();
+            if (option == "text"){
+                $("#reply_field").append(` <label for="">Text</label>
+                <input name="reply_mes" type="text" class="form-control" id="simpleFormNum">`);
+            } 
+            else{
+                let url = "/fetch_Temp?phone={{pid}}";
+                $.ajax({
+                    "async": true,
+                    "crossDomain": true,
+                    url: url,
+                    type: 'GET',
+                    success: function(res) {
+                        $("#reply_field").append(`<label for="">Template</label> <select name="reply_mes" class="form-control input-height" id="template">
+                            <option value="">Select...</option>
+                        </select>`)
+                        $.each(res["data"], function(k, v){
+                            $("#template").append(`<option value='${v[3]}'>${v[0]} 
+                                [${v[1]}]</option>`);
+                        })
+                    }
+                });
+            }
+        })
         $("#deleteCamp").on("click", function(){
             if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true){
                 $.ajax({

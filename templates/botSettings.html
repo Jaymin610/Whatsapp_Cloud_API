@@ -87,7 +87,7 @@
         <div class="col-sm-12 col-md-12 col-xl-12">
             <div class="card-box">
                 <div class="card-head">
-                    <header>Campaign List || Status {{CampStat}}</header>
+                    <header>Bot Settings</header>
                 </div>
 
                 <div class="card-body ">
@@ -137,7 +137,7 @@
                                     </div>
                                     <div class="btn-group">
                                         <div class="btn-group">
-                                            <a href="/deleteAll?name=Rec" class="btn btn-warning">
+                                            <a href="/deleteAll?name=botSettings" class="btn btn-warning">
                                                 Delete All
                                             </a>
                                         </div>
@@ -195,34 +195,6 @@
                                                         <a id="bot-stat-btn" href="#" class="btn {{btn_cls}}">{{btn_text}}</a>
                                                     </div>
                                                 </div>
-                                                <!-- <div class="form-group row">
-                                                    <label class="control-label col-md-2">Received Message
-                                                        <span class="required" aria-required="true"> * </span>
-                                                    </label>
-                                                    
-                                                    <div class="col-md-4">
-                                                        <input class="form-control" type="text">
-                                                    </div>
-                                                    <label class="control-label col-md-2">Reply
-                                                        <span class="required" aria-required="true"> * </span>
-                                                    </label>
-                                                    
-                                                    <div class="col-md-4">
-                                                        <input class="form-control" type="text">
-                                                    </div>
-                                                </div> -->
-                                                <!-- <div class="form-group row" id="temp_look">
-                                                    <label class="control-label col-md-3">Template Name
-                                                        <span class="required" aria-required="true"> * </span>
-                                                    </label>
-                                                    <div class="col-md-5" style="display: flex;">
-                                                        <select name="template" class="form-control input-height" id="template">
-                                                            <option value="">Select...</option>
-                                                        </select>
-                                                        &nbsp;
-                                                    </div>
-                                                    <img src="../static/assets/img/refresh.png" id="refresh" alt="" width="16px" height="16px" style="margin-top: 15px; cursor: pointer;">
-                                                </div> -->
                     
                                                 <div class="form-group row" id="numberofVar">        
                                                 </div>
@@ -230,47 +202,12 @@
                                                 <div class="form-actions">
                                                     <div class="row">
                                                         <div class="offset-md-3 col-md-9">
-                                                            <button type="submit" class="btn btn-danger">Add Bot</button>
+                                                            <button type="submit" class="btn btn-primary">Add Bot</button>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </form>
                                             </div>
-                                            {% comment %} Template Preview {% endcomment %}
-                                            {% comment %} <div class="col-md-4" style="position: relative; overflow: hidden; width: auto;">
-                                                <ul class="chat nice-chat small-slimscroll-style" style="overflow: hidden; width: auto;">
-                                                    <li class="in">
-                                                        <div class="message">
-                                                            <span class="arrow"></span> <a class="name" href="#" id="api_provider_name"></a> <span class="datetime">at Mar 12, 2014 6:12</span> 
-                                                            <span class="body" id="toup-temp-look">
-                                                                <div id="toup-header" style="font-weight: bold;"></div>
-                                                                <div id="toup-body"></div>
-                                                                <div id="toup-footer" style="font-weight: lighter;"></div>
-                                                                <div id="toup-butttons">
-                                                                    <span id="toup-buttton1" class="btn btn-light"></span>
-                                                                    <span id="toup-buttton2" class="btn btn-light"></span>
-                                                                </div>
-                                                            </span>
-                                                        </div>
-                                                    </li>
-                                                </ul>
-                                                <ul class="chat nice-chat small-slimscroll-style" style="overflow: hidden; width: auto;">
-                                                    <li class="in">
-                                                        <div class="message">
-                                                            <span class="arrow"></span> <a class="name" href="#" id="api_provider_name"></a> <span class="datetime">at Mar 12, 2014 6:12</span> 
-                                                            <span class="body" id="temp-look">
-                                                                <div id="header" style="font-weight: bold;"></div>
-                                                                <div id="body"></div>
-                                                                <div id="footer" style="font-weight: lighter;"></div>
-                                                                <div id="butttons">
-                                                                    <span id="buttton1" class="btn btn-light"></span>
-                                                                    <span id="buttton2" class="btn btn-light"></span>
-                                                                </div>
-                                                            </span>
-                                                        </div>
-                                                    </li>
-                                                </ul>
-                                            </div> {% endcomment %}
                                             
                                         </div>
                                         
@@ -299,24 +236,10 @@
                                                     style="width: 180.863px;">On / Off</th>
                                                 <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
                                                     colspan="1" aria-label="Title: activate to sort column ascending"
-                                                    style="width: 180.863px;">MR pair</th>
+                                                    style="width: 180.863px;"></th>
                                                 <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
                                                     colspan="1" aria-label="Title: activate to sort column ascending"
                                                     style="width: 180.863px;"></th>
-                                                <!-- <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
-                                                    colspan="1" aria-label="Title: activate to sort column ascending"
-                                                    style="width: 180.863px;">String Data</th>
-
-                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
-                                                    colspan="1" aria-label="Title: activate to sort column ascending"
-                                                    style="width: 180.863px;"></th>
-                                                
-                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
-                                                    colspan="1" aria-label="Title: activate to sort column ascending"
-                                                    style="width: 180.863px;">Status</th>
-                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
-                                                    colspan="1" aria-label="Title: activate to sort column ascending"
-                                                    style="width: 180.863px;">Whatsapp Status</th> -->
                                                 
                                             </tr>
                                         </thead>
@@ -326,8 +249,8 @@
                                                 <td class="sorting_1"><input type="checkbox" name="{{ c.id }}" id=""></td>
                                                 <td class="sorting_1">{{ c.bot_name }}</td>
                                                 <td class="sorting_1"><img src="static/assets/img/{{c.is_on}}.png" alt="" width="25px" height="25px"></td>
-                                                <td class="sorting_1"><a href="/addMesPair?bid={{c.id}}"><button class="btn btn-warning">Show Message Pair</button></a></td>
-                                                <td class="sorting_1"><button type="button" name="{{ c.id }}" class="btn btn-round btn-success addPair" data-toggle="modal" data-target="#exampleModalCenter2"> Add message Pair </button></td>
+                                                <td class="sorting_1"><a href="/addMesPair?bid={{c.id}}&pid={{c.provider_id}}"><button class="btn btn-light">Auto reply Message Settings</button></a></td>
+                                                <td class="sorting_1"><a href="/customerBotState?bid={{c.id}}&pid={{c.provider_id}}"><button class="btn btn-dark">Customer Bot Settings</button></a></td>
                                             </tr>
                                             {% endfor %}
                                         </tbody>
@@ -342,39 +265,10 @@
         </div>
     </div>
 </div>
-<div class="modal fade" id="exampleModalCenter2" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true" >
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content" style="width: 700px;">
-            <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLongTitle">Response</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form action="/addMesPair" method="post" id="form_modal" class="form-horizontal"
-                                novalidate="novalidate" enctype="multipart/form-data">{% csrf_token %}
-                                <input type="text" name="bot_id" id="inp-bot-id" style="display: none;">
-                                <div class="form-group">
-                                    <label for="simpleFormName">Received Message</label>
-                                    <input name='rec_mes' type="text" class="form-control" id="simpleFormName">
-                                </div>
-                                <div class="form-group">
-                                    <label for="simpleFormPassword">Reply</label>
-                                    <input name="reply_mes" type="text" class="form-control" id="simpleFormNum">
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                    <button type="submit" class="btn btn-primary">Submit</button>
-                                </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+
 <script>
     $(document).ready(function () {
-
+        var bot_toggle_url
         $("#provider").on("change", function(){
             var p_name = $("#provider option:selected").val();
             p_name = p_name.trim()
@@ -388,16 +282,32 @@
                 success: function(res) {
                     $("#bot-stat-btn").addClass(res['btn_cls'])
                     $("#bot-stat-btn").text(res['btn_text'])
-                    $("#bot-stat-btn").attr("href", "toggle_bot?bot_id="+res['btn_id'])
+                    bot_toggle_url= "/toggle_bot?bot_id=" + res['btn_id']
                 }
             });
 
         });
+        $("#bot-stat-btn").on("click", function(){
+            console.log(bot_toggle_url)
+            $.ajax({
+                "async": true,
+                "crossDomain": true,
+                url: bot_toggle_url,
+                type: 'GET',
+                success: function(res) {
+                    window.location.reload();
+                }
+            })
+        })
 
         $(".addPair").on("click", function(){ 
             var bot_id = $(this).attr("name");
             $("#inp-bot-id").val(bot_id);
         })
+
+        
+        
+
         $('#dltBtn').on('click', function () {
             if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true) {
                 var selected = [];
@@ -407,7 +317,7 @@
                         selected.push(t.attr('name'));
                     }
                 });
-                var json = { name: "record", data: selected }
+                var json = { name: "botSetting", data: selected }
                 console.log(json);
                 $.ajax({
                     type: 'POST',

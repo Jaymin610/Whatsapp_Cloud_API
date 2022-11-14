@@ -47,11 +47,19 @@
                     <div class="table-scrollable">
                         <div id="example4_wrapper" class="dataTables_wrapper container-fluid dt-bootstrap4 no-footer">
                             <div class="row" style="margin-bottom: 10px;">
-                                <div class="col-sm-12 col-md-3">
+                                <div class="col-sm-12 col-md-4">
                                     <div class="btn-group">
                                         <div class="btn-group">
                                             <a href="#" id="download-record" class="btn btn-default">
                                                 Download Selected Data
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="btn-group">
+                                        <div class="btn-group">
+                                            <!-- /export_excel/?table=Inbox -->
+                                            <a href="#" id="downloadBtn" class="btn btn-success">
+                                                Download Record
                                             </a>
                                         </div>
                                     </div>
@@ -60,8 +68,8 @@
                                     <div class="btn-group">
                                         <div class="btn-group">
                                             <!-- /export_excel/?table=Inbox -->
-                                            <a href="#" id="downloadBtn" class="btn btn-success">
-                                                Download Record
+                                            <a href="#" id="dltBtn" class="btn btn-danger">
+                                                Delete
                                             </a>
                                         </div>
                                     </div>
@@ -85,18 +93,6 @@
                                                 <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
                                                     colspan="1" aria-label="Title: activate to sort column ascending"
                                                     style="width: 180.863px;">Provider</th>
-                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
-                                                    colspan="1" aria-label="Title: activate to sort column ascending"
-                                                    style="width: 180.863px;">Latest Message</th>
-                                                    <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
-                                                    colspan="1" aria-label="Title: activate to sort column ascending"
-                                                    style="width: 180.863px;">Send Temp Time</th>
-                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
-                                                    colspan="1" aria-label="Title: activate to sort column ascending"
-                                                    style="width: 180.863px;">Last received</th>
-                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
-                                                    colspan="1" aria-label="Title: activate to sort column ascending"
-                                                    style="width: 180.863px;">Status</th>
                                                 
                                             </tr>
                                         </thead>
@@ -104,12 +100,8 @@
                                             {% for c in data %}
                                             <tr class="odd" role="row">
                                                 <td class="sorting_1"><input type="checkbox" name="row-check" id="{{ c.id }}"></td>
-                                                <td>{{ c.to }} </td>
-                                                <td>{{ c.provider }} </td>
-                                                <td>{{ c.inbox_msg }} </td>
-                                                <td>{{ c.send_time }} </td>
-                                                <td>{{ c.received_time }} </td>
-                                                <td>{{ c.conversation_status }} </td>
+                                                <td class="sorting_1">{{ c.user_number }} </td>
+                                                <td class="sorting_1">{{ c.provider_name }} </td>
                                             </tr>
                                             {% endfor %}
                                         </tbody>
@@ -132,18 +124,27 @@
         }
         }
     $(document).ready(function(){
-        $("#deleteCamp").on("click", function(){
-            if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true){
+        $('#dltBtn').on('click', function () {
+            if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true) {
+                var selected = [];
+                $('#example4 tbody tr').each(function () {
+                    var t = $(this).children("td").children("input");
+                    if (t.is(":checked")) {
+                        selected.push(t.attr('id'));
+                    }
+                });
+                var json = { name: "startbot", data: selected }
+                console.log(json);
                 $.ajax({
-                "async": true,
-                "crossDomain": true,
-                url: "/delete?name=Camp&cid="+ $(this).attr("class"),
-                type: 'GET',
-                success: function(res) {
-                    console.log(res);
-                    window.location.reload();
-                }
-            });
+                    type: 'POST',
+                    url: "/deleteRec/",
+                    data: JSON.stringify(json),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: 'json',
+                    success: function (result) {
+                        window.location.reload();
+                    },
+                })
             }
         });
         $("#downloadBtn").on("click", function(){

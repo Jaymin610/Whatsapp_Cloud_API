@@ -42,7 +42,7 @@
                         </ul>
                     </div>
                 </div>
-
+                {% csrf_token %}
                 <div class="card-body ">
                     <div class="table-scrollable">
                         <div id="example4_wrapper" class="dataTables_wrapper container-fluid dt-bootstrap4 no-footer">
@@ -118,7 +118,17 @@
                                 <div class="col-sm-12 col-md-3">
                                     <div class="btn-group">
                                         <div class="btn-group">
-                                            <a href="/export_excel/?table=Inbox" id="downloadBtn" class="btn btn-default">
+                                            <a href="#" id="download-record" class="btn btn-default">
+                                                Download Selected Data
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-12 col-md-3">
+                                    <div class="btn-group">
+                                        <div class="btn-group">
+                                            <!-- /export_excel/?table=Inbox -->
+                                            <a href="#" id="downloadBtn" class="btn btn-success">
                                                 Download Record
                                             </a>
                                         </div>
@@ -150,7 +160,7 @@
                                                 <th class="sorting_asc" tabindex="0" aria-controls="example4"
                                                     rowspan="1" colspan="1" aria-sort="ascending"
                                                     aria-label="#: activate to sort column descending"
-                                                    style="width: 63.6px;"></th>
+                                                    style="width: 63.6px;"><input type="checkbox" onclick="toggle(this)" ></th>
                                                 <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
                                                     colspan="1" aria-label="Title: activate to sort column ascending"
                                                     style="width: 180.863px;">Sender</th>
@@ -178,6 +188,9 @@
                                                 <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
                                                     colspan="1" aria-label="Title: activate to sort column ascending"
                                                     style="width: 180.863px;">Log</th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;"></th>
                                                 
                                                 
                                             </tr>
@@ -185,7 +198,7 @@
                                         <tbody>
                                             {% for c in messages %}
                                             <tr style="text-align:center" class="odd" role="row">
-                                                <td class="sorting_1"><input type="checkbox" name="{{ c.id }}" id=""></td>
+                                                <td class="sorting_1"><input type="checkbox" name="row-check" id="{{ c.id }}"></td>
                                                 <td class="sorting_1">{{ c.sender_number }}</td>
                                                 <td class="sorting_1">{{ c.received_msg }}</td>
                                                 <td class="sorting_1">{{ c.received_time }}</td>
@@ -195,7 +208,7 @@
                                                 <td><a href="/send_message_panel?id={{c.id}}"> <button name="{{ c.id }}" type="button" class="btn btn-round btn-primary strt"> Reply </button></a><p></p></td>
                                                 <td><a href="/submessage_panel?id={{c.id}}"> <button name="{{ c.id }}" type="button" class="btn btn-round btn-primary strt"> Sub Message </button></a><p></p></td>
                                                 <td><button type="button" class="btn btn-round btn-warning txt-toggle" data-toggle="modal" data-target="#exampleModalCenter2"> Show </button><p id="req" class="hide-text" style="display: none;">{{ c.request }}<p><p id="res" class="hide-text" style="display: none;">{{ c.response }}<p></p></td>
-                                                
+                                                <td><a href="/stopBot?user={{c.sender_number}}&provider={{ c.reply_number }}" class="btn btn-round btn-danger">Stop Bot</button></td>
                                                 <!-- {% if c.status == 'Sent' %}<i class="fa fa-check"> {% elif c.status == 'delivered' %}<i class="fa fa-double-check"> {% elif c.status == 'read' %} read {% endif %} -->
                                                     
                                             </tr>
@@ -282,7 +295,14 @@
 <link rel="stylesheet" href="//cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
 <script src="//cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
 <script>
+    function toggle(source) {
+    checkboxes = document.getElementsByName('row-check');
+    for(var i=0, n=checkboxes.length;i<n;i++) {
+    checkboxes[i].checked = source.checked;
+    }
+    }
     $(document).ready(function () {
+        $("#down-tog").hide();
         $("#from-date").on("change", function(){
             var _href = $("#downloadBtn").attr("href");
             $("#downloadBtn").attr("href", _href + "&from="+$(this).val())
@@ -303,7 +323,7 @@
                     jQuery.each(response, function(i, v){
                         console.log(i, v);
                         $('tbody').append(`<tr style="text-align:center" class="odd" role="row">
-                                                <td class="sorting_1"><input type="checkbox" name="${i}" id=""></td>
+                                                <td class="sorting_1"><input type="checkbox" name="row-check" id="${i}"></td>
                                                 <td class="sorting_1">${ v['Sender'] }</td>
                                                 <td class="sorting_1">${ v['message'] }</td>
                                                 <td class="sorting_1">${ v['received_time'] }</td>
@@ -403,7 +423,7 @@
                 $('#example4 tbody tr').each(function () {
                     var t = $(this).children("td").children("input");
                     if (t.is(":checked")) {
-                        selected.push(t.attr('name'));
+                        selected.push(t.attr('id'));
                     }
                 });
                 var json = { name: "inbox", data: selected }
@@ -420,7 +440,53 @@
                 })
             }
         });
-
-    });
+        $("#downloadBtn").on("click", function(){
+            var selected = [];
+            checkboxes = $('[name="row-check"]').map(function(idx, elem) {return $(elem).attr('id');}).get();;
+            for(var i=0, n=checkboxes.length;i<n;i++) {
+                selected.push(checkboxes[i]);
+            }
+            var json = { name: "Inbox", data: selected }
+            $.ajax({
+                    type: 'POST',
+                    url: "/export_selected_excel",
+                    headers: {'X-CSRFToken': csrftoken},
+                    data: JSON.stringify(json),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: 'json',
+                    success: (data) =>{
+                        window.location.replace(data['url'])
+                    },
+                    error:(data) =>{
+                        console.log(error)
+                    }                
+                })
+        })
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        $('#download-record').on('click', function () {
+            var selected = [];
+            $('#example4 tbody tr').each(function () {
+                var t = $(this).children("td").children("input");
+                if (t.is(":checked")) {
+                    selected.push(t.attr('id'));
+                }
+            });
+            var json = { name: "Inbox", data: selected }
+            $.ajax({
+                    type: 'POST',
+                    url: "/export_selected_excel",
+                    headers: {'X-CSRFToken': csrftoken},
+                    data: JSON.stringify(json),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: 'json',
+                    success: (data) =>{
+                        window.location.replace(data['url'])
+                    },
+                    error:(data) =>{
+                        console.log(error)
+                    }                
+                })
+        });
+    })
 </script>
 {% endblock %}
