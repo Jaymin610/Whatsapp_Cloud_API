@@ -121,8 +121,8 @@
                                 <div class="col-sm-12 col-md-3">
                                     <div class="btn-group">
                                         <div class="btn-group">
-                                            <a href="/export_excel/?table=Record" id="downloadBtn" class="btn btn-default">
-                                                Download Record
+                                            <a href="#" id="download-record" class="btn btn-default">
+                                                Download Selected Data
                                             </a>
                                         </div>
                                     </div>
@@ -152,6 +152,27 @@
                                         </div>
                                     </div>
                                     <div class="btn-group">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row" style="margin-bottom: 10px;">
+                                <div class="col-sm-12 col-md-3"> 
+                                    <div class="btn-group">
+                                        <div class="btn-group" id='send_multiple'>
+                                            <a href="#" class="btn btn-primary">
+                                                Send Whats To selected
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-12 col-md-3">
+                                    <div class="btn-group">
+                                        <div class="btn-group">
+                                            <!-- /export_excel/?table=Inbox -->
+                                            <a href="#" id="downloadBtn" class="btn btn-success">
+                                                Download Record
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -208,7 +229,7 @@
                                         <tbody>
                                             {% for c in record %}
                                             <tr style="text-align:center" class="odd" role="row">
-                                                <td class="sorting_1"><input type="checkbox" name="{{ c.id }}" id=""></td>
+                                                <td class="sorting_1"><input type="checkbox" name="row-check" id="{{ c.id }}"></td>
                                                 <td class="sorting_1">{{ c.mobile }}</td>
                                                 <td class="sorting_1">{{ c.template }}</td>
                                                 <td class="sorting_1">{{ c.sender_name }}</td>
@@ -245,7 +266,7 @@
         </div>
         <div class="modal-body">
             <form action="/setAllTemp/" method="post" id="form_sample_modal" class="form-horizontal"
-                            novalidate="novalidate" enctype="multipart/form-data">
+                            novalidate="novalidate" enctype="multipart/form-data">{% csrf_token %}
                 <div class="form-group row">
                     <label class="control-label col-md-3">Whatsapp user
                         <span class="required" aria-required="true"> * </span>
@@ -303,6 +324,7 @@
   
 <script>
     $(document).ready(function () {
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
         $("#strtal").on("click", function(){
             let mode = $('input[name="mode"]:checked').val();
@@ -423,6 +445,87 @@
                 })
             }
         });
+        $("#send_multiple").on("click", function(){
+            var selected = [];
+            $('#example4 tbody tr').each(function () {
+                var t = $(this).children("td").children("input");
+                if (t.is(":checked")) {
+                    selected.push(t.attr('id'));
+                }
+            });
+            
+            let mode = $('input[name="mode"]:checked').val();
+            if (!mode){
+                mode = 'temp';
+            }
+            console.log(selected)
+            var json = { type: "Advrecord",mode: mode, data: selected }
+            $.ajax({
+                type: 'POST',
+                url: "/send_multiple_msg",
+                headers: {'X-CSRFToken': csrftoken},
+                data: JSON.stringify(json),
+                contentType: "application/json; charset=utf-8",
+                dataType: 'json',
+                success: (res) =>{
+                    $('#res-show').html(`<h4><b>Response</b></h4><p id="res-txt"><img src="${res['img']}" width="10%" alt=""><p style="width: 400px;">${res['text']}</p></p>`)
+                    $("#exampleModalCenter2").modal('show');
+                },
+                error:(data) =>{
+                    console.log(error)
+                }                
+            })
+        })
+
+        $("#downloadBtn").on("click", function(){
+            var selected = [];
+            checkboxes = $('[name="row-check"]').map(function(idx, elem) {return $(elem).attr('id');}).get();;
+            for(var i=0, n=checkboxes.length;i<n;i++) {
+                selected.push(checkboxes[i]);
+            }
+            var json = { name: "AdvRecord", data: selected }
+            $.ajax({
+                    type: 'POST',
+                    url: "/export_selected_excel",
+                    headers: {'X-CSRFToken': csrftoken},
+                    data: JSON.stringify(json),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: 'json',
+                    success: (data) =>{
+                        window.location.replace(data['url'])
+                    },
+                    error:(data) =>{
+                        console.log(error)
+                    }                
+                })
+        })
+        
+        
+        $('#download-record').on('click', function () {
+            var selected = [];
+            $('#example4 tbody tr').each(function () {
+                var t = $(this).children("td").children("input");
+                if (t.is(":checked")) {
+                    selected.push(t.attr('id'));
+                }
+            });
+            var json = { name: "AdvRecord", data: selected }
+            $.ajax({
+                    type: 'POST',
+                    url: "/export_selected_excel",
+                    headers: {'X-CSRFToken': csrftoken},
+                    data: JSON.stringify(json),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: 'json',
+                    success: (data) =>{
+                        window.location.replace(data['url'])
+                    },
+                    error:(data) =>{
+                        console.log(error)
+                    }                
+                })
+        });
+
 
     });
 </script>

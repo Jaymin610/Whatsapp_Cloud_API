@@ -2,19 +2,6 @@
 {% load static %}
 {% block content %}
 <div class="page-content" style="min-height:1539px; width:1450px; margin-left: auto; margin-right: auto;">
-    {% comment %} <div class="page-bar">
-        <div class="page-title-breadcrumb">
-            <div class=" pull-left">
-                <div class="page-title">{{ Campaign }}</div>
-            </div>
-            <ol class="breadcrumb page-breadcrumb pull-right">
-                <li><i class="fa fa-home"></i>&nbsp;<a class="parent-item" href="/dashboard">Home</a>&nbsp;<i
-                        class="fa fa-angle-right"></i>
-                </li>
-                <li class="active">Inbox</li>
-            </ol>
-        </div>
-    </div> {% endcomment %}
     <div class="row">
         <div class="col-sm-12 col-md-12 col-xl-12">
             <div class="card-box">
@@ -115,7 +102,7 @@
                                 </div>
                             </form>
                             <div class="row" style="margin-bottom: 10px; margin-top: 10px;">
-                                <div class="col-sm-12 col-md-3">
+                                <div class="col-sm-12 col-md-4">
                                     <div class="btn-group">
                                         <div class="btn-group">
                                             <a href="#" id="download-record" class="btn btn-default">
@@ -123,8 +110,6 @@
                                             </a>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="col-sm-12 col-md-3">
                                     <div class="btn-group">
                                         <div class="btn-group">
                                             <!-- /export_excel/?table=Inbox -->
@@ -144,9 +129,18 @@
                                     </div>
                                     <div class="btn-group">
                                         <div class="btn-group">
-                                            <a href="/deleteAll?name=inbox" class="btn btn-warning">
+                                            <a href="#" class="btn btn-warning" id="deleteAll">
                                                 Delete All
                                             </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-sm-12">
+                                    <div class="btn-group">
+                                        <div class="btn-group" id="send_multiple">
+                                            <button type="button" class="btn btn-primary" data-toggle="modal", data-target="#exampleModalCenter1">
+                                                Send Whatsapp To selected
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -205,9 +199,9 @@
                                                 <td class="sorting_1">{{ c.reply }}</td>
                                                 <td class="sorting_1"><p>{{ c.reply_number }}<p></td>
                                                 <td class="sorting_1"> <img src='../static/assets/img/{{c.status}}.png' width="20%" height="20%" alt=""> </td>
-                                                <td><a href="/send_message_panel?id={{c.id}}"> <button name="{{ c.id }}" type="button" class="btn btn-round btn-primary strt"> Reply </button></a><p></p></td>
-                                                <td><a href="/submessage_panel?id={{c.id}}"> <button name="{{ c.id }}" type="button" class="btn btn-round btn-primary strt"> Sub Message </button></a><p></p></td>
-                                                <td><button type="button" class="btn btn-round btn-warning txt-toggle" data-toggle="modal" data-target="#exampleModalCenter2"> Show </button><p id="req" class="hide-text" style="display: none;">{{ c.request }}<p><p id="res" class="hide-text" style="display: none;">{{ c.response }}<p></p></td>
+                                                <td><a href="/send_message_panel?id={{c.id}}"> <button name="{{ c.id }}" type="button" class="btn btn-round btn-primary"> Reply </button></a><p></p></td>
+                                                <td><a href="/submessage_panel?id={{c.id}}"> <button name="{{ c.id }}" type="button" class="btn btn-round btn-primary"> Sub Message </button></a><p></p></td>
+                                                <td><button type="button" onclick="addReqRes(this)" class="btn btn-round btn-warning txt-toggle" data-toggle="modal" data-target="#exampleModalCenter2"> Show </button><p id="req" class="hide-text" style="display: none;">{{ c.request }}<p><p id="res" class="hide-text" style="display: none;">{{ c.response }}<p></p></td>
                                                 <td><a href="/stopBot?user={{c.sender_number}}&provider={{ c.reply_number }}" class="btn btn-round btn-danger">Stop Bot</button></td>
                                                 <!-- {% if c.status == 'Sent' %}<i class="fa fa-check"> {% elif c.status == 'delivered' %}<i class="fa fa-double-check"> {% elif c.status == 'read' %} read {% endif %} -->
                                                     
@@ -225,53 +219,65 @@
         </div>
     </div>
 </div>
-<!-- Modal data-toggle="modal" data-target="#exampleModalCenter"-->
-<div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-      <div class="modal-content">
+<div class="modal fade" id="exampleModalCenter1" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="width: 1000px;">
+        <div class="modal-content" >
         <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLongTitle">Set all Templates</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <h5 class="modal-title" id="exampleModalLongTitle">Send Message Panel</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
-          </button>
+            </button>
         </div>
         <div class="modal-body">
-            <form action="/setAllTemp/" method="post" id="form_sample_modal" class="form-horizontal"
-                            novalidate="novalidate" enctype="multipart/form-data">
-                <div class="form-group row">
-                    <label class="control-label col-md-3">Whatsapp user
-                        <span class="required" aria-required="true"> * </span>
-                    </label>
-                    
-                    <div class="col-md-5">
-                        <select name="provider" class="form-control input-height" id="provider">
-                            <option value="">Select...</option>
-                            {% for d in providers %}
-                            <option value='{{d.phone_no}}'>{{ d.provider_name }} [{{d.phone_no}}]</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+            <div class="card card-box">
+                <div class="card-body " id="bar-parent" style="width: 700px;">
+                    <form action="/send_message/" method='post' id="form_sample_1">
+                        <input type="text" name="phone" id="" value="{{phone}}" style="display: none;">
+                        <input type="text" name="id" id="" value="{{id}}" style="display: none;">
+                        <div class="form-group row">
+                            <label class="control-label col-md-3">Method
+                            </label>
+                            <div class="col-md-5">
+                                <div class="form-check">
+                                    <label class="form-check-label">
+                                        <input type="radio" class="form-check-input" name="method" id="SAR" value="Temp">
+                                        Template
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <label class="form-check-label">
+                                        <input type="radio" class="form-check-input" name="method" id="oth" value="Mes">
+                                        Text Message
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group row" style="display: none;">
+                            <label class="control-label col-md-3">Template Name
+                            </label>
+                            <div class="col-md-5">
+                                <select name="template" class="form-control input-height" id="template">
+                                </select>
+                            </div>
+                        </div>
+                        <!-- style="display: none;" -->
+                        <div class="form-group row" style="display: none;">
+                            <label for="simpleFormPassword" class="control-label col-md-3">Enter your Message</label>
+                            <div class="col-md-5">
+                                <textarea name="message" id="" cols="30" rows="10" class="form-control"></textarea>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
                 </div>
-                <div class="form-group row">
-                    <label class="control-label col-md-3">Template Name
-                        <span class="required" aria-required="true"> * </span>
-                    </label>
-                    <div class="col-md-5">
-                        <select name="template" class="form-control input-height" id="template">
-                            <option value="">Select...</option>
-                        </select>
-                    </div>
-                </div>
-            </form>
+            </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="submit" class="btn btn-primary" id="Shoot" data-dismiss="modal">Submit</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Ok</button>
         </div>
-      </div>
+        </div>
     </div>
-</div>
-
+    </div>
 
 <div class="modal fade" id="exampleModalCenter2" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
 <div class="modal-dialog modal-dialog-centered" role="document">
@@ -295,6 +301,15 @@
 <link rel="stylesheet" href="//cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
 <script src="//cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
 <script>
+    function addReqRes(t){ 
+        var q = $(t).siblings("#req");
+        var s = $(t).siblings("#res");
+    
+        if (q.hasClass("hide-text")){
+            $("#req-txt").text(q.text());
+            $("#res-txt").text(s.text());
+        }
+    }
     function toggle(source) {
     checkboxes = document.getElementsByName('row-check');
     for(var i=0, n=checkboxes.length;i<n;i++) {
@@ -302,16 +317,83 @@
     }
     }
     $(document).ready(function () {
+
+        
+        
+        $('.form-check-label').on("change", function () {
+            console.log($("#form_sample_1").children(".form-group"))
+            var value = $(this).children('input').val();
+            var template = $("#form_sample_1").children(".form-group")[1];
+            var message = $("#form_sample_1").children(".form-group")[2];
+
+            if (value == "Temp") {
+                message.style.display = "none";
+                template.style.display = "";
+            }
+            else if (value == "Mes") {
+                message.style.display = "";
+                template.style.display = "none";
+            }
+        });
+
+
+
+
+        $("#send_multiple").on("click", function(){
+            var selected = [];
+            $('#example4 tbody tr').each(function () {
+                var t = $(this).children("td").children("input");
+                if (t.is(":checked")) {
+                    
+                    selected.push(t.attr('id'));
+                }
+            });
+            
+            var json = { type: "inbox", data: selected }
+            $.ajax({
+                type: 'POST',
+                url: "/send_message_panel/",
+                headers: {'X-CSRFToken': csrftoken},
+                data: JSON.stringify(json),
+                contentType: "application/json; charset=utf-8",
+                dataType: 'json',
+                success: (res) =>{
+                    $("[name='phone']").val(res['phone'])
+                    $("[name='id']").val(res['id'])
+                    let url = "/fetch_Temp?phone="+res['phone'];
+                    $.ajax({
+                        "async": true,
+                        "crossDomain": true,
+                        url: url,
+                        type: 'GET',
+                        success: function(res) {
+                            $.each(res["data"], function(k, v){
+                                $("#template").append(`<option value='${v[0]}-${v[1]}'>${v[0]} 
+                                    [${v[1]}]</option>`);
+                            })
+                        }
+                    });
+                },
+                error:(data) =>{
+                    console.log(error)
+                }                
+            })
+        })
+
         $("#down-tog").hide();
+
         $("#from-date").on("change", function(){
             var _href = $("#downloadBtn").attr("href");
             $("#downloadBtn").attr("href", _href + "&from="+$(this).val())
         });
+
         $("#to-date").on("change", function(){
             var _href = $("#downloadBtn").attr("href");
             $("#downloadBtn").attr("href", _href + "&to="+$(this).val())
         });
+
         $('#example4').DataTable({'iDisplayLength': 1000});
+
         $('#kt_search').on("click", function(){
             $.ajax({
                 url: "/searchTable/?name=inbox",
@@ -329,10 +411,12 @@
                                                 <td class="sorting_1">${ v['received_time'] }</td>
                                                 <td class="sorting_1">${ v['reply'] }</td>
                                                 <td class="sorting_1"><p>${ v['from'] }<p></td>
-                                                    <!-- /startCamp?id=${ i } -->
-                                                <td><a href="/send_message_panel?id=${i}"> <button name="${ i }" type="button" class="btn btn-round btn-primary strt"> Reply </button></a><p></p></td>
-                                                <td><button type="button" class="btn btn-round btn-warning txt-toggle" data-toggle="modal" data-target="#exampleModalCenter2"> Show </button><p id="req" class="hide-text" style="display: none;">${ v.req }<p><p id="res" class="hide-text" style="display: none;">${ v.res }<p></p></td>
-                                                <td class="sorting_1"> <img src='../static/assets/img/${v.status}.png' width="20%" height="20%" alt=""> </td>
+                                                <td class="sorting_1"> <img src='../static/assets/img/${v["status"]}.png' width="20%" height="20%" alt=""> </td>
+                                                <td><a href="/send_message_panel?id=${i}"> <button name="${ i }" type="button" class="btn btn-round btn-primary"> Reply </button></a><p></p></td>
+                                                <td><a href="/submessage_panel?id=${i}"> <button name="${ i }" type="button" class="btn btn-round btn-primary"> Sub Message </button></a><p></p></td>
+                                                <td><button type="button" onclick="addReqRes(this)" class="btn btn-round btn-warning txt-toggle" data-toggle="modal" data-target="#exampleModalCenter2"> Show </button><p id="req" class="hide-text" style="display: none;">${ v['req'] }<p><p id="res" class="hide-text" style="display: none;">${ v['res'] }<p></p></td>
+                                                <td><a href="/stopBot?user=${v['Sender']}&provider=${ v['from']}" class="btn btn-round btn-danger">Stop Bot</button></td>
+    
                                                     
                                             </tr>`)
                     });
@@ -340,81 +424,21 @@
                 }
             });
         });
+
         let text;
-        $(".strt").on("click", function(){
-            text = $(this).attr('name');
-            url = "/startCamp?id=" + text
-            $.ajax({
-                "async": true,
-                "crossDomain": true,
-                url: url,
-                type: 'GET',
-                success: function(res) {
-                    $('#status img').remove();
-                    $('#status p').remove();
-                    $('#status').append(`<img src="${res['img']}" width="10%" alt=""><p>${res['text']}</p>`);
-                    $("#exampleModalCenter2").modal('show');
-                }
-            });
-            console.log(text);
-        });
 
-        $("#provider").on("change", function(){
-            var p_name = $("#provider option:selected").val();
-            p_name = p_name.trim()
-            let url = "/fetch_Temp?phone="+p_name;
-            $.ajax({
-                "async": true,
-                "crossDomain": true,
-                url: url,
-                type: 'GET',
-                success: function(res) {
-                    $.each(res["data"], function(k, v){
-                        $("#template").append(`<option value='${v[0]}-${v[1]}'>${v[0]} 
-                            [${v[1]}]</option>`);
-                    })
-                }
-            });
-            console.log(p_name);
-        });
-
-        $("#Shoot").on("click", function(){
-            $.ajax({
-                type: 'POST',
-                url: "/setAllTemp/",
-                dataType : 'json',
-                data: $("#form_sample_modal").serialize(),
-                success: function(res) {
-                    window.location.reload();
-                }
-            });
-        });
-
-        // $("#ShootAll").on("click", function(){
-        //     let api;
-        //     if ($("#AllS_receiver").is(":checked")){
-        //         api = "SARV";
-        //     }
-        //     else if ($("#MulS_receiver").is(":checked")){
-        //         api = "other";
-        //     }
-        //     console.log(api);
-        //     $.ajax({
-        //     type: 'GET',
-        //     url: `/start_all?api=${api}`,
-        //     success: function(result){
-        //         location.replace(result["url"])
-        //     }
-        //     });
-        // });
-
-        $(".txt-toggle").on("click", function(){ 
-            var q = $(this).siblings("#req");
-            var s = $(this).siblings("#res");
-        
-            if (q.hasClass("hide-text")){
-                $("#req-txt").text(q.text());
-                $("#res-txt").text(s.text());
+        $("#deleteAll").on("click", function(){
+            if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true) {
+                $.ajax({
+                    "async": true,
+                    "crossDomain": true,
+                    url: "/deleteAll?name=inbox",
+                    type: 'GET',
+                    success: function(res) {
+                        console.log(res);
+                        window.location.reload();
+                    }
+                });
             }
         })
         $('#dltBtn').on('click', function () {

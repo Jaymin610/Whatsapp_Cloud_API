@@ -116,21 +116,12 @@
                                             </a>
                                         </div>
                                     </div>
-                                    
                                 </div>
                                 <div class="col-sm-12 col-md-3">
                                     <div class="btn-group">
                                         <div class="btn-group">
                                             <a href="#" id="download-record" class="btn btn-default">
                                                 Download Selected Data
-                                            </a>
-                                        </div>
-                                    </div>
-                                    <div class="btn-group">
-                                        <div class="btn-group">
-                                            <!-- /export_excel/?table=Inbox -->
-                                            <a href="#" id="downloadBtn" class="btn btn-success">
-                                                Download Record
                                             </a>
                                         </div>
                                     </div>
@@ -150,6 +141,7 @@
                                             </a>
                                         </div>
                                     </div>
+                                    
                                 </div>
                                 <div class="col-md-3 col-sm-12">
                                     <div class="btn-group">
@@ -167,6 +159,27 @@
                                         </div>
                                     </div>
                                     <div class="btn-group">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row" style="margin-bottom: 10px;">
+                                <div class="col-sm-12 col-md-3"> 
+                                    <div class="btn-group">
+                                        <div class="btn-group" id='send_multiple'>
+                                            <a href="#" class="btn btn-primary">
+                                                Send Whats To selected
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-12 col-md-3">
+                                    <div class="btn-group">
+                                        <div class="btn-group">
+                                            <!-- /export_excel/?table=Inbox -->
+                                            <a href="#" id="downloadBtn" class="btn btn-success">
+                                                Download Record
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -308,8 +321,8 @@
             </button>
         </div>
         <div class="modal-body">
-            <div id="req-show"><h4><strong>Request</strong></h4><p id="req-txt"></p></div>
-            <div id="res-show"><h4><b>Response</b></h4><p id="res-txt"></p></div>
+            <div id="req-show"></div>
+            <div id="res-show"></div>
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Ok</button>
@@ -342,8 +355,6 @@
                 success: function(res) {
                     $('#status img').remove();
                     $('#status p').remove();
-                    $('#status').append(`<p style="width: 400px;">Campaign Started</p>`);
-                    $("#exampleModalCenter2").modal('show');
                 }
             });
         });
@@ -351,8 +362,6 @@
         $("#stp").on("click", function(){
             $('#status img').remove();
             $('#status p').remove();
-            $('#status').append(`<p style="width: 400px;">Campaign Stoped</p>`);
-            $("#exampleModalCenter2").modal('show');
         });
         
         let text;
@@ -370,10 +379,7 @@
                 url: url,
                 type: 'GET',
                 success: function(res) {
-                    
-                    $('#res-txt').remove();
-                    $('#res-show').append(`<p id="res-txt"></p>`)
-                    $('#res-txt').append(`<img src="${res['img']}" width="10%" alt=""><p style="width: 400px;">${res['text']}</p>`);
+                    $('#res-show').html(`<h4><b>Response</b></h4><p id="res-txt"><img src="${res['img']}" width="10%" alt=""><p style="width: 400px;">${res['text']}</p></p>`)
                     $("#exampleModalCenter2").modal('show');
                 }
             });
@@ -411,31 +417,13 @@
             });
         });
 
-        // $("#ShootAll").on("click", function(){
-        //     let api;
-        //     if ($("#AllS_receiver").is(":checked")){
-        //         api = "SARV";
-        //     }
-        //     else if ($("#MulS_receiver").is(":checked")){
-        //         api = "other";
-        //     }
-        //     console.log(api);
-        //     $.ajax({
-        //     type: 'GET',
-        //     url: `/start_all?api=${api}`,
-        //     success: function(result){
-        //         location.replace(result["url"])
-        //     }
-        //     });
-        // });
-
         $(".txt-toggle").on("click", function(){ 
             var q = $(this).siblings("#req");
             var s = $(this).siblings("#res");
         
             if (q.hasClass("hide-text")){
-                $("#req-txt").text(q.text());
-                $("#res-txt").text(s.text());
+                $("#req-show").html(`<h4><strong>Request</strong></h4><p id="req-txt">${q.text()}</p>`);
+                $('#res-show').html(`<h4><b>Response</b></h4><p id="res-txt"><p style="width: 400px;">${s.text()}</p></p>`)
             }
         })
         $('#dltBtn').on('click', function () {
@@ -461,13 +449,45 @@
                 })
             }
         });
+
+        $("#send_multiple").on("click", function(){
+            var selected = [];
+            $('#example4 tbody tr').each(function () {
+                var t = $(this).children("td").children("input");
+                if (t.is(":checked")) {
+                    selected.push(t.attr('id'));
+                }
+            });
+            
+            let mode = $('input[name="mode"]:checked').val();
+            if (!mode){
+                mode = 'temp';
+            }
+            var json = { type: "record",mode: mode, data: selected }
+            $.ajax({
+                type: 'POST',
+                url: "/send_multiple_msg",
+                headers: {'X-CSRFToken': csrftoken},
+                data: JSON.stringify(json),
+                contentType: "application/json; charset=utf-8",
+                dataType: 'json',
+                success: (res) =>{
+                    $('#res-show').html(`<h4><b>Response</b></h4><p id="res-txt"><img src="${res['img']}" width="10%" alt=""><p style="width: 400px;">${res['text']}</p></p>`)
+                    $("#exampleModalCenter2").modal('show');
+                },
+                error:(data) =>{
+                    console.log(error)
+                }                
+            })
+        })
+
         $("#downloadBtn").on("click", function(){
             var selected = [];
             checkboxes = $('[name="row-check"]').map(function(idx, elem) {return $(elem).attr('id');}).get();;
             for(var i=0, n=checkboxes.length;i<n;i++) {
                 selected.push(checkboxes[i]);
             }
-            var json = { name: "Inbox", data: selected }
+            var json = { name: "Record", data: selected }
             $.ajax({
                     type: 'POST',
                     url: "/export_selected_excel",
@@ -484,6 +504,7 @@
                 })
         })
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
         $('#download-record').on('click', function () {
             var selected = [];
             $('#example4 tbody tr').each(function () {
@@ -492,7 +513,7 @@
                     selected.push(t.attr('id'));
                 }
             });
-            var json = { name: "Inbox", data: selected }
+            var json = { name: "Record", data: selected }
             $.ajax({
                     type: 'POST',
                     url: "/export_selected_excel",

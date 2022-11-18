@@ -15,7 +15,7 @@
 </div> {% endcomment %}
 <div class="card card-box">
     <div class="card-head">
-        <header>Campaign Details</header>
+        <header>Send Message Panel</header>
         <button id="panel-button" class="mdl-button mdl-js-button mdl-button--icon pull-right"
             data-upgraded=",MaterialButton">
             <i class="material-icons">more_vert</i>
@@ -79,20 +79,6 @@
 </div>
 <script>
     $(document).ready(function () {
-        let url = "/fetch_Temp?phone={{phone}}";
-        $.ajax({
-            "async": true,
-            "crossDomain": true,
-            url: url,
-            type: 'GET',
-            success: function(res) {
-                $.each(res["data"], function(k, v){
-                    $("#template").append(`<option value='${v[0]}-${v[1]}'>${v[0]} 
-                        [${v[1]}]</option>`);
-                })
-            }
-        });
-        
         $('.form-check-label').on("change", function () {
             console.log($("#form_sample_1").children(".form-group"))
             var value = $(this).children('input').val();
@@ -106,6 +92,21 @@
             else if (value == "Mes") {
                 message.style.display = "";
                 template.style.display = "none";
+            }
+        });
+        let phone = $("[name='phone']").val()
+        let id = $("[name='id']").val()
+        let url = "/fetch_Temp?phone="+phone;
+        $.ajax({
+            "async": true,
+            "crossDomain": true,
+            url: url,
+            type: 'GET',
+            success: function(res) {
+                $.each(res["data"], function(k, v){
+                    $("#template").append(`<option value='${v[0]}-${v[1]}'>${v[0]} 
+                        [${v[1]}]</option>`);
+                })
             }
         });
     })

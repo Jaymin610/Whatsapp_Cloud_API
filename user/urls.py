@@ -15,7 +15,7 @@ urlpatterns = [
     path('process/', views.process_composer, name='processCompo'),
     path('composerList/', views.record, name='composerList'),
     path('startCamp/', views.start, name='startCamp'),
-    path('settings/', views.settings, name='settings'),
+    path('settings/', views.show_settings, name='show_settings'),
     path('logout/', views.logout, name='logout'),
     path('start_all/', views.start_all, name='start_all'),
     path('stop/', views.stop, name='stop'),
@@ -58,5 +58,8 @@ urlpatterns = [
     path('getExcel', views.getExcel, name='getExcel'),
     path('customerBotState', views.customerBotState, name='customerBotState'),
     path('stopBot', views.stopBot, name='stopBot'),
+    path('editAutoReply', views.editAutoReply, name='editAutoReply'),
+    path('send_multiple_msg', views.send_multiple_msg, name='send_multiple_msg'),
+    path('ShowFiles', views.ShowFiles, name='ShowFiles'),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

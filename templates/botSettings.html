@@ -282,7 +282,7 @@
                 success: function(res) {
                     $("#bot-stat-btn").addClass(res['btn_cls'])
                     $("#bot-stat-btn").text(res['btn_text'])
-                    bot_toggle_url= "/toggle_bot?bot_id=" + res['btn_id']
+                    bot_toggle_url= "/toggle_bot?type=bot&bot_id=" + res['btn_id']
                 }
             });
 

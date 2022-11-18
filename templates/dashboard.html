@@ -61,8 +61,8 @@
                         <div class="btn-group">
                             <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModalCenter" id="normalCamp"> Add New Campaign<i class="fa fa-plus"></i> </button>
                         </div>
-                        <div class="btn-group">
-                            <a href="/deleteAll?name=Camp" id="" class="btn btn btn-outline-danger">
+                        <div class="btn-group deleteAll" name="Camp">
+                            <a href="#" id="" class="btn btn btn-outline-danger">
                                 Delete All
                             </a>
                         </div>
@@ -124,8 +124,8 @@
                         <div class="btn-group">
                             <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModalCenter" id="advanceCamp"> Add Advance Campaign <i class="fa fa-plus"></i></button>
                         </div>
-                        <div class="btn-group">
-                            <a href="/deleteAll?name=Camp" id="" class="btn btn btn-outline-danger">
+                        <div class="btn-group deleteAll" name="AdvCamp">
+                            <a href="#" id=""  class="btn btn btn-outline-danger">
                                 Delete All
                             </a>
                         </div>
@@ -219,6 +219,21 @@
 </div>
 <script>
     $(document).ready(function(){
+        $(".deleteAll").on("click", function(){
+            var name = $(this).attr("name");
+            if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true) {
+                
+                $.ajax({
+                    "async": true,
+                    "crossDomain": true,
+                    url: "/deleteAll?name="+name,
+                    type: 'GET',
+                    success: function(res) {
+                        window.location.reload();
+                    }
+                });
+            }
+        })
         $("#advanceCamp").on("click", function(){
             $("#form_modal").attr("action", "/advanceCamp");
             $("#exampleModalLongTitle").text("Advance Campaign");

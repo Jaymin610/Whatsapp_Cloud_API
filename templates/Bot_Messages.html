@@ -54,6 +54,7 @@
                                         </div>
                                     </div>
                                     <button type="button" name="{{ c.id }}" class="btn btn-round btn-dark addPair" data-toggle="modal" data-target="#exampleModalCenter2"> Add message Pair </button>
+                                    <button class="btn btn-primary disabled">Bot: {% if bot_state %} On {% else %} Off {% endif %}</button>
                                 </div>
                             </div>
                             <div class="row">
@@ -73,6 +74,21 @@
                                                 <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
                                                     colspan="1" aria-label="Title: activate to sort column ascending"
                                                     style="width: 180.863px;">Reply</th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;">Reply Type</th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;">On / Off</th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;"></th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;"></th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;"></th>
                                                 
                                             </tr>
                                         </thead>
@@ -81,9 +97,30 @@
                                             <tr class="odd" role="row">
                                                 <td class="sorting_1"><input type="checkbox" name="{{ c.id }}" id="{{ c.id }}"></td>
                                                 <td class="sorting_1">{{ c.receive_message }} </td>
-                                                <td class="sorting_1">{{ c.reply_message }} </td>
+                                                <td class="sorting_1">
+                                                    {% if c.msg_type == "catalogue" %} 
+                                                    <a href="/ShowFiles?rid={{c.id}}" target="_blank">{{ c.show_reply_message }}</a> 
+                                                    {% else %}
+                                                    {{ c.show_reply_message }}
+                                                    {% endif %}
+                                                </td>
+                                                <td class="sorting_1">{{ c.msg_type }} </td>
+                                                <td class="sorting_1">{% if c.is_active %} 
+                                                    On 
+                                                    {% else %}
+                                                    Off
+                                                    {% endif %} </td>
+                                                <td class="sorting_1">
+                                                    {% if c.is_active %} 
+                                                    <a id="auto-reply-state" href="/toggle_bot?type=row&reply_row_id={{c.id}}" class="btn btn-success">On</a> 
+                                                    {% else %}
+                                                    <a id="auto-reply-state" href="/toggle_bot?type=row&reply_row_id={{c.id}}" class="btn btn-danger">Off</a>
+                                                    {% endif %} </td>
+                                                    <td class="sorting_1"><a href="#" name="{{c.id}}" class="delete_replies" title="Delete" data-toggle="tooltip"><i class="fa fa-trash" style="font-size: 2rem;"></i> Delete</a> </td>
+                                                    <td class="sorting_1"><a href="#" class="editAutoReply" name="{{c.id}}" data-toggle="modal" data-target="#exampleModalCenter3" title="Edit"><i class="fa fa-edit" style="font-size: 2rem;"></i>Edit</a></td>
                                             </tr>
                                             {% endfor %}
+                                            
                                         </tbody>
                                     </table>
                                 </div>
@@ -139,9 +176,44 @@
                                         <option value='text'>Text</option>
                                         <option value='template'>Template</option>   
                                         <option value='catalogue'>Catalogue</option>   
+                                        <option value='btn-w-text'>Button with Text</option>   
+                                        <option value='list-btn'>List Button with Text</option>   
                                     </select>
                                 </div>
                                 <div class="form-group" id="reply_field">
+                                    
+                                </div>
+                                <div class="form-group" id="btn-input-fields"></div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                    <button type="submit" class="btn btn-primary">Submit</button>
+                                </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="exampleModalCenter3" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true" >
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content" style="width: 700px;">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle">Response</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form action="/editAutoReply" method="post" id="form_modal" class="form-horizontal"
+                                novalidate="novalidate" enctype="multipart/form-data">{% csrf_token %}
+                                <input type="text" name="mid" id="edit-inp-bot-id" style="display: none;" >
+                                <input type="text" name="bid" id="edit-inp-bot-id" style="display: none;" value="{{bid}}">
+                                <input type="text" name="pid" id="edit-inp-bot-id" style="display: none;" value="{{pid}}">
+                                <input type="text" name="rep_type" id="edit_rep_type" style="display: none;">
+                                <div class="form-group" id="edit_received_time">
+                                    <label for="simpleFormName">Received Message</label>
+                                    <input name='rec_mes' type="text" class="form-control" id="simp_repMes">
+                                </div>
+                                <div class="form-group" id="edit_reply_field">
                                     
                                 </div>
                                 <div class="modal-footer">
@@ -154,7 +226,95 @@
     </div>
 </div>
 <script>
+    function updateInp(t){
+        let num = $(t).val();
+        console.log(num);
+        if (num < 4){
+            $("#btn-input-fields").html("");
+            for (let i = 0; i < num; i++) {
+                $("#btn-input-fields").append(`<label for="">Button ${i+1} Text</label>
+                <input type="text" name="btn-text[]" id="" class="form-control">`);
+            }
+        }
+        else{
+            $("#btn-input-fields").children(".war-bt").html("");
+            $("#btn-input-fields").append("<p class='war-bt' style='color: red;'> Cant use more than 3 buttons</p>")
+        }
+    }
+    
+    // function edit(t, e){
+    //     let current = $(t).text();
+    //     current = current.split(",")
+    //     console.log(current)
+    //     $(t).html(`<input id="edit-text" onkeypress="subm(this, event)"  type=text value=${current}>`)
+    //     e.stopPropagation()
+    // }
+    // function subm(t, e){
+    //     console.log(e)
+    //     var key = e.which;
+    //     if(key == 13)  // the enter key code
+    //     {
+    //         $(t).html(`<td>${t.val()}</td>`)  
+    //     }
+    // };   
     $(document).ready(function(){
+
+        $(".editAutoReply").on("click", function(){
+            
+            let mid = $(this).attr("name");
+            $.ajax({
+                "async": true,
+                "crossDomain": true,
+                url: "/editAutoReply?mid="+mid,
+                type: 'GET',
+                success: function(res) {
+                    $("#simp_repMes").val(res['receive_msg']);
+                    $("#edit-inp-bot-id").val(res['mid']);
+                    if (res['type'] == "text"){
+                        $("#edit_rep_type").val("text")
+                        let text = res['reply_message']['text']
+                        $("#edit_reply_field").html(` <label for="">Text</label>
+                        <input name="reply_mes" type="text" class="form-control" id="edit_reply_mes">`);
+                        $("#edit_reply_mes").val(text)
+                    }
+                    if (res['type'] == "catalogue"){
+                        $("#edit_reply_field").html(`<p>Type catalogue cant be updated</p>`);
+                    }
+                    if (res['type'] == "template"){
+                        $("#edit_rep_type").val("template")
+                        let url = "/fetch_Temp?phone={{pid}}";
+                        $.ajax({
+                            "async": true,
+                            "crossDomain": true,
+                            url: url,
+                            type: 'GET',
+                            success: function(response) {
+                                $("#edit_reply_field").html(`<label for="">Template</label> <select name="reply_mes" class="form-control input-height" id="template">
+                                    <option value="">Select...</option>
+                                </select>`)
+                                $.each(response["data"], function(k, v){
+                                    $("#template").append(`<option value='${v[3]}'>${v[0]} 
+                                        [${v[1]}]</option>`);
+                                })
+                            }
+                        });
+                    }
+                }
+            })
+        })
+
+        $("#auto-reply-state").on("click", function(){
+            console.log(bot_toggle_url)
+            $.ajax({
+                "async": true,
+                "crossDomain": true,
+                url: bot_toggle_url,
+                type: 'GET',
+                success: function(res) {
+                    window.location.reload()
+                }
+            })
+        })
 
         $('.form-check-label').on("change", function () {
             var value = $(this).children('input').val();
@@ -169,10 +329,25 @@
 
         $("#reply_option").on("change", function () {
             let option = $("#reply_option option:selected").val();
+
             if (option == "text"){
-                $("#reply_field").append(` <label for="">Text</label>
+                $("#reply_field").html(` <label for="">Text</label>
                 <input name="reply_mes" type="text" class="form-control" id="simpleFormNum">`);
-            } 
+            }
+            else if (option == "catalogue"){
+                $("#reply_field").html(` <label for="">Upload File</label>
+                <input type="file" name="catalogue_zip" id="" class="form-control">`);
+            }
+            else if (option == "btn-w-text"){
+                $("#reply_field").html(`<label for="">Text</label>
+                <input type="text" name="text" id="" class="form-control">
+                <label for="">Button Count</label>
+                <input type="number" name="btn-count" id="btn-count" onkeyup="updateInp(this)" class="form-control">`);
+            }
+            else if (option == "catalogue"){
+                $("#reply_field").html(` <label for="">Upload File</label>
+                <input type="file" name="catalogue_zip" id="" class="form-control">`);
+            }   
             else{
                 let url = "/fetch_Temp?phone={{pid}}";
                 $.ajax({
@@ -181,7 +356,7 @@
                     url: url,
                     type: 'GET',
                     success: function(res) {
-                        $("#reply_field").append(`<label for="">Template</label> <select name="reply_mes" class="form-control input-height" id="template">
+                        $("#reply_field").html(`<label for="">Template</label> <select name="reply_mes" class="form-control input-height" id="template">
                             <option value="">Select...</option>
                         </select>`)
                         $.each(res["data"], function(k, v){
@@ -192,19 +367,21 @@
                 });
             }
         })
-        $("#deleteCamp").on("click", function(){
-            if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true){
-                $.ajax({
+        $("#btn-count").on("keyup", function(){
+            
+        })
+        $(".delete_replies").on("click", function(){
+            
+            $.ajax({
                 "async": true,
                 "crossDomain": true,
-                url: "/delete?name=Camp&cid="+ $(this).attr("class"),
+                url: "/delete?name=auto_rep&rid="+ $(this).attr("name"),
                 type: 'GET',
                 success: function(res) {
                     console.log(res);
-                    window.location.reload();
+                    location.reload();
                 }
-            });
-            }
+            })
         })
     })
 </script>

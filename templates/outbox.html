@@ -191,7 +191,7 @@
                                                 <!-- <td class="sorting_1">{{ c.msg_id }}</td> -->
                                                 <td class="sorting_1"> <img src='../static/assets/img/{{c.status}}.png' width="20%" height="20%" alt=""> </td>
                                                     <!-- /startCamp?id={{ c.id }} <i class="fa fa-check"></i>-->
-                                                <td><button type="button" class="btn btn-round btn-warning txt-toggle" data-toggle="modal" data-target="#exampleModalCenter2"> Show </button><p id="req" class="hide-text" style="display: none;">{{ c.request }}<p><p id="res" class="hide-text" style="display: none;">{{ c.response }}<p></p></td>
+                                                <td><button type="button" onclick="addReqRes(this)" class="btn btn-round btn-warning txt-toggle" data-toggle="modal" data-target="#exampleModalCenter2"> Show </button><p id="req" class="hide-text" style="display: none;">{{ c.request }}<p><p id="res" class="hide-text" style="display: none;">{{ c.response }}<p></p></td>
                                                     
                                             </tr>
                                             {% endfor %}
@@ -276,6 +276,15 @@
 </div>
   
 <script>
+    function addReqRes(t){ 
+        var q = $(t).siblings("#req");
+        var s = $(t).siblings("#res");
+    
+        if (q.hasClass("hide-text")){
+            $("#req-txt").text(q.text());
+            $("#res-txt").text(s.text());
+        }
+    }
     function toggle(source) {
         checkboxes = document.getElementsByName('row-check');
         for(var i=0, n=checkboxes.length;i<n;i++) {
@@ -300,6 +309,7 @@
                 success: function(response){
                     $('tbody').remove();
                     $('#example4').append('<tbody></tbody>');
+                    console.log(response)
                     jQuery.each(response, function(i, c){
                         $('tbody').append(`<tr style="text-align:center" class="odd" role="row">
                                                 <td class="sorting_1"><input type="checkbox" name="row-check" id="${ i }"></td>
@@ -308,23 +318,13 @@
                                                 <td class="sorting_1">${ c.send_time }</td>
                                                 <td class="sorting_1">${ c.Sender }</td>
                                                 <td class="sorting_1"> <img src='../static/assets/img/${c.status}.png' width="20%" height="20%" alt=""> </td>
-                                                    <td><button type="button" class="btn btn-round btn-warning txt-toggle" data-toggle="modal" data-target="#exampleModalCenter2"> Show </button><p id="req" class="hide-text" style="display: none;">{{ c.request }}<p><p id="res" class="hide-text" style="display: none;">{{ c.response }}<p></p></td>    
+                                                    <td><button type="button" onclick="addReqRes(this)" class="btn btn-round btn-warning txt-toggle" data-toggle="modal" data-target="#exampleModalCenter2"> Show </button><p id="req" class="hide-text" style="display: none;">${ c.req }<p><p id="res" class="hide-text" style="display: none;">${ c.res }<p></p></td>    
                                             </tr>`)
                     });
                     
                 }
             });
         });
-
-        $(".txt-toggle").on("click", function(){ 
-            var q = $(this).siblings("#req");
-            var s = $(this).siblings("#res");
-        
-            if (q.hasClass("hide-text")){
-                $("#req-txt").text(q.text());
-                $("#res-txt").text(s.text());
-            }
-        })
         $('#dltBtn').on('click', function () {
             if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true) {
                 var selected = [];

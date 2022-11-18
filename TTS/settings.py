@@ -14,7 +14,7 @@ from pathlib import Path
 import os
 from django.contrib.messages import constants as messages
 
-
+HOST_URL = "http://wotsapp-campaign.bonrix.in:8000"
 MESSAGE_TAGS = {
         messages.DEBUG: 'alert-secondary',
         messages.INFO: 'alert-info',
@@ -137,7 +137,7 @@ STATICFILES_DIRS = [
 
 STATIC_URL = 'static/'
 
-MEDIA_ROOT = os.path.join(BASE_DIR, "user/media_objects")
+MEDIA_ROOT = os.path.join(BASE_DIR, "media_objects")
 MEDIA_URL = '/media/'
 
 # Default primary key field type
