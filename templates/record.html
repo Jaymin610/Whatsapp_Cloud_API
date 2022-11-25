@@ -135,8 +135,8 @@
                                         </div>
                                     </div>
                                     <div class="btn-group">
-                                        <div class="btn-group">
-                                            <a href="/deleteAll?name=Rec" class="btn btn-warning">
+                                        <div class="btn-group" id="deleteAll">
+                                            <a href="" class="btn btn-warning">
                                                 Delete All
                                             </a>
                                         </div>
@@ -339,6 +339,21 @@
     }
     }
     $(document).ready(function () {
+
+        $("#deleteAll").on("click", function(){
+            if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true) {
+                $.ajax({
+                    "async": true,
+                    "crossDomain": true,
+                    url: "/deleteAll?name=Rec",
+                    type: 'GET',
+                    success: function(res) {
+                        console.log(res);
+                        window.location.reload()
+                    }
+                });
+            }
+        })
         
         $("#strtal").on("click", function(){
             let mode = $('input[name="mode"]:checked').val();

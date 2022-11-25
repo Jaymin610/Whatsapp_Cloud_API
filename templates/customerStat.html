@@ -124,6 +124,9 @@
         </div>
     </div>
 </div>
+<link rel="stylesheet" href="//cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
+<script src="//cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+
 <script>
     function toggle(source) {
         checkboxes = document.getElementsByName('row-check');
@@ -132,6 +135,7 @@
         }
         }
     $(document).ready(function(){
+        $('#example4').DataTable({'iDisplayLength': 1000});
         $("#deleteCamp").on("click", function(){
             if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true){
                 $.ajax({

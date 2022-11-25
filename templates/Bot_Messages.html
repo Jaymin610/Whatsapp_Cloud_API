@@ -197,7 +197,7 @@
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content" style="width: 700px;">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLongTitle">Response</h5>
+                <h5 class="modal-title" id="exampleModalLongTitle">Edit Settings</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
                 </button>
@@ -234,6 +234,23 @@
             for (let i = 0; i < num; i++) {
                 $("#btn-input-fields").append(`<label for="">Button ${i+1} Text</label>
                 <input type="text" name="btn-text[]" id="" class="form-control">`);
+            }
+        }
+        else{
+            $("#btn-input-fields").children(".war-bt").html("");
+            $("#btn-input-fields").append("<p class='war-bt' style='color: red;'> Cant use more than 3 buttons</p>")
+        }
+    }
+    function updateListInp(t){
+        let num = $(t).val();
+        console.log(num);
+        if (num < 4){
+            $("#btn-input-fields").html("");
+            for (let i = 0; i < num; i++) {
+                $("#btn-input-fields").append(`<label for="">Title ${i+1}</label>
+                <input type="text" name="list-title[]" id="" class="form-control">
+                <label for="">Description ${i+1}</label>
+                <input type="text" name="list-desc[]" id="" class="form-control">`);
             }
         }
         else{
@@ -343,6 +360,14 @@
                 <input type="text" name="text" id="" class="form-control">
                 <label for="">Button Count</label>
                 <input type="number" name="btn-count" id="btn-count" onkeyup="updateInp(this)" class="form-control">`);
+            }
+            else if (option == "list-btn"){
+                $("#reply_field").html(`<label for="">Text</label>
+                <input type="text" name="body-text" id="" class="form-control">
+                <label for="">Button Text</label>
+                <input type="text" name="btn-text" id="" class="form-control">
+                <label for="">List Count</label>
+                <input type="number" name="list-count" id="" onkeyup="updateListInp(this)" class="form-control">`);
             }
             else if (option == "catalogue"){
                 $("#reply_field").html(` <label for="">Upload File</label>

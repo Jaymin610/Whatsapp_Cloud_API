@@ -193,7 +193,7 @@
                                             {% for c in messages %}
                                             <tr style="text-align:center" class="odd" role="row">
                                                 <td class="sorting_1"><input type="checkbox" name="row-check" id="{{ c.id }}"></td>
-                                                <td class="sorting_1">{{ c.sender_number }}</td>
+                                                <td class="sorting_1"><a target="_blank" href="/what_gui?to={{ c.sender_number }}&from={{c.reply_number}}">{{ c.sender_number }}</a> </td>
                                                 <td class="sorting_1">{{ c.received_msg }}</td>
                                                 <td class="sorting_1">{{ c.received_time }}</td>
                                                 <td class="sorting_1">{{ c.reply }}</td>

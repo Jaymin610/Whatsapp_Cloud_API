@@ -72,7 +72,7 @@ def get_tempJson(request):
     print(temps.temp_name)
     response = requests.get(url)
     json_data = json.loads(response.text)
-    print(json_data)
+    
     temp_compo = json_data['data'][0]['components']
     temp_preview = {}
     for i in range(len(temp_compo)):

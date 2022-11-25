@@ -104,6 +104,9 @@
                                                 <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
                                                     colspan="1" aria-label="Title: activate to sort column ascending"
                                                     style="width: 180.863px;">Media uploded</th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;"></th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -116,9 +119,9 @@
                                                 <td class="sorting_1"><p>{{ d.status }}<p></td>
                                                 <td class="sorting_1"><p>{% if d.med_id %} <img src='../static/assets/img/Sent.png' width="20%" height="20%" alt=""> {% endif %}<p></td>
                                                 
-                                                <td><a href="#">{% if d.is_media %}
+                                                <td class="sorting_1"><a href="#">{% if d.is_media %}
                                                     <button onclick="upload(this)" id="{{ d.temp_id }}" type="button" class="btn btn-primary upload" data-toggle="modal" data-target="#exampleModalCenter">
-                                                        Upload 
+                                                        <i class="fa fa-upload"></i> 
                                                 </button>{% endif %}</a></td>
                                                     
                                             </tr>

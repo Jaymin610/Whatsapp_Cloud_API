@@ -137,8 +137,8 @@
                                         </div>
                                     </div>
                                     <div class="btn-group">
-                                        <div class="btn-group">
-                                            <a href="/deleteAll?name=outbox" class="btn btn-warning">
+                                        <div class="btn-group" id="deleteAll">
+                                            <a href="#" class="btn btn-warning">
                                                 Delete All
                                             </a>
                                         </div>
@@ -274,7 +274,9 @@
     </div>
 </div>
 </div>
-  
+<link rel="stylesheet" href="//cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
+<script src="//cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+
 <script>
     function addReqRes(t){ 
         var q = $(t).siblings("#req");
@@ -292,6 +294,20 @@
         }
         }
     $(document).ready(function () {
+        $('#example4').DataTable({'iDisplayLength': 1000});
+        $("#deleteAll").on("click", function(){
+            if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true) {
+                $.ajax({
+                    "async": true,
+                    "crossDomain": true,
+                    url: "/deleteAll?name=outbox",
+                    type: 'GET',
+                    success: function(res) {
+                        console.log(res);
+                    }
+                });
+            }
+        })
         
         $("#from-date").on("change", function(){
             var _href = $("#downloadBtn").attr("href");

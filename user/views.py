@@ -55,11 +55,10 @@ def send_SMS(request):
     if time_check:
         lat_entry = time_check[len(time_check) - 1]
         this = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5)
-        if lat_entry.received_time and ((
-                                                this - lat_entry.received_time).total_seconds() / 3600) < 168 and lat_entry.conversation_status == "Stopped":
+        if lat_entry.received_time and ((this - lat_entry.received_time).total_seconds() / 3600) < 168 and lat_entry.conversation_status == "Stopped":
             return JsonResponse({"message": "Your messages are blocked by user"})
         else:
-            if lat_entry.received_time and ((this - lat_entry.received_time).total_seconds() / 3600) > 24:
+            if (not lat_entry.received_time) or  (((this - lat_entry.received_time).total_seconds() / 3600) > 24):
                 t = Templates.objects.get(temp_name=msg_provider.template, lang_code=msg_provider.lang,
                                           message_provider_id=wmp.id)
                 print("Working Properly")
@@ -1439,6 +1438,7 @@ def refresh_temp(request):
         for i in data:
             api_temp_ids.add(i["id"])
             if Templates.objects.filter(temp_id=i['id']):
+                Templates.objects.filter(temp_id=i['id']).update(status=i['status'])
                 continue
             else:
                 if i['components'][0]['type'].lower() == 'header' and i['components'][0]['format'].lower() != "text":
@@ -1520,12 +1520,12 @@ def receive_msg(request):
         CallBack_Data.objects.create(Received=data, received_time=t, user_id=entry.user_id, msg_id=incom_msg_id)
         MessageLog.objects.create(sender_number=number, received_msg=message, received_time=t, is_read=True,
                                   reply_number=p_num, json=data, user_id=entry.user_id)
-        
+        print("..............................", )
         msg_log = MessageLog.objects.filter(received_msg=message, received_time=t,sender_number=number,reply_number=p_num,)
         check_bot_exist = What_Bot.objects.filter(provider_id=entry.id)
-        if check_bot_exist and (not CustomerBotStop.objects.filter(user_number=number, provider_id=entry.id)) and message.lower() != "no" :
+        if check_bot_exist and (not CustomerBotStop.objects.filter(user_number=number, provider_id=entry.id)) and message.split("\n")[0].lower() != "no" :
             if check_bot_exist[0].is_on:
-                print(check_bot_set(entry.user_id, entry.id, number, message, incom_msg_id, msg_log[0]))
+                print(check_bot_set(entry.user_id, entry.id, number, message.split("\n")[0], incom_msg_id, msg_log[0]))
         
         check_conv = Conversation_Status.objects.filter(to=number, provider=entry.provider_name,
                                                         conversation_status="Pending")
@@ -1975,7 +1975,7 @@ def searchTable(request):
 def customerStat(request):
     if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         id = request.COOKIES['id']
-        data = Conversation_Status.objects.filter(user_id_id=id)
+        data = Conversation_Status.objects.filter(user_id_id=id).order_by('-id').values()
         return render(request, "customerStat.html", {"data": data})
 
 
@@ -2537,16 +2537,22 @@ def addMesPair(request):
         except Exception as e:
             rec = str(request.POST["rec_mes"]).lower()
         
-        bot_id = request.POST["bot_id"]
-        phone = request.POST['phone']
-        data = Bot_Auto_Reply.objects.filter(bot_id=bot_id)
+        bot_id = request.POST['bid']
+        phone = request.POST['pid']
+        pid = WA_MSG_Provider.objects.get(phone_no=phone).id
+    
+        data = Bot_Auto_Reply.objects.filter(provider_id=pid)
+        
         checked_list = []
         for d in data:
             for r in rec:
-                if r in d.receive_message:
+                if r in list(d.receive_message):
+                    print(d.receive_message)
                     checked_list.append(r)
+        
+        checked_list = [j for j in filter(lambda x: x != "", checked_list)]
         print(checked_list)
-        if (not checked_list) and (filter(lambda x: x != "", checked_list)):
+        if not checked_list:        
             bot = What_Bot.objects.get(pk=bot_id)
             rep_opt = request.POST['reply_option']
             if rep_opt == "catalogue":
@@ -2584,13 +2590,20 @@ def addMesPair(request):
                 btn_text = request.POST.getlist('btn-text[]')
                 rep = {"btext":tex_rep, "bcount":btn_c, "btn_text":btn_text}
                 print(tex_rep, btn_c, btn_text)
-                Bot_Auto_Reply.objects.create(receive_message=rec, msg_type=rep_opt, reply_message={rep_opt:rep}, show_reply_message=rep, bot_id=bot_id, provider_id=bot.provider_id)
-
+                Bot_Auto_Reply.objects.create(receive_message=rec, msg_type=rep_opt, reply_message={rep_opt:rep}, show_reply_message=tex_rep+"With Buttons" + btn_text, bot_id=bot_id, provider_id=bot.provider_id)
+            elif rep_opt == "list-btn":
+                body_tex = request.POST['body-text']
+                button_text = request.POST['btn-text']
+                list_c = request.POST['list-count']
+                list_title = request.POST.getlist('list-title[]')
+                list_desc = request.POST.getlist('list-desc[]')
+                rep = {"body_tex":body_tex,"button_text":button_text, "list_c":list_c, "list_title":list_title, "list_desc":list_desc}
+                Bot_Auto_Reply.objects.create(receive_message=rec, msg_type=rep_opt, reply_message={rep_opt:rep}, show_reply_message=body_tex+"With button list", bot_id=bot_id, provider_id=bot.provider_id)
             messages.success(request, "Message Added Succesfully")
         else:
             messages.error(request, "Message Already exist")
             print()
-        pid = WA_MSG_Provider.objects.get(phone_no=phone).id
+        
         return redirect(f"/addMesPair?bid={bot_id}&pid={pid}")
     else:
         bot_id = request.GET["bid"]
@@ -2643,16 +2656,23 @@ def editAutoReply(request):
             rec = str(request.POST["rec_mes"]).lower()
         
         auto_rep_id = request.POST['mid']
+        bot_id = request.POST['bid']
+        phone = request.POST['pid']
+        pid = WA_MSG_Provider.objects.get(phone_no=phone).id
     
-        data = Bot_Auto_Reply.objects.exclude(pk=auto_rep_id)
+        data = Bot_Auto_Reply.objects.filter(provider_id=pid)
+        data = data & Bot_Auto_Reply.objects.exclude(pk=auto_rep_id)
         print(data)
         checked_list = []
         for d in data:
             for r in rec:
-                if r in d.receive_message:
+                if r in list(d.receive_message):
+                    print(d.receive_message)
                     checked_list.append(r)
+        
+        checked_list = [j for j in filter(lambda x: x != "", checked_list)]
         print(checked_list)
-        if (not checked_list) and (filter(lambda x: x != "", checked_list)):        
+        if not checked_list:        
             rep = request.POST['reply_mes']
             if request.POST['rep_type'] == "text":      
                 Bot_Auto_Reply.objects.filter(pk=auto_rep_id).update(receive_message=rec, reply_message={"text":rep}, show_reply_message=rep)
@@ -2662,7 +2682,7 @@ def editAutoReply(request):
                 messages.success(request, "Message Updated Succesfully")
                 Bot_Auto_Reply.objects.filter(pk=auto_rep_id).update(receive_message=rec, reply_message={"template":rep}, show_reply_message=f"{temp_name.temp_name} [{temp_name.lang_code}]")
         pid = WA_MSG_Provider.objects.get(phone_no=request.POST['pid']).id
-        return redirect(f"/addMesPair?bid={request.POST['bid']}&pid={pid}")
+        return redirect(f"/addMesPair?bid={bot_id}&pid={pid}")
     else:  
         auto_rep_id = request.GET['mid']
         res_rep = Bot_Auto_Reply.objects.get(pk=auto_rep_id)
@@ -2692,8 +2712,9 @@ def check_bot_set(user, provider, to, message, msg_id, msg_log):
         
     else:
         default = Bot_Auto_Reply.objects.filter(provider_id=provider, receive_message__contains="*")
-        b = default[0]
+        
         if default and default[0].is_active:
+            b = default[0]
             print("Default reply")
         else:
             return "Auto reply and Default reply Blocked"
@@ -2874,3 +2895,140 @@ def check_bot_set(user, provider, to, message, msg_id, msg_log):
                                         pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5),
                                     response=response.text, msg_id=msg_id)
         return response.text
+    if "list-btn" in b.reply_message.keys():
+        data = b.reply_message["list-btn"]
+        payload = {"messaging_product": "whatsapp",
+                    "recipient_type": "individual",
+                    "to": f"{to}",
+                    "type": "interactive",
+                    "interactive": {
+                        "type": "list",
+                        "body": {
+                        "text": f"{data['body_tex']}"
+                        },
+                        "action": {
+                        "button": f"{data['button_text']}",
+                        "sections": [
+                            {
+                            "title": f"{data['button_text']}",
+                            "rows": []
+                            }
+                        ]
+                        }
+                    }
+                    }
+        for i in range(int(data["list_c"])):
+            payload["interactive"]["action"]["sections"][0]["rows"].append({
+                                "id": f"{i+1}",
+                                "title": f"{data['list_title'][i]}",
+                                "description": f"{data['list_desc'][i]}"
+                                })
+        payload = json.dumps(payload)
+        
+        response = requests.post(url=api.message_API, headers=api.header, data=payload)
+        reply = data["body_tex"] + "(With list reply)"
+        msg_log.reply = reply
+        msg_log.request = api.message_API
+        msg_log.send_time = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5)
+        msg_log.response = response.text
+        try:
+            msg_id = json.loads(response.text)["messages"][0]['id']
+            msg_log.msg_id = msg_id
+            msg_log.save()
+        except:
+            msg_id = ""
+            msg_log.save()
+        SubMessageLog.objects.create(parent_msg_id=msg_log.id, reply_number=msg_log.reply_number,
+                                    user_id=msg_log.user_id, reply=reply, request=api.message_API,
+                                    send_time=datetime.datetime.now(
+                                        pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5),
+                                    response=response.text, msg_id=msg_id)
+        return response.text
+
+
+def prepare_chat(cus_list):
+    time_data  = {}
+    for i in range(len(cus_list)):
+        sub = ""
+        time_data[cus_list[i]] = []
+        if i < len(cus_list)-1:
+            sub = SubMessageLog.objects.filter(parent_msg_id=cus_list[i].id, send_time__gte=cus_list[i].received_time, 
+                    send_time__lt=cus_list[i+1].received_time)
+        else:
+            sub = SubMessageLog.objects.filter(parent_msg_id=cus_list[i].id, send_time__gte=cus_list[i].received_time)
+        for s in sub:
+            time_data[cus_list[i]].append(s)
+    return time_data
+
+
+def what_gui(request):
+    uid = request.COOKIES["id"]
+    try:
+        to = request.GET['to']
+        rnum  =request.GET['from']
+        customers = MessageLog.objects.filter(reply_number=rnum, sender_number=to).order_by("received_time")
+    except:
+        customers = MessageLog.objects.filter(user_id=uid).order_by("received_time")
+        to, rnum = customers[len(customers)-1].sender_number, customers[len(customers)-1].reply_number
+    
+    users = MessageLog.objects.filter(user_id=uid).values("sender_number", "reply_number").distinct()
+    for u in users:
+        if u['sender_number'] == to:
+            u["active"] = "active"
+    print(users)
+    return render(request, "what_GUI.html", {"from":rnum, "to":to,"provider":WA_MSG_Provider.objects.get(phone_no=rnum).provider_name,"users": users,"time_data":prepare_chat(customers)})
+
+
+def chat_msg(request):
+    to = request.GET['to']
+    fom = request.GET['from']
+    msg = request.GET['msg']
+
+    msg_log = MessageLog.objects.filter(sender_number=to)
+    msg_log = msg_log[len(msg_log) -1]
+    api = Voice_API.objects.get(whatsapp_name=fom)
+    payload = json.dumps({
+                "messaging_product": "whatsapp",
+                "recipient_type": "individual",
+                "to": f"{msg_log.sender_number}",
+                "type": "text",
+                "text": {
+                    "preview_url": False,
+                    "body": f"{msg}"
+                }
+            })
+    response = requests.post(url=api.message_API, data=payload, headers=api.header)
+    msg_log.reply = msg
+    msg_log.request = api.message_API
+    msg_log.response = response.text
+    msg_log.send_time = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5)
+    try:
+        msg_id = json.loads(response.text)["messages"][0]['id']
+        msg_log.msg_id = msg_id
+        msg_log.save()
+        # messages.success(request, f"Message sent successfully to {msg_log.sender_number}")
+    except:
+        msg_id = ""
+        msg_log.save()
+        # messages.error(request, f"Message not sent to {msg_log.sender_number}")
+    SubMessageLog.objects.create(parent_msg_id=msg_log.id, reply_number=msg_log.reply_number,
+                                    user_id=msg_log.user_id, reply=msg,
+                                    request=api.message_API,
+                                    send_time=datetime.datetime.now(
+                                        pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5),
+                                    response=response.text, msg_id=msg_id)
+    return redirect(f"what_gui?to={to}&from={WA_MSG_Provider.objects.get(provider_name=fom).phone_no}")
+
+def change_chat(request):
+    uid = request.COOKIES["id"]
+    to = request.GET['to']
+    customers = MessageLog.objects.filter(user_id=uid, sender_number=to).order_by("received_time")
+    return JsonResponse({"chat":  prepare_chat(customers)})
+
+
+def testgui(request):
+    return render(request, "what_GUI.html")
+
+
+def chat_token(request):
+    return render(request, "create_temp.html")

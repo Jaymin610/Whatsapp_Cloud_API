@@ -136,8 +136,8 @@
                                         </div>
                                     </div>
                                     <div class="btn-group">
-                                        <div class="btn-group">
-                                            <a href="/deleteAll?name=advRec" class="btn btn-warning">
+                                        <div class="btn-group" id="deleteAll">
+                                            <a href="" class="btn btn-warning">
                                                 Delete All
                                             </a>
                                         </div>
@@ -324,6 +324,20 @@
   
 <script>
     $(document).ready(function () {
+        $("#deleteAll").on("click", function(){
+            if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true) {
+                $.ajax({
+                    "async": true,
+                    "crossDomain": true,
+                    url: "/deleteAll?name=advRec",
+                    type: 'GET',
+                    success: function(res) {
+                        console.log(res);
+                        window.location.reload()
+                    }
+                });
+            }
+        })
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
         $("#strtal").on("click", function(){

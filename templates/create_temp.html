@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+    <div class="page-content" style="min-height:1579px">
+        <div class="page-bar">
+            <div class="page-title-breadcrumb">
+                <div class=" pull-left">
+                    <div class="page-title">Create Template</div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12 col-sm-12">
+                <div class="card card-box">
+                    <div class="card-head">
+                        <header> </header>
+                    </div>
+                    <div class="card-body" id="bar-parent">
+                        <form action="#" method="post" id="form_sample_1" class="form-horizontal"
+                            novalidate="novalidate" enctype="multipart/form-data">{% csrf_token %}
+                            {% comment %} <div class="form-group row">
+                                <div class="col-md-5">
+                                    <input class="form-control" type="Number" id="id" value={{id}} name="id">
+                                </div>
+                            </div> {% endcomment %}
+                            {% comment %} <div class="form-group row">
+                                <label class="control-label col-md-3">Receiver 
+                                    </label>
+                                <div class="col-md-5">
+                                    <div class="form-check">
+                                      <label class="form-check-label">
+                                        <input type="radio" class="form-check-input" name="compType" id="single_receiver" value="single" >
+                                        single
+                                      </label>
+                                    </div>
+                                    <div class="form-check">
+                                    <label class="form-check-label">
+                                        <input type="radio" class="form-check-input" name="compType" id="multiple_receiver" value="multiple">
+                                        Multiple
+                                      </label>
+                                    </div>
+                                </div>
+                            </div> {% endcomment %}
+                            <div class="form-group row">
+                                <label class="control-label col-md-3">Excel Data
+                                    <span class="required" aria-required="true"> * </span>
+                                </label>
+                                <div class="col-md-5">
+                                    <!-- <inppload Excel File></inppload> -->
+                                    <input class="form-control" type="file" id="formFile" name="myfile">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group row">
+                                <div class="control-label col-md-3 checkbox checkbox-icon-black p-0">
+                                    <label for="checkbox1">
+                                        Header
+                                    </label>
+                                </div>
+                                <div class="col-md-1">
+                                    <input id="Header_check" type="checkbox" name="Header_check">
+                                </div>
+                                <div class="control-label col-md-1 checkbox checkbox-icon-black p-0">
+                                    <label for="checkbox2">
+                                        Body
+                                    </label>
+                                </div>
+                                <div class="col-md-1">
+                                    <input id="Body_check" type="checkbox" name="Body_check">
+                                </div>
+                                <div class="control-label col-md-1 checkbox checkbox-icon-black p-0">
+                                    <label for="checkbox3">
+                                        Footer
+                                    </label>
+                                </div>
+                                <div class="col-md-1">
+                                    <input id="Footer_check" type="checkbox" name="Footer_check">
+                                </div>
+                            </div>
+                            <div class="form-group row" style="display: none;">
+                                <label class="control-label col-md-3">Header
+                                    <span class="required" aria-required="true"> * </span>
+                                </label>
+                                <div class="col-md-5" id="mob-select">
+                                    <select class="form-control header-to-inject" name="header">
+                                        <option value="">Select...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group row" style="display: none;">
+                                <label class="control-label col-md-3">Body
+                                    <span class="required" aria-required="true"> * </span>
+                                </label>
+                                <div class="col-md-5" id="mob-select">
+                                    <select class="form-control header-to-inject" name="body">
+                                        <option value="">Select...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group row" style="display: none;">
+                                <label class="control-label col-md-3">Footer
+                                    <span class="required" aria-required="true"> * </span>
+                                </label>
+                                <div class="col-md-5" id="mob-select">
+                                    <select class="form-control header-to-inject" name="footer">
+                                        <option value="">Select...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="control-label col-md-3">Whatsapp user
+                                    <span class="required" aria-required="true"> * </span>
+                                </label>
+                                
+                                <div class="col-md-5">
+                                    <select name="provider" class="form-control input-height" id="provider">
+                                        <option value="">Select...</option>
+                                        {% for d in data %}
+                                        <option value='{{d.phone_no}}'>{{ d.provider_name }} [{{d.phone_no}}]</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <div class="row">
+                                    <div class="offset-md-3 col-md-9">
+                                        <button type="submit" class="btn btn-danger">Create</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                     
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="exampleModalCenter2" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLongTitle">Response</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body" id="status" style="display: flex;">
+            
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Ok</button>
+        </div>
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function(){
+
+        $("#Header_check").on("click", function(){
+            if ($(this).is(":checked")){
+                $(".form-group")[2].style.display = "";
+            }
+        })
+        $("#Body_check").on("click", function(){
+            if ($(this).is(":checked")){
+                $(".form-group")[3].style.display = "";
+            }
+        })
+        $("#Footer_check").on("click", function(){
+            if ($(this).is(":checked")){
+                console.log($(".header-to-inject")[0])
+                $(".form-group")[4].style.display = "";
+            }
+        })
+        var options = ""
+
+        $("#formFile").on("change", function(){
+            var fileSelect = document.getElementById('formFile');
+            var file = fileSelect.files[0];
+            var data = new FormData();
+            data.append("myfile", file);
+            $.ajax({
+                type: 'POST',
+                url: "/getHeaderExcel",
+                processData: false,
+                contentType: false,
+                mimeType: 'multipart/form-data',
+                data: data,
+                success: function(response){
+                    response = JSON.parse(response);
+                    csv_header = response['data'];
+                    csv_header.forEach(element => {
+                        options += `<option value="${element}">${element}</option>`
+                    })
+                    $(".header-to-inject").append(options)
+                }
+            })
+            
+        })
+    })
+</script>
+{% endblock %}

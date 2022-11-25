@@ -61,5 +61,9 @@ urlpatterns = [
     path('editAutoReply', views.editAutoReply, name='editAutoReply'),
     path('send_multiple_msg', views.send_multiple_msg, name='send_multiple_msg'),
     path('ShowFiles', views.ShowFiles, name='ShowFiles'),
+    path('what_gui', views.what_gui, name='what_gui'),
+    path('chat_msg', views.chat_msg, name='chat_msg'),
+    path('testgui', views.testgui, name='testgui'),
+    path('chat_token', views.chat_token, name='chat_token'),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
