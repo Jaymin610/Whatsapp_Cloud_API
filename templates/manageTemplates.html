@@ -1,32 +1,19 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="page-content" style="min-height:1539px; width:1450px; margin-left: auto; margin-right: auto;">
-    {% comment %} <div class="page-bar">
-        <div class="page-title-breadcrumb">
-            <div class=" pull-left">
-                <div class="page-title">{{ User }}</div>
-            </div>
-            <ol class="breadcrumb page-breadcrumb pull-right">
-                <li><i class="fa fa-home"></i>&nbsp;<a class="parent-item" href="/dashboard">Home</a>&nbsp;<i
-                        class="fa fa-angle-right"></i>
-                </li>
-                <li class="active">manage Templates</li>
-            </ol>
-        </div>
-    </div> {% endcomment %}
     {% if messages %}
     {% for message in messages %}
-<div class="container-fluid p-0">
-  <div class="alert {{ message.tags }} alert-dismissible" role="alert" >
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-      <span aria-hidden="">&times;close</span>
-      <i class="fa fa-close"></i>
-    </button>
-    {{ message }}
-  </div>
-</div>
-{% endfor %}
-{% endif %}
+    <div class="container-fluid p-0">
+    <div class="alert {{ message.tags }} alert-dismissible" role="alert" >
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="">&times;close</span>
+        <i class="fa fa-close"></i>
+        </button>
+        {{ message }}
+    </div>
+    </div>
+    {% endfor %}
+    {% endif %}
     <div class="row">
         <div class="col-sm-12 col-md-12 col-xl-12">
             <div class="card-box">
@@ -238,26 +225,10 @@
                         alert(res['alert']);
                     }
                     else{location.reload();}
-                    
-                    // $('tbody').remove();
-                    // $('#example4').append('<tbody></tbody>');
-                    // jQuery.each(res["response"], function(i,v){
-                    // let load = `<tr style="text-align:center" class="odd" role="row">
-                    //                             <td class="sorting_1"><input type="checkbox" name="" id=""></td>
-                    //                             <td class="sorting_1">${ v['id'] }</td>
-                    //                             <td class="sorting_1">${ v['name'] }</td>
-                    //                             <td class="sorting_1">${ v['language'] }</td>
-                    //                             <td class="sorting_1"><p>${v['components'][0]['format'] == 'IMAGE' || v['components'][0]['format'] == 'DOCUMENT' ? true : false}<p></td>
-                    //                             <td class="sorting_1"><p>${ v['status'] }<p></td>
-                    //                             <td>`
-                    //     if (v['components'][0]['format'] == 'IMAGE' || v['components'][0]['format'] == 'DOCUMENT' ? true : false){load+=`<button onclick="upload(this)" id="${ v['id'] }" type="button" class="upload btn btn-primary" data-toggle="modal" data-target="#exampleModalCenter">
-                    //         Upload  </button></td></tr>`}
-                    //     else{load+='</td></tr>'}
-                    //     $('tbody').append(load)
-                    //                             })
                 }
             });
         })
+        
         $("#provider").on("change", function(){
             var p_name = $("#provider option:selected").val();
             p_name = p_name.trim()

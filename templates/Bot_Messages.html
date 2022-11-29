@@ -145,7 +145,7 @@
             <div class="modal-body">
                 <form action="/addMesPair" method="post" id="form_modal" class="form-horizontal"
                                 novalidate="novalidate" enctype="multipart/form-data">{% csrf_token %}
-                                <input type="text" name="bot_id" id="inp-bot-id" style="display: none;" value="{{bid}}">
+                                <input type="text" name="bid" id="inp-bot-id" style="display: none;" value="{{bid}}">
                                 <input type="text" name="phone" style="display: none;" value="{{pid}}">
                                 <div class="form-group row">
                                     <label class="control-label col-md-3">Receiver 
@@ -205,7 +205,7 @@
             <div class="modal-body">
                 <form action="/editAutoReply" method="post" id="form_modal" class="form-horizontal"
                                 novalidate="novalidate" enctype="multipart/form-data">{% csrf_token %}
-                                <input type="text" name="mid" id="edit-inp-bot-id" style="display: none;" >
+                                <input type="text" name="mid" id="edit-inp-bot-id" style="display: none;">
                                 <input type="text" name="bid" id="edit-inp-bot-id" style="display: none;" value="{{bid}}">
                                 <input type="text" name="pid" id="edit-inp-bot-id" style="display: none;" value="{{pid}}">
                                 <input type="text" name="rep_type" id="edit_rep_type" style="display: none;">
@@ -291,13 +291,13 @@
                         $("#edit_rep_type").val("text")
                         let text = res['reply_message']['text']
                         $("#edit_reply_field").html(` <label for="">Text</label>
-                        <input name="reply_mes" type="text" class="form-control" id="edit_reply_mes">`);
+                        <textarea name="reply_mes" type="text" class="form-control" id="edit_reply_mes" rows="4">`);
                         $("#edit_reply_mes").val(text)
                     }
-                    if (res['type'] == "catalogue"){
-                        $("#edit_reply_field").html(`<p>Type catalogue cant be updated</p>`);
-                    }
-                    if (res['type'] == "template"){
+                    // if (res['type'] == "catalogue"){
+                    //     $("#edit_reply_field").html(`<p>Type catalogue cant be updated</p>`);
+                    // }
+                    else if (res['type'] == "template"){
                         $("#edit_rep_type").val("template")
                         let url = "/fetch_Temp?phone={{pid}}";
                         $.ajax({
@@ -315,6 +315,9 @@
                                 })
                             }
                         });
+                    }
+                    else{
+                        $("#edit_reply_field").html(`<p style="color:red">*${res['type']} field can't be updated</p>`)
                     }
                 }
             })
@@ -346,10 +349,11 @@
 
         $("#reply_option").on("change", function () {
             let option = $("#reply_option option:selected").val();
+            
 
             if (option == "text"){
                 $("#reply_field").html(` <label for="">Text</label>
-                <input name="reply_mes" type="text" class="form-control" id="simpleFormNum">`);
+                <textarea name="reply_mes" cols="30" rows="5" type="text" class="form-control" id="simpleFormNum">`);
             }
             else if (option == "catalogue"){
                 $("#reply_field").html(` <label for="">Upload File</label>

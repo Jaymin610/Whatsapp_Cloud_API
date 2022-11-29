@@ -7,6 +7,7 @@ urlpatterns = [
     path('', views.login, name='login'),
     path('send_SMS', views.send_SMS, name='send_SMS'),
     path('send_Template', views.send_Template, name='send_Template'),
+    path('dynamicTemplate', views.send_dynamic_template, name='send_dynamic_template'),
     path('register/', views.register, name='register'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('addCamp/', views.addCamp, name='addCamp'),
@@ -64,6 +65,9 @@ urlpatterns = [
     path('what_gui', views.what_gui, name='what_gui'),
     path('chat_msg', views.chat_msg, name='chat_msg'),
     path('testgui', views.testgui, name='testgui'),
-    path('chat_token', views.chat_token, name='chat_token'),
+    path('createTemp', views.createTemp, name='createTemp'),
+    path('fetch_New', views.fetch_New, name='fetch_New'),
+    path('getMatchTemp', views.getMatchTemp, name='getMatchTemp'),
+    path('changeHorF', views.ChangeHeaderorFooter, name='ChangeHeaderorFooter'),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

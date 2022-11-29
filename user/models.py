@@ -96,6 +96,8 @@ class WA_MSG_Provider(models.Model):
     token = models.CharField(max_length=255, default="")
     business_id = models.CharField(max_length=255, null=True, blank=True)
     user = models.ForeignKey(User1, on_delete=models.CASCADE, null=True)
+    temp_header = models.CharField(max_length=100, blank=True)
+    temp_footer = models.CharField(max_length=100, blank=True)
 
 
 class MessageLog(models.Model):
@@ -139,6 +141,7 @@ class OutBox(models.Model):
     user = models.ForeignKey(User1, on_delete=models.CASCADE, null=True)
     to_number = models.CharField(max_length=15, null=True)
     message = models.CharField(max_length=1000, null=True, blank=True)
+    variables = models.CharField(max_length=500, null=True)
     send_time = models.DateTimeField(null=True)
     reply_number = models.CharField(max_length=100)
     msg_id = models.CharField(max_length=255, blank=True, null=True)
@@ -168,6 +171,19 @@ class Templates(models.Model):
     status = models.CharField(max_length=100, blank=True)
     med_id = models.CharField(max_length=255, null=True, blank=True)
     variables = models.CharField(max_length=255, null=True, blank=True)
+
+
+class New_Templates(models.Model):
+    user = models.ForeignKey(User1, on_delete=models.CASCADE, null=True)
+    message_provider = models.ForeignKey(WA_MSG_Provider, on_delete=models.CASCADE, null=True)
+    temp_name = models.CharField(max_length=100, null=True, blank=True)
+    text_msg = models.CharField(max_length=1000, null=True, blank=True)
+    text_converted = models.CharField(max_length=1000, null=True, blank=True)
+    lang_code = models.CharField(max_length=15, null=True, blank=True)
+    category = models.CharField(max_length=255, null=True, blank=True)
+    temp_id = models.CharField(max_length=200, blank=True)
+    status = models.CharField(max_length=100, blank=True)
+    
 
 
 class Conversation_Status(models.Model):

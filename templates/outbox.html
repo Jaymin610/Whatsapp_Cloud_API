@@ -164,6 +164,9 @@
                                                     style="width: 180.863px;">Message</th>
                                                 <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
                                                     colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;">Variables</th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
                                                     style="width: 180.863px;">Send Time</th>
                                                 <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
                                                     colspan="1" aria-label="Title: activate to sort column ascending"
@@ -186,9 +189,9 @@
                                                 <td class="sorting_1"><input type="checkbox" name="row-check" id="{{ c.id }}"></td>
                                                 <td class="sorting_1">{{ c.to_number }}</td>
                                                 <td class="sorting_1">{{ c.message }}</td>
+                                                <td class="sorting_1">{{ c.variables }}</td>
                                                 <td class="sorting_1">{{ c.send_time }}</td>
                                                 <td class="sorting_1">{{ c.reply_number }}</td>
-                                                <!-- <td class="sorting_1">{{ c.msg_id }}</td> -->
                                                 <td class="sorting_1"> <img src='../static/assets/img/{{c.status}}.png' width="20%" height="20%" alt=""> </td>
                                                     <!-- /startCamp?id={{ c.id }} <i class="fa fa-check"></i>-->
                                                 <td><button type="button" onclick="addReqRes(this)" class="btn btn-round btn-warning txt-toggle" data-toggle="modal" data-target="#exampleModalCenter2"> Show </button><p id="req" class="hide-text" style="display: none;">{{ c.request }}<p><p id="res" class="hide-text" style="display: none;">{{ c.response }}<p></p></td>

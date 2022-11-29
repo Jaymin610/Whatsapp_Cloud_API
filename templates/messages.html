@@ -199,10 +199,10 @@
                                                 <td class="sorting_1">{{ c.reply }}</td>
                                                 <td class="sorting_1"><p>{{ c.reply_number }}<p></td>
                                                 <td class="sorting_1"> <img src='../static/assets/img/{{c.status}}.png' width="20%" height="20%" alt=""> </td>
-                                                <td><a href="/send_message_panel?id={{c.id}}"> <button name="{{ c.id }}" type="button" class="btn btn-round btn-primary"> Reply </button></a><p></p></td>
-                                                <td><a href="/submessage_panel?id={{c.id}}"> <button name="{{ c.id }}" type="button" class="btn btn-round btn-primary"> Sub Message </button></a><p></p></td>
-                                                <td><button type="button" onclick="addReqRes(this)" class="btn btn-round btn-warning txt-toggle" data-toggle="modal" data-target="#exampleModalCenter2"> Show </button><p id="req" class="hide-text" style="display: none;">{{ c.request }}<p><p id="res" class="hide-text" style="display: none;">{{ c.response }}<p></p></td>
-                                                <td><a href="/stopBot?user={{c.sender_number}}&provider={{ c.reply_number }}" class="btn btn-round btn-danger">Stop Bot</button></td>
+                                                <td class="sorting_1"><a href="/send_message_panel?id={{c.id}}"> <button name="{{ c.id }}" type="button" class="btn btn-round btn-primary"> Reply </button></a><p></p></td>
+                                                <td class="sorting_1"><a href="/submessage_panel?id={{c.id}}"> <button name="{{ c.id }}" type="button" class="btn btn-round btn-primary"> Sub Message </button></a><p></p></td>
+                                                <td class="sorting_1"><button type="button" onclick="addReqRes(this)" class="btn btn-round btn-warning txt-toggle" data-toggle="modal" data-target="#exampleModalCenter2"> Show </button><p id="req" class="hide-text" style="display: none;">{{ c.request }}<p><p id="res" class="hide-text" style="display: none;">{{ c.response }}<p></p></td>
+                                                <td class="sorting_1"><a href="/stopBot?user={{c.sender_number}}&provider={{ c.reply_number }}" class="btn btn-round btn-danger">Stop Bot</button></td>
                                                 <!-- {% if c.status == 'Sent' %}<i class="fa fa-check"> {% elif c.status == 'delivered' %}<i class="fa fa-double-check"> {% elif c.status == 'read' %} read {% endif %} -->
                                                     
                                             </tr>
