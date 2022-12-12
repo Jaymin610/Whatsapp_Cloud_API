@@ -220,9 +220,10 @@
                 "crossDomain": true,
                 url: url,
                 type: 'GET',
-                success: function(res) { 
-                    if (res["alert"]){
-                        alert(res['alert']);
+                success: function(res) {
+                    console.log(res.alert) 
+                    if (res.alert){
+                        alert(res.alert.error.message);
                     }
                     else{location.reload();}
                 }
@@ -248,11 +249,14 @@
                                                 <td class="sorting_1">${ v.temp_id }</td>
                                                 <td class="sorting_1">${ v.temp_name }</td>
                                                 <td class="sorting_1">${ v.lang_code }</td>
-                                                <td class="sorting_1"><p>${ v.is_media }<p></td>
                                                 <td class="sorting_1"><p>${ v.status }<p></td>
-                                                <td>`
-                        if (v.is_media){load+=`<button name="${ i }" type="button" class="btn btn-round btn-primary strt"> Upload </button></td></tr>`}
-                        else{load+='</td></tr>'}
+                                                `
+                        if (v.med_id){load+=`<td class="sorting_1"><p> <img src='../static/assets/img/Sent.png' width="20%" height="20%" alt=""> <p></td>`}
+                        else{load+=`<td class="sorting_1"></td>`}
+                        if (v.is_media){load+=`<td class="sorting_1"><button onclick="upload(this)" id="${ v.temp_id }" type="button" class="btn btn-primary upload" data-toggle="modal" data-target="#exampleModalCenter">
+                                            <i class="fa fa-upload"></i> 
+                                            </button></td></tr>`}
+                        else{load+='<td class="sorting_1"></td></tr>'}
                         $('tbody').append(load)
                     });
                 }

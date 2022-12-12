@@ -94,6 +94,9 @@ DATABASES = {
         'PASSWORD': '',
         'HOST': 'localhost',
         'PORT': '3306',
+        'OPTIONS': {
+           "init_command": "SET GLOBAL max_connections = 1000",
+    }
     }
 }
 

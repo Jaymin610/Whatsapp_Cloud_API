@@ -126,7 +126,13 @@
             alt="profile-pic">
           <div class="message-box-wrapper">
             <div class="message-box">
+              {% if s1.type == "img" %}
+              <img src="{{s1.reply}}" alt="" srcset="">
+              {% else %}
               {{s1.reply}}
+              {% endif %}
+              
+              
             </div>
             <span>{{s1.send_time}}</span>
           </div>

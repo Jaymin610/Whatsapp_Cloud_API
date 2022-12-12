@@ -58,11 +58,11 @@ def send_SMS(request):
     # After First time
     if time_check:
         lat_entry = time_check[len(time_check) - 1]
-        this = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5)
-        if lat_entry.received_time and ((this - lat_entry.received_time).total_seconds() / 3600) < 168 and lat_entry.conversation_status == "Stopped":
+        
+        if lat_entry.received_time and lat_entry.conversation_status == "Stopped":
             return JsonResponse({"message": "Your messages are blocked by user"})
         else:
-            if (not lat_entry.received_time) or  (((this - lat_entry.received_time).total_seconds() / 3600) > 24):
+            if (not lat_entry.received_time) or  (lat_entry.conversation_status == "Pending"):
                 t = Templates.objects.get(temp_name=msg_provider.template, lang_code=msg_provider.lang,
                                           message_provider_id=wmp.id)
                 print("Working Properly")
@@ -113,60 +113,60 @@ def send_SMS(request):
                 response = requests.request("POST", url_data.message_API, headers=url_data.header, data=payload)
                 try:
                     msgid = json.loads(response.text)['messages'][0]['id']
-                    OutBox.objects.create(message=msg_provider.template,
-                                          send_time=datetime.datetime.now(
-                                              pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
-                                              hours=5.5),
-                                          reply_number=wmp.provider_name, status="sent", request=url_data.message_API,
-                                          response=response.text, user_id=wmp.user_id, to_number=to, msg_id=msgid)
-                    OutBox.objects.create(message=text,
-                                          send_time=datetime.datetime.now(
-                                              pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
-                                              hours=5.5),
-                                          reply_number=wmp.provider_name, status="in_queue", user_id=wmp.user_id,
-                                          to_number=to)
-                    con_stat = Conversation_Status.objects.get(to=to, provider=wmp.provider_name)
-                    con_stat.inbox_msg = ""
-                    con_stat.template = msg_provider.template
-                    con_stat.send_time = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
-                        hours=5.5)
-                    con_stat.received_time = None
-                    con_stat.conversation_status = "Pending"
-                    con_stat.save()
+                    status = "sent"
                 except KeyError:
-                    pass
+                    msgid, status = None, None
+                OutBox.objects.create(message=msg_provider.template,
+                                        send_time=datetime.datetime.now(
+                                            pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+                                            hours=5.5),
+                                        reply_number=wmp.provider_name, status=status, request=url_data.message_API,
+                                        response=response.text, user_id=wmp.user_id, to_number=to, msg_id=msgid)
+                OutBox.objects.create(message=text,
+                                        send_time=datetime.datetime.now(
+                                            pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+                                            hours=5.5),
+                                        reply_number=wmp.provider_name, status="in_queue", user_id=wmp.user_id,
+                                        to_number=to)
+                con_stat = Conversation_Status.objects.get(to=to, provider=wmp.provider_name)
+                con_stat.inbox_msg = ""
+                con_stat.template = msg_provider.template
+                con_stat.send_time = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5)
+                con_stat.received_time = None
+                con_stat.conversation_status = "Pending"
+                con_stat.save()
 
             else:
-                if lat_entry.inbox_msg == "No" or lat_entry.inbox_msg == "":
-                    OutBox.objects.create(message=text,
-                                          send_time=datetime.datetime.now(
-                                              pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
-                                              hours=5.5),
-                                          reply_number=wmp.provider_name, status="in_queue", user_id=wmp.user_id,
-                                          to_number=to)
-                    return JsonResponse({"message": "Message added to queue"})
-                else:
-                    payload = json.dumps({
-                        "messaging_product": "whatsapp",
-                        "recipient_type": "individual",
-                        "to": f"{to}",
-                        "type": "text",
-                        "text": {
-                            "preview_url": False,
-                            "body": f"{text}"
-                        }
-                    })
-                    response = requests.request("POST", url_data.message_API, headers=url_data.header, data=payload)
-                    try:
-                        msgid = json.loads(response.text)['messages'][0]['id']
-                    except KeyError:
-                        msgid = ""
-                    OutBox.objects.create(message=text,
-                                          send_time=datetime.datetime.now(
-                                              pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
-                                              hours=5.5), reply_number=wmp.provider_name,
-                                          status="sent", request=url_data.message_API, response=response.text,
-                                          user_id=wmp.user_id, to_number=to, msg_id=msgid)
+                # if lat_entry.inbox_msg == "No" or lat_entry.inbox_msg == "":
+                #     OutBox.objects.create(message=text,
+                #                           send_time=datetime.datetime.now(
+                #                               pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+                #                               hours=5.5),
+                #                           reply_number=wmp.provider_name, status="in_queue", user_id=wmp.user_id,
+                #                           to_number=to)
+                #     return JsonResponse({"message": "Message added to queue"})
+                # else:
+                payload = json.dumps({
+                    "messaging_product": "whatsapp",
+                    "recipient_type": "individual",
+                    "to": f"{to}",
+                    "type": "text",
+                    "text": {
+                        "preview_url": False,
+                        "body": f"{text}"
+                    }
+                })
+                response = requests.request("POST", url_data.message_API, headers=url_data.header, data=payload)
+                try:
+                    msgid = json.loads(response.text)['messages'][0]['id']
+                except KeyError:
+                    msgid = ""
+                OutBox.objects.create(message=text,
+                                        send_time=datetime.datetime.now(
+                                            pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+                                            hours=5.5), reply_number=wmp.provider_name,
+                                        status="sent", request=url_data.message_API, response=response.text,
+                                        user_id=wmp.user_id, to_number=to, msg_id=msgid)
     # First Time API call
     else:
         t = Templates.objects.get(temp_name=msg_provider.template, lang_code=msg_provider.lang,
@@ -319,70 +319,489 @@ def send_Template(request):
     else:
         return JsonResponse({"Message": "Required all params"})
 
+def send_matched_temps(token_data, to, msg):
+    provider = WA_MSG_Provider.objects.get(id=token_data.message_provider_id)
+    msg = msg.replace("  ", " ").replace("\n","")
 
-def send_dynamic_template(request):
+    api = Voice_API.objects.get(whatsapp_name=provider.provider_name)
+    all_temp = New_Templates.objects.filter(message_provider_id=token_data.message_provider_id)
+    for a in all_temp:
+        
+        data = a.text_msg.replace("{#var#}", "(.*)")
+        p = re.compile(data)
+        
+        variables = p.findall(msg+ " Thank you")
+        
+        if variables:
+            print(data)
+            print(msg+ " Thank you")
+            print(variables)
+            print(a.temp_name, a.lang_code)
+            payload = {
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": f"{to}",
+            "type": "template",
+            "template": {
+                "name": f"{a.temp_name}",
+                "language": {
+                    "code": f"{a.lang_code}"
+                },
+                "components": [
+
+                    ]
+                }
+            }
+            
+            payload["template"]["components"].append({
+                "type": "body",
+                "parameters": []
+            })
+
+            print(variables)
+            to_save  = {}
+            i = 1
+            if type(variables[0]) is str:
+                to_roam = variables
+            elif type(variables[0]) is tuple:
+                to_roam = variables[0]
+            
+            for v in to_roam:
+                payload["template"]["components"][0]["parameters"].append({"type": "text", "text": f"{v}"})
+                to_save[i] = v
+                i += 1
+            payload = json.dumps(payload)
+            print(payload)
+            response = requests.request("POST", api.message_API, headers=api.header, data=payload)
+            print(response.text)
+            try:
+                msgid = json.loads(response.text)['messages'][0]['id']
+                OutBox.objects.create(message=a.temp_name,
+                        send_time=datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+                            hours=5.5),
+                        reply_number=provider.provider_name, status="sent", request=api.message_API,
+                        response=response.text, user_id=provider.user_id, to_number=to, msg_id=msgid, variables=to_save)
+            except KeyError:
+                pass
+            
+            return json.loads(response.text)
+    MissMatched_Temps.objects.create(text_msg=msg, provider_id=token_data.message_provider_id, usr_id=token_data.user_id)
+    return {"message":"Data not found"}
+
+
+def getMisMatchedData(request):
+    data = MissMatched_Temps.objects.filter(usr_id=request.COOKIES['id'])
+    return render(request, "MissMatched.html", {"data":data})
+
+def check_matched(token_data, to, msg):
+    provider = WA_MSG_Provider.objects.get(id=token_data.message_provider_id)
+
+    api = Voice_API.objects.get(whatsapp_name=provider.provider_name)
+    all_temp = New_Templates.objects.filter(message_provider_id=token_data.message_provider_id)
+    for a in all_temp:
+        
+        data = regexpstring(a.text_msg, 1).replace("{#var#}", "(.*)")
+        p = re.compile(data)
+        
+        variables = p.findall(msg)
+        # print(data)
+        # print(msg)
+        
+        if variables:
+            # print(data)
+            # print(msg)
+            # print(variables)
+            print(a.temp_name, a.lang_code)
+            payload = {
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": f"{to}",
+            "type": "template",
+            "template": {
+                "name": f"{a.temp_name}",
+                "language": {
+                    "code": f"{a.lang_code}"
+                },
+                "components": [
+
+                    ]
+                }
+            }
+            
+            payload["template"]["components"].append({
+                "type": "body",
+                "parameters": []
+            })
+
+            to_save  = {}
+            i = 1
+            if type(variables[0]) is str:
+                to_roam = variables
+            elif type(variables[0]) is tuple:
+                to_roam = variables[0]
+            
+            for v in to_roam:
+                payload["template"]["components"][0]["parameters"].append({"type": "text", "text": f"{v}"})
+                to_save[i] = v
+                i += 1
+            payload = json.dumps(payload)
+            print(payload)
+            response = requests.request("POST", api.message_API, headers=api.header, data=payload)
+            print(response.text)
+            try:
+                msgid = json.loads(response.text)['messages'][0]['id']
+                status = "sent"
+            except KeyError:
+                msgid = None
+                status = None
+            OutBox.objects.create(message=a.temp_name,
+                        send_time=datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+                            hours=5.5),
+                        reply_number=provider.provider_name, status=status, request=api.message_API,
+                        response=response.text, user_id=provider.user_id, to_number=to, msg_id=msgid, variables=to_save)
+            return json.loads(response.text)
+    MissMatched_Temps.objects.create(text_msg=msg, provider_id=token_data.message_provider_id, usr_id=token_data.user_id)
+    return {"message":"Data not found"}
+
+def send_check(request):
     to = request.GET.get('to')
     msg = request.GET.get('msg')
     token = request.GET.get('token')
     if to != "" and msg != "" and token != "":
         if len(to) == 10:
             to = "91" + to
-
+        
         token_data = Developers_token.objects.get(u_token=token)
-        provider = WA_MSG_Provider.objects.get(id=token_data.message_provider_id)
+        response = check_matched(token_data, to=to, msg=regexpstring(msg, 0))
+        return JsonResponse(response)
 
-        api = Voice_API.objects.get(whatsapp_name=provider.provider_name)
-        all_temp = New_Templates.objects.filter(message_provider_id=token_data.message_provider_id)
-        for a in all_temp:
-            data = a.text_msg.replace("{#var#}", "(.*)")
-            p = re.compile(data)
-            variables = p.findall(msg)
-            if variables:
-                payload = {
+def send_dynamic_template(request):
+    to = request.GET.get('to')
+    msg = request.GET.get('msg')
+    msg = msg.replace("  ", " ").replace("   ", " ")
+    print(msg+" Thank you")
+    token = request.GET.get('token')
+    if to != "" and msg != "" and token != "":
+        if len(to) == 10:
+            to = "91" + to
+        
+        token_data = Developers_token.objects.get(u_token=token)
+        msg_state = SMS_Settings.objects.get(usr_id=token_data.user_id)
+        print(msg_state.selective)
+
+        if msg_state.selective:
+            if "," not in msg_state.keywords:
+                to_check = msg_state.keywords.replace("['","").replace("']","").split(",")
+            
+            else:
+                ar = msg_state.keywords.split(",")
+                to_check = [x.replace("[","").replace("]","").replace("'","").strip() for x in ar]
+            print(to_check)
+            
+            for i in to_check:
+                if i in msg:
+                    print("Matched")
+                    if msg_state.sel_whatsapp and msg_state.sel_sms:
+                        response2 = send_matched_temps(token_data, to=to, msg=request.GET.get('msg'))
+                        url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
+                        s_response = requests.get(url).text
+                        SMS_OutBox.objects.create(message=msg,
+                        send_time=datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5),
+                        status="sent", request=url,response=s_response, user_id=token_data.user_id, to_number=to)
+                        return JsonResponse({"SMS":s_response, "whatsapp":response2}, safe=False)
+                    if msg_state.sel_whatsapp:
+                        response2 = send_matched_temps(token_data, to=to, msg=request.GET.get('msg'))
+                        s_response = ""
+                        if msg_state.sms:
+                            url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
+                            s_response = requests.get(url).text
+                            SMS_OutBox.objects.create(message=msg,
+                            send_time=datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5),
+                            status="sent", request=url,response=s_response, user_id=token_data.user_id, to_number=to)
+                        return JsonResponse({"whatsapp":response2, "SMS":s_response}, safe=False)
+                        
+                    if msg_state.sel_sms:
+
+                        url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
+                        s_response = requests.get(url).text
+                        response2 = ""
+                        SMS_OutBox.objects.create(message=msg,
+                            send_time=datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5),
+                            status="sent", request=url,response=s_response, user_id=token_data.user_id, to_number=to)
+                        if msg_state.whatsapp:
+                            response2 = send_matched_temps(token_data, to=to, msg=request.GET.get('msg'))
+                        return JsonResponse({"SMS":s_response, "whatsapp":response2}, safe=False)
+            else:
+                pass
+
+        if msg_state.both or (msg_state.sms and msg_state.whatsapp):
+            url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
+            s_response = requests.get(url).text
+            OutBox.objects.create(message=msg,
+                        send_time=datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+                            hours=5.5),
+                        reply_number="SMS_url", status="sent", request=url,
+                        response=s_response, user_id=token_data.user_id, to_number=to)
+            w_response = send_matched_temps(token_data, to=to, msg=request.GET.get('msg'))
+            return JsonResponse({"sms":s_response, "whatsapp":w_response}, safe=False)
+
+        elif msg_state.sms:
+            url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
+            s_response = requests.get(url).text
+            SMS_OutBox.objects.create(message=msg,
+                        send_time=datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5),
+                        status="sent", request=url,response=s_response, user_id=token_data.user_id, to_number=to)
+            return JsonResponse(s_response, safe=False)
+
+        elif msg_state.whatsapp:
+            response = send_matched_temps(token_data, to=to, msg=request.GET.get('msg'))
+            return JsonResponse(response)
+
+        if (not msg_state.both) and (not msg_state.sms) and (not msg_state.whatsapp) and (not msg_state.selective):
+            return JsonResponse({"message":"Please select options in settings"})
+        return HttpResponse("Send")
+
+# all_u = User1.objects.all()
+# for u in all_u:
+#     if not SMS_Settings.objects.filter(usr_id=u.id):
+#         SMS_Settings.objects.create(whatsapp=True, usr_id=u.id)
+
+@csrf_exempt
+def send_media_SMS(request):
+    furl = ""
+    
+    if request.method == "POST":
+        to = request.POST['to']
+        text = request.POST['text']
+        token = request.POST['token']
+        file = request.FILES['media_file']
+
+        token_obj = Developers_token.objects.get(u_token=token)
+        user_id = token_obj.user_id
+
+        user_obj = User1.objects.get(pk=user_id)
+        wa_obj = WA_MSG_Provider.objects.get(pk=token_obj.message_provider_id)
+
+        object_path = settings.MEDIA_ROOT+ "/media_msg/" + user_obj.user_name + "/" + wa_obj.provider_name
+        if not os.path.exists(object_path):
+            os.mkdir(settings.MEDIA_ROOT+ "/media_msg/" + user_obj.user_name)
+            os.mkdir(settings.MEDIA_ROOT+ "/media_msg/" + user_obj.user_name + "/" + wa_obj.provider_name)
+
+        if file:
+            fss = FileSystemStorage()
+            file_s = fss.save(object_path+"/"+file.name, file)
+            furl = fss.url(file_s)
+            furl = "http://wotsapp-campaign.bonrix.in:8000" + furl
+            print(furl.split(".")[-1])
+    else:
+        to = request.GET['to']
+        text = request.GET['text']
+        token = request.GET['token']
+        furl = request.GET['media_file']
+        token_obj = Developers_token.objects.get(u_token=token)
+        user_id = token_obj.user_id
+        print(furl)
+    
+    
+    response = ""
+    if len(to) == 10:
+        to = "91" + to
+
+    try:
+        msg_provider = Developers_token.objects.get(u_token=token)
+    except:
+        return JsonResponse({"message": "Parameters are not valid."})
+
+    wmp = WA_MSG_Provider.objects.get(id=msg_provider.message_provider_id)
+    url_data = Voice_API.objects.get(whatsapp_name=wmp.provider_name)
+
+    time_check = Conversation_Status.objects.filter(to=to, provider=wmp.provider_name)
+    print(time_check)
+    # After First time
+    if time_check:
+        lat_entry = time_check[len(time_check) - 1]
+        
+        if lat_entry.received_time and lat_entry.conversation_status == "Stopped":
+            return JsonResponse({"message": "Your messages are blocked by user"})
+        else:
+            if (not lat_entry.received_time) or  (lat_entry.conversation_status == "Pending"):
+                t = Templates.objects.get(temp_name=msg_provider.template, lang_code=msg_provider.lang,
+                                          message_provider_id=wmp.id)
+                print("Working Properly")
+                if t.is_media:
+                    if t.med_id is None:
+                        return JsonResponse({"message": "Please Upload media content first."})
+                    else:
+                        js = json.loads(t.med_id)
+                        payload = json.dumps({
+                            "messaging_product": "whatsapp",
+                            "recipient_type": "individual",
+                            "to": f"{to}",
+                            "type": "template",
+                            "template": {
+                                "name": f"{msg_provider.template}",
+                                "language": {
+                                    "code": f"{msg_provider.lang}"
+                                },
+                                "components": [
+                                    {
+                                        "type": "header",
+                                        "parameters": [
+                                            {
+                                                "type": "image",
+                                                "image": {"link": f"{js['link']}"} if js["type"] == "what" else {
+                                                    "id": f"{js['med_obj']}"}
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        })
+                else:
+                    payload = json.dumps({
+                        "messaging_product": "whatsapp",
+                        "recipient_type": "individual",
+                        "to": f"{to}",
+                        "type": "template",
+                        "template": {
+                            "name": f"{msg_provider.template}",
+                            "language": {
+                                "code": f"{msg_provider.lang}"
+                            },
+
+                        }
+                    })
+
+                response = requests.request("POST", url_data.message_API, headers=url_data.header, data=payload)
+                try:
+                    msgid = json.loads(response.text)['messages'][0]['id']
+                    OutBox.objects.create(message=msg_provider.template,
+                                          send_time=datetime.datetime.now(
+                                              pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+                                              hours=5.5),
+                                          reply_number=wmp.provider_name, status="sent", request=url_data.message_API,
+                                          response=response.text, user_id=wmp.user_id, to_number=to, msg_id=msgid)
+                    OutBox.objects.create(message=text,
+                                          send_time=datetime.datetime.now(
+                                              pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+                                              hours=5.5),
+                                          reply_number=wmp.provider_name, status="in_queue", user_id=wmp.user_id,
+                                          to_number=to, media_url=furl)
+                    con_stat = Conversation_Status.objects.get(to=to, provider=wmp.provider_name)
+                    con_stat.inbox_msg = ""
+                    con_stat.template = msg_provider.template
+                    con_stat.send_time = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+                        hours=5.5)
+                    con_stat.received_time = None
+                    con_stat.conversation_status = "Pending"
+                    con_stat.save()
+                except KeyError:
+                    pass
+
+            else:
+                # if lat_entry.inbox_msg == "No" or lat_entry.inbox_msg == "":
+                #     OutBox.objects.create(message=text,
+                #                           send_time=datetime.datetime.now(
+                #                               pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+                #                               hours=5.5),
+                #                           reply_number=wmp.provider_name, status="in_queue", user_id=wmp.user_id,
+                #                           to_number=to)
+                #     return JsonResponse({"message": "Message added to queue"})
+                # else:
+                if furl.split(".")[-1] in ['jpg', 'jpeg']:
+                    con_type = "image"
+                elif furl.split(".")[-1] in ['docx', 'pdf']:
+                    con_type = "document"
+
+                payload = json.dumps({
+                    "messaging_product": "whatsapp",
+                    "recipient_type": "individual",
+                    "to": f"{to}",
+                    "type": con_type,
+                    con_type: {
+                        "link": furl,
+                        "caption": text
+                    }
+                })
+                response = requests.request("POST", url_data.message_API, headers=url_data.header, data=payload)
+                try:
+                    msgid = json.loads(response.text)['messages'][0]['id']
+                except KeyError:
+                    msgid = ""
+                OutBox.objects.create(message=text,
+                                        send_time=datetime.datetime.now(
+                                            pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+                                            hours=5.5), reply_number=wmp.provider_name,
+                                        status="sent", request=url_data.message_API, response=response.text,
+                                        user_id=wmp.user_id, to_number=to, msg_id=msgid)
+    # First Time API call
+    else:
+        t = Templates.objects.get(temp_name=msg_provider.template, lang_code=msg_provider.lang,
+                                  message_provider_id=wmp.id)
+        if t.is_media:
+            if t.med_id is None:
+                return JsonResponse({"message": "Please Upload media content first."})
+            else:
+                js = json.loads(t.med_id)
+                payload = json.dumps({
+                    "messaging_product": "whatsapp",
+                    "recipient_type": "individual",
+                    "to": f"{to}",
+                    "type": "template",
+                    "template": {
+                        "name": f"{msg_provider.template}",
+                        "language": {
+                            "code": f"{msg_provider.lang}"
+                        },
+                        "components": [
+                            {
+                                "type": "header",
+                                "parameters": [
+                                    {
+                                        "type": "image",
+                                        "image": {"link": f"{js['link']}"} if js["type"] == "what" else {
+                                            "id": f"{js['med_obj']}"}
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                })
+        else:
+            payload = json.dumps({
                 "messaging_product": "whatsapp",
                 "recipient_type": "individual",
                 "to": f"{to}",
                 "type": "template",
                 "template": {
-                    "name": f"{a.temp_name}",
+                    "name": f"{msg_provider.template}",
                     "language": {
-                        "code": f"{a.lang_code}"
+                        "code": f"{msg_provider.lang}"
                     },
-                    "components": [
 
-                        ]
-                    }
                 }
-                
-                payload["template"]["components"].append({
-                    "type": "body",
-                    "parameters": []
-                })
+            })
 
-                print(variables)
-                to_save  = {}
-                i = 1
-                for v in variables[0]:
-                    payload["template"]["components"][0]["parameters"].append({"type": "text", "text": f"{v}"})
-                    to_save[i] = v
-                    i += 1
-                payload = json.dumps(payload)
-                response = requests.request("POST", api.message_API, headers=api.header, data=payload)
-                print(response.text)
-                try:
-                    msgid = json.loads(response.text)['messages'][0]['id']
-                    OutBox.objects.create(message=a.temp_name,
+        response = requests.request("POST", url_data.message_API, headers=url_data.header, data=payload)
+        try:
+            msgid = json.loads(response.text)['messages'][0]['id']
+        except KeyError:
+            msgid = ""
+        OutBox.objects.create(message=msg_provider.template,
                               send_time=datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
                                   hours=5.5),
-                              reply_number=provider.provider_name, status="sent", request=api.message_API,
-                              response=response.text, user_id=provider.user_id, to_number=to, msg_id=msgid, variables=to_save)
-                except KeyError:
-                    pass
-                
-                return JsonResponse(json.loads(response.text), safe=False)
-            else:
-                continue
-        return JsonResponse({"message":"Data not found"})
+                              reply_number=wmp.provider_name, status="sent", request=url_data.message_API,
+                              response=response.text, user_id=wmp.user_id, to_number=to, msg_id=msgid)
+        OutBox.objects.create(message=text,
+                              send_time=datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+                                  hours=5.5),
+                              reply_number=wmp.provider_name, status="in_queue", user_id=wmp.user_id, to_number=to, media_url=furl)
+        Conversation_Status.objects.create(to=to, provider=wmp.provider_name, template=msg_provider.template,
+                                           send_time=datetime.datetime.now(
+                                               pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+                                               hours=5.5), user_id_id=user_id)
+
+    return JsonResponse(json.loads(response.text))
 
 
 def dashboard(request):
@@ -392,7 +811,11 @@ def dashboard(request):
             u_name = request.COOKIES['uname']
             data = Campaign.objects.filter(user_key_id=u_id)
             advData = AdvanceCampaign.objects.filter(user_key_id=u_id)
-            return render(request, "dashboard.html", {'u_name': u_name, 'data': data, 'advData': advData})
+            try:
+                validity = User1.objects.get(id=u_id).validity - datetime.date.today()
+            except:
+                validity = ""
+            return render(request, "dashboard.html", {'u_name': u_name, 'data': data, 'advData': advData, 'validity':validity})
     else:
         return redirect('/')
 
@@ -515,23 +938,26 @@ def record(request):
 
 
 def pendingAll(request):
-    campID = request.COOKIES["camp_id"]
-    if request.GET['name'] == "advance":
-        pending = Advance_Data.objects.filter(recordID_id=campID, status="Success")
-        for p in pending:
-            p.status = "Pending"
-            p.save()
-        return redirect(f"/advanceRecord?unique={campID}")
-    elif request.GET['name'] == "normal":
-        pending = Data_Summary.objects.filter(recordID_id=campID, status="Success")
-        for p in pending:
-            p.status = "Pending"
-            p.save()
-        return redirect(f"/composerList/?unique={campID}")
+    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        campID = request.COOKIES["camp_id"]
+        if request.GET['name'] == "advance":
+            pending = Advance_Data.objects.filter(recordID_id=campID, status="Success")
+            for p in pending:
+                p.status = "Pending"
+                p.save()
+            return redirect(f"/advanceRecord?unique={campID}")
+        elif request.GET['name'] == "normal":
+            pending = Data_Summary.objects.filter(recordID_id=campID, status="Success")
+            for p in pending:
+                p.status = "Pending"
+                p.save()
+            return redirect(f"/composerList/?unique={campID}")
 
 
 def deleteAll(request):
+    print("...........................Delete")
     name = request.GET.get('name')
+    print(name)
     if name == "Camp":
         Campaign.objects.filter(user_key_id=request.COOKIES['id']).delete()
         return redirect("/dashboard")
@@ -547,6 +973,7 @@ def deleteAll(request):
         return redirect("/dashboard")
     if name == "advRec":
         camp = request.COOKIES['camp_id']
+        print(camp)
         Advance_Data.objects.filter(recordID_id=camp).delete()
         campaign = AdvanceCampaign.objects.get(id=camp)
         campaign.record_count = 0
@@ -564,85 +991,87 @@ def deleteAll(request):
 
 
 def delete(request):
-    name = request.GET.get('name')
-    if name == 'Camp':
-        campid = request.GET.get('cid')
-        print(Campaign.objects.get(id=campid).delete())
-        return redirect("/dashboard")
-    
-    if name == 'Tok':
-        tok_id = request.GET.get('tid')
-        print(tok_id)
-        print(Developers_token.objects.get(message_provider_id=tok_id).delete())
-        return redirect("/generateToken/")
-    
-    if name == "auto_rep":
-        rep_id = request.GET['rid']
-        bot_auto = Bot_Auto_Reply.objects.get(pk=rep_id)
-        if "catalogue" in bot_auto.reply_message:
-            catlist = bot_auto.reply_message['catalogue']
-            for c in catlist:
-                fname = c["link"].split("/")[6]
-                provider = c["link"].split("/")[5]
-            try: 
-                pth = r"C:/Whatsapp_Cloud_API_Server/media_objects/UnzippedFiles" + f"/{provider}/{fname}" 
-                pth = pathlib.Path(pth)
-                
-                for sub in pth.iterdir() :
-                        sub.unlink()
+    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        name = request.GET.get('name')
+        if name == 'Camp':
+            campid = request.GET.get('cid')
+            print(Campaign.objects.get(id=campid).delete())
+            return redirect("/dashboard")
+        
+        if name == 'Tok':
+            tok_id = request.GET.get('tid')
+            print(tok_id)
+            print(Developers_token.objects.get(message_provider_id=tok_id).delete())
+            return redirect("/generateToken/")
+        
+        if name == "auto_rep":
+            rep_id = request.GET['rid']
+            bot_auto = Bot_Auto_Reply.objects.get(pk=rep_id)
+            if "catalogue" in bot_auto.reply_message:
+                catlist = bot_auto.reply_message['catalogue']
+                for c in catlist:
+                    fname = c["link"].split("/")[6]
+                    provider = c["link"].split("/")[5]
+                try: 
+                    pth = r"C:/Whatsapp_Cloud_API_Server/media_objects/UnzippedFiles" + f"/{provider}/{fname}" 
+                    pth = pathlib.Path(pth)
+                    
+                    for sub in pth.iterdir() :
+                            sub.unlink()
 
-                os.rmdir("C:\Whatsapp_Cloud_API_Server\media_objects/UnzippedFiles/"+provider+"/"+fname)
-            except Exception as e:
-                print(e)
-        bot_auto.delete()
-        messages.success(request, "Data deleted Successfully")
-        return JsonResponse({"Status":"Success"})
+                    os.rmdir("C:\Whatsapp_Cloud_API_Server\media_objects/UnzippedFiles/"+provider+"/"+fname)
+                except Exception as e:
+                    print(e)
+            bot_auto.delete()
+            messages.success(request, "Data deleted Successfully")
+            return JsonResponse({"Status":"Success"})
 
 
 @csrf_exempt
 def deleteRec(request):
-    result = json.load(request)
-    data = result['data']
-    name = result['name']
+    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        result = json.load(request)
+        data = result['data']
+        name = result['name']
 
-    if name == "record":
-        camp_id = request.COOKIES['camp_id']
-        count = Campaign.objects.get(id=camp_id)
-        n = 0
-        for id in data:
-            Data_Summary.objects.get(id=id).delete()
-            n += 1
-        count.record_count -= n
-        count.save()
-    if name == "advanceRec":
-        camp_id = request.COOKIES['camp_id']
-        count = AdvanceCampaign.objects.get(id=camp_id)
-        n = 0
-        for id in data:
-            Advance_Data.objects.get(id=id).delete()
-            n += 1
-        count.record_count -= n
-        count.save()
-    if name == 'outbox':
-        data = data
-        for id in data:
-            OutBox.objects.get(id=id).delete()
-    if name == 'inbox':
-        data = data
-        for id in data:
-            MessageLog.objects.get(id=id).delete()
-    if name == "submessage":
-        data = data
-        for id in data:
-            SubMessageLog.objects.get(id=id).delete()
-    
-    if name == "startbot":
-        CustomerBotStop.objects.filter(pk__in=data).delete()
-    
-    if name == "botSetting":
-        What_Bot.objects.filter(pk__in=data).delete()
+        if name == "record":
+            camp_id = request.COOKIES['camp_id']
+            count = Campaign.objects.get(id=camp_id)
+            n = 0
+            for id in data:
+                Data_Summary.objects.get(id=id).delete()
+                n += 1
+            count.record_count -= n
+            count.save()
+        if name == "advanceRec":
+            camp_id = request.COOKIES['camp_id']
+            count = AdvanceCampaign.objects.get(id=camp_id)
+            n = 0
+            for id in data:
+                Advance_Data.objects.get(id=id).delete()
+                n += 1
+            count.record_count -= n
+            count.save()
+        if name == 'outbox':
+            data = data
+            for id in data:
+                OutBox.objects.get(id=id).delete()
+        if name == 'inbox':
+            data = data
+            for id in data:
+                MessageLog.objects.get(id=id).delete()
+        if name == "submessage":
+            data = data
+            for id in data:
+                SubMessageLog.objects.get(id=id).delete()
+        
+        if name == "startbot":
+            CustomerBotStop.objects.filter(pk__in=data).delete()
+        
+        if name == "botSetting":
+            What_Bot.objects.filter(pk__in=data).delete()
 
-    return JsonResponse({"Name": "DeleteFunction"})
+        return JsonResponse({"Name": "DeleteFunction"})
 
 
 def show_settings(request):
@@ -898,17 +1327,18 @@ def background_process(id, mode, is_adv):
         
         user = AdvanceCampaign.objects.get(id=id).user_key_id
         for i in data:
+            print(threading.current_thread().name)
             if AdvanceCampaign.objects.get(id=id).CampaignStatus == "Start":
                 API = Voice_API.objects.get(u_ID_id=user, whatsapp_name=i.sender_name)
                 advanceSend(i, API, mode)
                 i.status = "Success"
                 i.save()
+                db.connections.close_all()
                 print(i.status)
             else:
                 print("Done")
                 break
         else:
-            print(db.close_old_connections()) 
             obj = AdvanceCampaign.objects.get(id=id)
             obj.CampaignStatus = "Stop"
             obj.save()
@@ -916,17 +1346,18 @@ def background_process(id, mode, is_adv):
         data = Data_Summary.objects.filter(recordID_id=id, status="Pending")
         user = Campaign.objects.get(id=id).user_key_id
         for i in data:
+            print(threading.current_thread().name)
             if Campaign.objects.get(id=id).CampaignStatus == "Start":
                 API = Voice_API.objects.get(u_ID_id=user, whatsapp_name=i.sender_name)
                 hit_voice(i, API, mode)
                 i.status = "Success"
                 i.save()
+                db.connections.close_all()
                 print(i.status)
             else:
                 print("Done")
                 break 
         else:
-            print(db.close_old_connections())
             obj = Campaign.objects.get(id=id)
             obj.CampaignStatus = "Stop"
             obj.save()
@@ -941,7 +1372,7 @@ def start_all(request):
             obj = Campaign.objects.get(id=my_id)
             obj.CampaignStatus = "Start"
             obj.save()
-            t = threading.Thread(target=background_process, args=(my_id, mode, 0), kwargs={})
+            t = threading.Thread(target=background_process, args=(my_id, mode, 0), kwargs={}, name=obj.CampaignName)
             t.setDaemon(True)
             t.start()
             messages.info(request, "Campaign Started")
@@ -952,7 +1383,7 @@ def start_all(request):
             obj = AdvanceCampaign.objects.get(id=my_id)
             obj.CampaignStatus = "Start"
             obj.save()
-            t = threading.Thread(target=background_process, args=(my_id, mode, 1), kwargs={})
+            t = threading.Thread(target=background_process, args=(my_id, mode, 1), kwargs={}, name=obj.CampaignName)
             t.setDaemon(True)
             t.start()
             messages.info(request, "Campaign Started")
@@ -961,7 +1392,7 @@ def start_all(request):
             return redirect(url)
 
 for thread in threading.enumerate(): 
-    print("Thread working........",thread.name)
+    print("Thread working........",thread.name, thread.isDaemon() )
 
 
 
@@ -1005,7 +1436,7 @@ def preview_composer(request):
             if type == "multiple":
                 mobile = "{" + str(request.POST['col_Num']) + "}"
                 file = request.FILES.get('myfile')
-                if file.name.lower().endswith('.xlsx'):
+                if file.name.lower().endswith('.xlsx') or file.name.lower().endswith('.xls'):
                     dataset = Dataset()
                     imported_data = dataset.load(file.read(), format='xlsx')
                     my_csv_data = []
@@ -1014,6 +1445,8 @@ def preview_composer(request):
                 else:
                     data = str(file.read())
                     rows = data.split("\\r\\n")
+                    print(len(rows[1]))
+                    print(rows[1])
                     my_csv_data = rows[1].split(",")
 
                 chars = []
@@ -1485,6 +1918,7 @@ def export_selected_excel(request):
 
 
 def getExcel(request):
+    
     return selected_Ecxel_file
 
 
@@ -1508,7 +1942,7 @@ def refresh_temp(request):
             response = json.loads(response.text)
             data = response['data']
         except KeyError:
-            pass
+            return JsonResponse({"alert":response})
         api_temp_ids = set()
         temp_ids_query = Templates.objects.filter(message_provider_id=p.id).values('temp_id')
         tab_temp_id = set()
@@ -1558,8 +1992,6 @@ def receive_msg(request):
         msgid = intern[0]['id']
         status = intern[0]['status']
         t = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5)
-
-        print(rec_phone_id)
         entry = WA_MSG_Provider.objects.get(phone_id=rec_phone_id)
         CallBack_Data.objects.create(Received=data, received_time=t, user_id=entry.user_id, msg_id=msgid,
                                      msg_status=status)
@@ -1575,7 +2007,11 @@ def receive_msg(request):
         Data_Summary.objects.filter(msg_id=msgid).update(what_status=status)
         OutBox.objects.filter(msg_id=msgid).update(status=status)
         Advance_Data.objects.filter(msg_id=msgid).update(what_status=status)
-
+        
+        # for thread in threading.enumerate():
+        #     if not thread.is_alive():
+        #         thread.join()
+        #     print("Thread working........",thread.name, thread.isDaemon(), thread.is_alive())
         print(entry.provider_name, status)
         return JsonResponse({"response": "Success"})
     except KeyError:
@@ -1600,7 +2036,7 @@ def receive_msg(request):
         CallBack_Data.objects.create(Received=data, received_time=t, user_id=entry.user_id, msg_id=incom_msg_id)
         MessageLog.objects.create(sender_number=number, received_msg=message, received_time=t, is_read=True,
                                   reply_number=p_num, json=data, user_id=entry.user_id)
-        print("..............................", )
+        print("..............................", message)
         msg_log = MessageLog.objects.filter(received_msg=message, received_time=t,sender_number=number,reply_number=p_num,)
         
         check_conv = Conversation_Status.objects.filter(to=number, provider=entry.provider_name,
@@ -1611,20 +2047,39 @@ def receive_msg(request):
         
         print(check_out, check_conv)
         
-        if message.lower() == "yes" and (check_out or check_conv):
+        if (message.lower() in ["yes", "हां", "ok"]) and (check_out or check_conv):
+            print("Yes Matched Hindi")
             pend_msg = check_out
             url_data = Voice_API.objects.get(whatsapp_name=entry.provider_name)
+    
             for p in pend_msg:
-                payload = json.dumps({
-                    "messaging_product": "whatsapp",
-                    "recipient_type": "individual",
-                    "to": f"{number}",
-                    "type": "text",
-                    "text": {
-                        "preview_url": False,
-                        "body": f"{p.message}"
-                    }
-                })
+                if p.media_url:
+                    if p.media_url.split(".")[-1] in ['jpg', 'jpeg']:
+                        con_type = "image"
+                    elif p.media_url.split(".")[-1] in ['docx', 'pdf']:
+                        con_type = "document"
+
+                    payload = json.dumps({
+                        "messaging_product": "whatsapp",
+                        "recipient_type": "individual",
+                        "to": f"{number}",
+                        "type": con_type,
+                        "image": {
+                            "link": "http://wotsapp-campaign.bonrix.in:8000"+p.media_url,
+                            "caption":p.message
+                        }
+                    })
+                else:
+                    payload = json.dumps({
+                        "messaging_product": "whatsapp",
+                        "recipient_type": "individual",
+                        "to": f"{number}",
+                        "type": "text",
+                        "text": {
+                            "preview_url": False,
+                            "body": f"{p.message}"
+                        }
+                    })
                 response = requests.request("POST", url_data.message_API, headers=url_data.header, data=payload)
                 try:
                     msgid = json.loads(response.text)['messages'][0]['id']
@@ -1637,9 +2092,9 @@ def receive_msg(request):
                 p.save()
             print("Reaching")
             update_conv.update(conversation_status="Started")
-        elif message == "Yes":
+        elif message.lower() in ["yes", "हां", "ok", 'start']:
             update_conv.update(conversation_status="Started")
-        elif message == "No":
+        elif message.lower() in ["no","cancel"]:
             update_conv.update(conversation_status="Stopped")
         check_bot_exist = What_Bot.objects.filter(provider_id=entry.id)
         if check_bot_exist and (not CustomerBotStop.objects.filter(user_number=number, provider_id=entry.id)) and message.split("\n")[0].lower() not in ["no",""] :
@@ -1674,19 +2129,20 @@ def submessage_panel(request):
 
 @csrf_exempt
 def getHeaderExcel(request):
-    if request.method == "POST":
-        file = request.FILES.get('myfile')
-        if file.name.lower().endswith('.xlsx'):
-            dataset = Dataset()
-            csv_data = dataset.load(file.read(), format='xlsx')
-            csv_data = csv_data.headers
-            print(csv_data)
-        else:
-            data = str(file.read())
-            rows = data.split("\\r\\n")
-            csv_data = rows[0].split(",")
-            print(csv_data)
-        return JsonResponse({"data": csv_data})
+    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        if request.method == "POST":
+            file = request.FILES.get('myfile')
+            if file.name.lower().endswith('.xlsx'):
+                dataset = Dataset()
+                csv_data = dataset.load(file.read(), format='xlsx')
+                csv_data = csv_data.headers
+                print(csv_data)
+            else:
+                data = str(file.read())
+                rows = data.split("\\r\\n")
+                csv_data = rows[0].split(",")
+                print(csv_data)
+            return JsonResponse({"data": csv_data})
 
 
 @csrf_exempt
@@ -1789,6 +2245,7 @@ def send_message(request):
                     }
                 })
                 response = requests.post(url=api.message_API, data=payload, headers=api.header)
+                print(response.text)
                 msg_log.reply = request.POST['message']
                 msg_log.request = api.message_API
                 msg_log.response = response.text
@@ -1826,6 +2283,13 @@ def outBox(request):
         messages = OutBox.objects.filter(user_id=id).order_by('-id').values()
         # 'provider': providers
         return render(request, 'outbox.html', {'messages': messages})
+
+def SMS_outbox(request):
+    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        id = request.COOKIES['id']
+        messages = SMS_OutBox.objects.filter(user_id=id).order_by('-id').values()
+        # 'provider': providers
+        return render(request, 'sms_outbox.html', {'messages': messages})
 
 
 def get_random_string(length):
@@ -1975,81 +2439,82 @@ def setAllTemp(request):
 
 @csrf_exempt
 def searchTable(request):
-    name = request.GET.get('name')
-    print(name)
-    final = {}
-    if name == "inbox":
-        sender = request.POST['sender']
-        msg = request.POST['message']
-        receiver = request.POST['receiver']
-        stat = request.POST['status']
+    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        name = request.GET.get('name')
+        print(name)
+        final = {}
+        if name == "inbox":
+            sender = request.POST['sender']
+            msg = request.POST['message']
+            receiver = request.POST['receiver']
+            stat = request.POST['status']
 
-        data = MessageLog.objects.filter(user_id=request.COOKIES['id'])
-        if sender != "":
-            data = data & MessageLog.objects.filter(sender_number=sender)
-        if msg != "":
-            data = data & MessageLog.objects.filter(received_msg=msg)
-        if receiver != "":
-            data = data & MessageLog.objects.filter(reply_number=receiver)
-        if stat != "":
-            data = data & MessageLog.objects.filter(status=stat)
-        if request.POST['start'] != "" or request.POST['end'] != "":
-            start = str(request.POST['start']).split("-")
-            end = str(request.POST['end']).split("-")
-            start = datetime.datetime(int(start[0]), int(start[1]), int(start[2]), tzinfo=timezone.utc)
-            end = datetime.datetime(int(end[0]), int(end[1]), int(end[2]), tzinfo=timezone.utc)
-            if start == end or request.POST['end'] == "":
-                data = data & MessageLog.objects.filter(received_time__gte=start)
-            else:
-                data = data & MessageLog.objects.filter(received_time__gte=start, received_time__lte=end)
-        for d in data:
-            final[d.id] = {"Sender": d.sender_number, "received_time": d.received_time.strftime("%b. %d, %Y, %H:%M %p"),
-                           "message": d.received_msg, "reply": d.reply, "from": d.reply_number, 'status': d.status,
-                           "req": d.request, "res": d.response}
-    elif name == "outbox":
-        sender = request.POST['sender']
-        msg = request.POST['message']
-        stat = request.POST['status']
-
-        data = OutBox.objects.filter(user_id=request.COOKIES['id'])
-        if sender != "":
-            data = data & OutBox.objects.filter(reply_number=sender)
-        if msg != "":
-            data = data & OutBox.objects.filter(message=msg)
-        if stat != "":
-            data = data & OutBox.objects.filter(status=stat)
-        if request.POST['start'] != "" or request.POST['end'] != "":
-            start = request.POST['start']
-            end = request.POST['end']
-            if start == end or request.POST['end'] == "":
-                start = str(start).split("-")
-                start = datetime.datetime(int(start[0]), int(start[1]), int(start[2]), tzinfo=timezone.utc)
-                print(start)
-                data = data & OutBox.objects.filter(send_time__gte=start)
-            else:
-                start = str(start).split("-")
-                end = str(end).split("-")
+            data = MessageLog.objects.filter(user_id=request.COOKIES['id'])
+            if sender != "":
+                data = data & MessageLog.objects.filter(sender_number=sender)
+            if msg != "":
+                data = data & MessageLog.objects.filter(received_msg=msg)
+            if receiver != "":
+                data = data & MessageLog.objects.filter(reply_number=receiver)
+            if stat != "":
+                data = data & MessageLog.objects.filter(status=stat)
+            if request.POST['start'] != "" or request.POST['end'] != "":
+                start = str(request.POST['start']).split("-")
+                end = str(request.POST['end']).split("-")
                 start = datetime.datetime(int(start[0]), int(start[1]), int(start[2]), tzinfo=timezone.utc)
                 end = datetime.datetime(int(end[0]), int(end[1]), int(end[2]), tzinfo=timezone.utc)
-                data = data & OutBox.objects.filter(send_time__gte=start, send_time__lte=end)
-            # print(data)
+                if start == end or request.POST['end'] == "":
+                    data = data & MessageLog.objects.filter(received_time__gte=start)
+                else:
+                    data = data & MessageLog.objects.filter(received_time__gte=start, received_time__lte=end)
+            for d in data:
+                final[d.id] = {"Sender": d.sender_number, "received_time": d.received_time.strftime("%b. %d, %Y, %H:%M %p"),
+                            "message": d.received_msg, "reply": d.reply, "from": d.reply_number, 'status': d.status,
+                            "req": d.request, "res": d.response}
+        elif name == "outbox":
+            sender = request.POST['sender']
+            msg = request.POST['message']
+            stat = request.POST['status']
 
-        for d in data:
-            final[d.id] = {"To": d.to_number, "Sender": d.reply_number, "message": d.message,
-                           "send_time": d.send_time.strftime("%b. %d, %Y, %H:%M %p"), 'status': d.status,
-                           'req': d.request, 'res': d.response}
-    elif name == "template":
-        print("Reaching")
-        provider = request.GET.get('provider')
-        final = {}
-        data = Templates.objects.filter(message_provider_id=WA_MSG_Provider.objects.get(phone_no=provider).id)
-        for d in data:
-            final[d.id] = {'temp_id': d.temp_id, 'temp_name': d.temp_name, 'lang_code': d.lang_code,
-                           'is_media': d.is_media,
-                           'status': d.status}
-        # print(data)
-    # print(final)
-    return JsonResponse(final)
+            data = OutBox.objects.filter(user_id=request.COOKIES['id'])
+            if sender != "":
+                data = data & OutBox.objects.filter(reply_number=sender)
+            if msg != "":
+                data = data & OutBox.objects.filter(message=msg)
+            if stat != "":
+                data = data & OutBox.objects.filter(status=stat)
+            if request.POST['start'] != "" or request.POST['end'] != "":
+                start = request.POST['start']
+                end = request.POST['end']
+                if start == end or request.POST['end'] == "":
+                    start = str(start).split("-")
+                    start = datetime.datetime(int(start[0]), int(start[1]), int(start[2]), tzinfo=timezone.utc)
+                    print(start)
+                    data = data & OutBox.objects.filter(send_time__gte=start)
+                else:
+                    start = str(start).split("-")
+                    end = str(end).split("-")
+                    start = datetime.datetime(int(start[0]), int(start[1]), int(start[2]), tzinfo=timezone.utc)
+                    end = datetime.datetime(int(end[0]), int(end[1]), int(end[2]), tzinfo=timezone.utc)
+                    data = data & OutBox.objects.filter(send_time__gte=start, send_time__lte=end)
+                # print(data)
+
+            for d in data:
+                final[d.id] = {"To": d.to_number, "Sender": d.reply_number, "message": d.message,
+                            "send_time": d.send_time.strftime("%b. %d, %Y, %H:%M %p"), 'status': d.status,
+                            'req': d.request, 'res': d.response}
+        elif name == "template":
+            print("Reaching")
+            provider = request.GET.get('provider')
+            final = {}
+            data = Templates.objects.filter(message_provider_id=WA_MSG_Provider.objects.get(phone_no=provider).id)
+            for d in data:
+                final[d.id] = {'temp_id': d.temp_id, 'temp_name': d.temp_name, 'lang_code': d.lang_code,
+                            'is_media': d.is_media,
+                            'status': d.status}
+            # print(data)
+        # print(final)
+        return JsonResponse(final)
 
 
 def customerStat(request):
@@ -2079,222 +2544,281 @@ def advanceCamp(request):
 def advanceTemplate(request):
     id = request.GET.get('unique')
     u_id = request.COOKIES["id"]
-    if request.method == "POST":
-        vari = request.POST.getlist('body-variable[]')
-        variables = vari
-        try:
-            header_vari = request.POST.getlist('header-variable[]')
-        except:
-            header_vari = []
-            pass
+    if User1.objects.get(id=u_id).is_authenticated():
+        if request.method == "POST":
+            vari = request.POST.getlist('body-variable[]')
+            variables = vari
+            try:
+                header_vari = request.POST.getlist('header-variable[]')
+            except:
+                header_vari = []
+                pass
 
-        camp_id = request.POST['id']
-        comp_type = request.POST['compType']
-        checks = request.POST.getlist('country_check[]')
+            camp_id = request.POST['id']
+            comp_type = request.POST['compType']
+            checks = request.POST.getlist('country_check[]')
 
-        desc = request.POST['Description']
-        desc_vars = re.findall(r"\{[A-Z]}", desc)
-        desc_vars.sort()
-        desc_vars = [x.replace("{", "").replace("}", "") for x in desc_vars]
-        print(desc_vars)
-        alphabet = list(string.ascii_uppercase)
+            desc = request.POST['Description']
+            desc_vars = re.findall(r"\{[A-Z]}", desc)
+            desc_vars.sort()
+            desc_vars = [x.replace("{", "").replace("}", "") for x in desc_vars]
+            print(desc_vars)
+            alphabet = list(string.ascii_uppercase)
 
-        temp_id = str(request.POST['template'])
-        template = Templates.objects.get(temp_id=temp_id)
+            temp_id = str(request.POST['template'])
+            template = Templates.objects.get(temp_id=temp_id)
 
-        provider_no = request.POST['provider']
-        msg_provider = WA_MSG_Provider.objects.get(phone_no=provider_no)
+            provider_no = request.POST['provider']
+            msg_provider = WA_MSG_Provider.objects.get(phone_no=provider_no)
 
-        if not Voice_API.objects.filter(
-                message_API=f"https://graph.facebook.com/v15.0/{msg_provider.phone_id}/messages",
-                u_ID_id=request.COOKIES['id']):
-            Voice_API.objects.create(u_ID_id=request.COOKIES['id'],
-                                     message_API=f"https://graph.facebook.com/v15.0/{msg_provider.phone_id}/messages",
-                                     header={'Content-Type': 'application/json',
-                                             'Authorization': f'Bearer {msg_provider.token}'},
-                                     whatsapp_name=msg_provider.provider_name)
+            if not Voice_API.objects.filter(
+                    message_API=f"https://graph.facebook.com/v15.0/{msg_provider.phone_id}/messages",
+                    u_ID_id=request.COOKIES['id']):
+                Voice_API.objects.create(u_ID_id=request.COOKIES['id'],
+                                        message_API=f"https://graph.facebook.com/v15.0/{msg_provider.phone_id}/messages",
+                                        header={'Content-Type': 'application/json',
+                                                'Authorization': f'Bearer {msg_provider.token}'},
+                                        whatsapp_name=msg_provider.provider_name)
 
-        if comp_type == "multiple":
-            mob_num = str(request.POST['col_Num'])
-            file = request.FILES.get('myfile')
-            rows, f_type, header_chars = prepare(file, request.COOKIES['id'])
+            if comp_type == "multiple":
+                mob_num = str(request.POST['col_Num'])
+                file = request.FILES.get('myfile')
+                rows, f_type, header_chars = prepare(file, request.COOKIES['id'])
 
-            if f_type == "":
-                header_chars = header_chars.split(",")
-                desc = desc
-                for i in range(1, len(rows) - 1):
+                if f_type == "":
+                    header_chars = header_chars.split(",")
+                    desc = desc
+                    for i in range(1, len(rows) - 1):
 
-                    cols = rows[i].split(",")
+                        cols = rows[i].split(",")
 
-                    for d in desc_vars:
-                        desc = desc.replace("{" + d + "}", str(cols[alphabet.index(d)]))
-                    pure_text = desc
+                        for d in desc_vars:
+                            desc = desc.replace("{" + d + "}", str(cols[alphabet.index(d)]))
+                        pure_text = desc
 
-                    to_save = {"header": {}, "body": {}}
-                    for c in variables:
-                        c = c.replace("{", "")
-                        c = c.replace("}", "")
-                        to_save["body"][str(variables.index(c) + 1)] = str(cols[header_chars.index(c)])
+                        to_save = {"header": {}, "body": {}}
+                        for c in variables:
+                            c = c.replace("{", "")
+                            c = c.replace("}", "")
+                            to_save["body"][str(variables.index(c) + 1)] = str(cols[header_chars.index(c)])
 
-                    for h in header_vari:
-                        h = h.replace("{", "")
-                        h = h.replace("}", "")
-                        to_save["header"][str(header_vari.index(h) + 1)] = str(cols[header_chars.index(h)])
+                        for h in header_vari:
+                            h = h.replace("{", "")
+                            h = h.replace("}", "")
+                            to_save["header"][str(header_vari.index(h) + 1)] = str(cols[header_chars.index(h)])
 
-                    mobile = cols[header_chars.index(mob_num)]
-                    temp = template.temp_name
-                    lang = template.lang_code
+                        mobile = cols[header_chars.index(mob_num)]
+                        temp = template.temp_name
+                        lang = template.lang_code
 
-                    if len(checks) and checks[0] == "yes":
-                        mobile = request.POST['country_val'] + str(mobile)
+                        if len(checks) and checks[0] == "yes":
+                            mobile = request.POST['country_val'] + str(mobile)
 
-                    Advance_Data.objects.create(template=temp, lang=lang, mobile=mobile, variables=to_save,
-                                                text=pure_text,
-                                                recordID_id=camp_id, sender_name=msg_provider.provider_name)
-                    count = AdvanceCampaign.objects.get(id=camp_id)
-                    count.record_count += 1
-                    count.save()
-                return redirect("/dashboard")
-            elif f_type == "tup":
-                desc = desc
-                for i in range(0, len(rows)):
-                    cols = [x for x in rows[i]]
+                        Advance_Data.objects.create(template=temp, lang=lang, mobile=mobile, variables=to_save,
+                                                    text=pure_text,
+                                                    recordID_id=camp_id, sender_name=msg_provider.provider_name)
+                        count = AdvanceCampaign.objects.get(id=camp_id)
+                        count.record_count += 1
+                        count.save()
+                    return redirect("/dashboard")
+                elif f_type == "tup":
+                    desc = desc
+                    for i in range(0, len(rows)):
+                        cols = [x for x in rows[i]]
 
-                    for d in desc_vars:
-                        desc = desc.replace("{" + d + "}", str(cols[alphabet.index(d)]))
-                    pure_text = desc
+                        for d in desc_vars:
+                            desc = desc.replace("{" + d + "}", str(cols[alphabet.index(d)]))
+                        pure_text = desc
 
-                    to_save = {"header": {}, "body": {}}
-                    for c in variables:
-                        c = c.replace("{", "")
-                        c = c.replace("}", "")
-                        to_save["body"][str(variables.index(c) + 1)] = str(cols[header_chars.index(c)])
+                        to_save = {"header": {}, "body": {}}
+                        for c in variables:
+                            c = c.replace("{", "")
+                            c = c.replace("}", "")
+                            to_save["body"][str(variables.index(c) + 1)] = str(cols[header_chars.index(c)])
 
-                    for h in header_vari:
-                        h = h.replace("{", "")
-                        h = h.replace("}", "")
-                        to_save["header"][str(header_vari.index(h) + 1)] = str(cols[header_chars.index(h)])
+                        for h in header_vari:
+                            h = h.replace("{", "")
+                            h = h.replace("}", "")
+                            to_save["header"][str(header_vari.index(h) + 1)] = str(cols[header_chars.index(h)])
 
-                    mobile = cols[header_chars.index(mob_num)]
-                    temp = template.temp_name
-                    lang = template.lang_code
+                        mobile = cols[header_chars.index(mob_num)]
+                        temp = template.temp_name
+                        lang = template.lang_code
 
-                    if len(checks) and checks[0] == "yes":
-                        mobile = request.POST['country_val'] + str(mobile)
+                        if len(checks) and checks[0] == "yes":
+                            mobile = request.POST['country_val'] + str(mobile)
 
-                    Advance_Data.objects.create(template=temp, lang=lang, mobile=mobile, variables=to_save,
-                                                text=pure_text,
-                                                recordID_id=camp_id, sender_name=msg_provider.provider_name)
-                    count = AdvanceCampaign.objects.get(id=camp_id)
-                    count.record_count += 1
-                    count.save()
+                        Advance_Data.objects.create(template=temp, lang=lang, mobile=mobile, variables=to_save,
+                                                    text=pure_text,
+                                                    recordID_id=camp_id, sender_name=msg_provider.provider_name)
+                        count = AdvanceCampaign.objects.get(id=camp_id)
+                        count.record_count += 1
+                        count.save()
 
-                return redirect("/dashboard")
+                    return redirect("/dashboard")
 
-        else:
-
-            if len(checks) and checks[0] == "yes":
-                mob_num = request.POST['country_val'] + request.POST['mobile']
             else:
-                mob_num = request.POST['mobile']
-            to_save = {"header": {}, "body": {}}
-            i = 1
-            for c in variables:
-                to_save["body"][f"{str(i)}"] = c
-                i += 1
-            i = 1
-            for h in header_vari:
-                to_save["header"][f"{str(i)}"] = h
-                i += 1
 
-            Advance_Data.objects.create(template=template.temp_name, lang=template.lang_code, mobile=mob_num,
-                                        variables=to_save,
-                                        recordID_id=camp_id, sender_name=msg_provider.provider_name)
-            count = AdvanceCampaign.objects.get(id=camp_id)
-            count.record_count += 1
-            count.save()
-            return redirect("/dashboard")
+                if len(checks) and checks[0] == "yes":
+                    mob_num = request.POST['country_val'] + request.POST['mobile']
+                else:
+                    mob_num = request.POST['mobile']
+                to_save = {"header": {}, "body": {}}
+                i = 1
+                for c in variables:
+                    to_save["body"][f"{str(i)}"] = c
+                    i += 1
+                i = 1
+                for h in header_vari:
+                    to_save["header"][f"{str(i)}"] = h
+                    i += 1
 
-    data = WA_MSG_Provider.objects.filter(user_id=u_id)
-    return render(request, "advanceTemp.html", {"id": id, "data": data})
+                Advance_Data.objects.create(template=template.temp_name, lang=template.lang_code, mobile=mob_num,
+                                            variables=to_save,
+                                            recordID_id=camp_id, sender_name=msg_provider.provider_name)
+                count = AdvanceCampaign.objects.get(id=camp_id)
+                count.record_count += 1
+                count.save()
+                return redirect("/dashboard")
+
+        data = WA_MSG_Provider.objects.filter(user_id=u_id)
+        return render(request, "advanceTemp.html", {"id": id, "data": data})
 
 
 @csrf_exempt
 def advancePreview(request):
-    if request.method == 'POST':
-        vari = request.POST.getlist('body-variable[]')
-        variables = vari[0].split(",")
-        try:
-            header_vari = request.POST.getlist('header-variable[]')
-            header_vari = header_vari[0].split(",")
-        except:
-            header_vari = []
-            pass
-        print(variables, header_vari)
-        id = request.POST['id']
-        type = request.POST['compType']
-        checks = request.POST.getlist('country_check[]')
+    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        if request.method == 'POST':
+            vari = request.POST.getlist('body-variable[]')
+            variables = vari[0].split(",")
+            try:
+                header_vari = request.POST.getlist('header-variable[]')
+                header_vari = header_vari[0].split(",")
+            except:
+                header_vari = []
+                pass
+            print(variables, header_vari)
+            id = request.POST['id']
+            type = request.POST['compType']
+            checks = request.POST.getlist('country_check[]')
 
-        temp_id = str(request.POST['template'])
-        template = Templates.objects.get(temp_id=temp_id)
+            temp_id = str(request.POST['template'])
+            template = Templates.objects.get(temp_id=temp_id)
 
-        provider_no = request.POST['provider']
+            provider_no = request.POST['provider']
 
-        msg_provider = WA_MSG_Provider.objects.get(phone_no=provider_no)
-        message_API = f"https://graph.facebook.com/v15.0/{msg_provider.phone_id}/messages"
-        header = {'Content-Type': 'application/json',
-                  'Authorization': f'Bearer {msg_provider.token}'}
-        to_save = {"header": {}, "body": {}}
-        if type == "multiple":
-            mobile = request.POST['col_Num']
-            file = request.FILES.get('myfile')
-            if file.name.lower().endswith('.xlsx'):
-                dataset = Dataset()
-                imported_data = dataset.load(file.read(), format='xlsx')
-                header_chars = imported_data.headers
-                my_csv_data = []
-                for i in imported_data[0]:
-                    my_csv_data.append(str(i))
+            msg_provider = WA_MSG_Provider.objects.get(phone_no=provider_no)
+            message_API = f"https://graph.facebook.com/v15.0/{msg_provider.phone_id}/messages"
+            header = {'Content-Type': 'application/json',
+                    'Authorization': f'Bearer {msg_provider.token}'}
+            to_save = {"header": {}, "body": {}}
+            if type == "multiple":
+                mobile = request.POST['col_Num']
+                file = request.FILES.get('myfile')
+                if file.name.lower().endswith('.xlsx'):
+                    dataset = Dataset()
+                    imported_data = dataset.load(file.read(), format='xlsx')
+                    header_chars = imported_data.headers
+                    my_csv_data = []
+                    for i in imported_data[0]:
+                        my_csv_data.append(str(i))
+                else:
+                    data = str(file.read())
+                    rows = data.split("\\r\\n")
+                    header_chars = rows[0].split(",")
+                    my_csv_data = rows[1].split(",")
+                # to_save = {"header": {}, "body": {}}
+
+                for c in variables:
+                    c = c.replace("{", "")
+                    c = c.replace("}", "")
+                    to_save["body"][str(variables.index(c) + 1)] = my_csv_data[header_chars.index(c)]
+
+                for h in header_vari:
+                    if h != "":
+                        h = h.replace("{", "")
+                        h = h.replace("}", "")
+                        to_save["header"][str(header_vari.index(h) + 1)] = my_csv_data[header_chars.index(h)]
+
+                mobile = my_csv_data[header_chars.index(mobile)]
+                if len(checks) and checks[0] == "yes":
+                    mobile = request.POST['country_val'] + str(mobile)
             else:
-                data = str(file.read())
-                rows = data.split("\\r\\n")
-                header_chars = rows[0].split(",")
-                my_csv_data = rows[1].split(",")
-            # to_save = {"header": {}, "body": {}}
+                if len(checks) and checks[0] == "yes":
+                    mobile = request.POST['country_val'] + request.POST['mobile']
+                else:
+                    mobile = request.POST['mobile']
+                i = 1
+                for c in variables:
+                    to_save["body"][f"{str(i)}"] = c
+                    i += 1
+                i = 1
+                for h in header_vari:
+                    if h != "":
+                        to_save["header"][f"{str(i)}"] = h
+                        i += 1
+            t = template
+            print(to_save)
+            if t.is_media:
+                if t.med_id is None:
+                    return "Please upload media from template management", ""
+                else:
+                    js = json.loads(t.med_id)
+                    payload = {
+                        "messaging_product": "whatsapp",
+                        "recipient_type": "individual",
+                        "to": f"{mobile}",
+                        "type": "template",
+                        "template": {
+                            "name": f"{t.temp_name}",
+                            "language": {
+                                "code": f"{t.lang_code}"
+                            },
+                            "components": [
+                                {
+                                    "type": "header",
+                                    "parameters": [
+                                        {
+                                            "type": "image",
+                                            "image": {"link": f"{js['link']}"} if js["type"] == "what" else {
+                                                "id": f"{js['med_obj']}"}
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "body",
+                                    "parameters": []
 
-            for c in variables:
-                c = c.replace("{", "")
-                c = c.replace("}", "")
-                to_save["body"][str(variables.index(c) + 1)] = my_csv_data[header_chars.index(c)]
+                                }
+                            ]
+                        }
+                    }
+                    vars = to_save
+                    if vars["header"]:
+                        payload["template"]["components"].append({
+                            "type": "header",
+                            "parameters": []
+                        })
+                        payload["template"]["components"].append({
+                            "type": "body",
+                            "parameters": []
+                        })
+                        for i in vars["header"]:
+                            payload["template"]["components"][0]["parameters"].append(
+                                {"type": "text", "text": f"{vars['header'][i]}"})
+                        for i in vars["body"]:
+                            payload["template"]["components"][1]["parameters"].append(
+                                {"type": "text", "text": f"{vars['body'][i]}"})
+                    elif vars["body"] and (not vars['header']):
+                        payload["template"]["components"].append({
+                            "type": "body",
+                            "parameters": []
+                        })
 
-            for h in header_vari:
-                h = h.replace("{", "")
-                h = h.replace("}", "")
-                to_save["header"][str(header_vari.index(h) + 1)] = my_csv_data[header_chars.index(h)]
-
-            mobile = my_csv_data[header_chars.index(mobile)]
-            if len(checks) and checks[0] == "yes":
-                mobile = request.POST['country_val'] + str(mobile)
-        else:
-            if len(checks) and checks[0] == "yes":
-                mobile = request.POST['country_val'] + request.POST['mobile']
+                        for i in vars["body"]:
+                            payload["template"]["components"][0]["parameters"].append({"type": "text", "text": f"{vars['body'][i]}"})
+                    payload = json.dumps(payload)
             else:
-                mobile = request.POST['mobile']
-            i = 1
-            for c in variables:
-                to_save["body"][f"{str(i)}"] = c
-                i += 1
-            i = 1
-            for h in header_vari:
-                to_save["header"][f"{str(i)}"] = h
-                i += 1
-        t = template
-        print(to_save)
-        if t.is_media:
-            if t.med_id is None:
-                return "Please upload media from template management", ""
-            else:
-                js = json.loads(t.med_id)
                 payload = {
                     "messaging_product": "whatsapp",
                     "recipient_type": "individual",
@@ -2306,21 +2830,7 @@ def advancePreview(request):
                             "code": f"{t.lang_code}"
                         },
                         "components": [
-                            {
-                                "type": "header",
-                                "parameters": [
-                                    {
-                                        "type": "image",
-                                        "image": {"link": f"{js['link']}"} if js["type"] == "what" else {
-                                            "id": f"{js['med_obj']}"}
-                                    }
-                                ]
-                            },
-                            {
-                                "type": "body",
-                                "parameters": []
 
-                            }
                         ]
                     }
                 }
@@ -2349,50 +2859,9 @@ def advancePreview(request):
                     for i in vars["body"]:
                         payload["template"]["components"][0]["parameters"].append({"type": "text", "text": f"{vars['body'][i]}"})
                 payload = json.dumps(payload)
-        else:
-            payload = {
-                "messaging_product": "whatsapp",
-                "recipient_type": "individual",
-                "to": f"{mobile}",
-                "type": "template",
-                "template": {
-                    "name": f"{t.temp_name}",
-                    "language": {
-                        "code": f"{t.lang_code}"
-                    },
-                    "components": [
-
-                    ]
-                }
-            }
-            vars = to_save
-            if vars["header"]:
-                payload["template"]["components"].append({
-                    "type": "header",
-                    "parameters": []
-                })
-                payload["template"]["components"].append({
-                    "type": "body",
-                    "parameters": []
-                })
-                for i in vars["header"]:
-                    payload["template"]["components"][0]["parameters"].append(
-                        {"type": "text", "text": f"{vars['header'][i]}"})
-                for i in vars["body"]:
-                    payload["template"]["components"][1]["parameters"].append(
-                        {"type": "text", "text": f"{vars['body'][i]}"})
-            elif vars["body"] and (not vars['header']):
-                payload["template"]["components"].append({
-                    "type": "body",
-                    "parameters": []
-                })
-
-                for i in vars["body"]:
-                    payload["template"]["components"][0]["parameters"].append({"type": "text", "text": f"{vars['body'][i]}"})
-            payload = json.dumps(payload)
-        response = requests.request("POST", message_API, headers=header, data=payload)
-        print(response.text)
-        return JsonResponse({"text": response.text})
+            response = requests.request("POST", message_API, headers=header, data=payload)
+            print(response.text)
+            return JsonResponse({"text": response.text})
 
 
 def advanceRecord(request):
@@ -2456,41 +2925,25 @@ def advanceSend(record, API, mode):
                                             "id": f"{js['med_obj']}"}
                                     }
                                 ]
-                            },
-                            {
-                                "type": "body",
-                                "parameters": []
-
                             }
                         ]
                     }
                 }
                 vars = record.variables
-                if vars["header"]:
-                    payload["template"]["components"].append({
-                        "type": "header",
-                        "parameters": []
-                    })
-                    payload["template"]["components"].append({
-                        "type": "body",
-                        "parameters": []
-                    })
-                    for i in vars["header"]:
-                        payload["template"]["components"][0]["parameters"].append(
-                            {"type": "text", "text": f"{vars['header'][i]}"})
+                if vars["body"] and (not vars['header']):
+                    params = []
                     for i in vars["body"]:
-                        payload["template"]["components"][1]["parameters"].append(
+                        
+                        params.append(
                             {"type": "text", "text": f"{vars['body'][i]}"})
-                elif vars["body"] and (not vars['header']):
                     payload["template"]["components"].append({
                         "type": "body",
-                        "parameters": []
+                        "parameters": params
                     })
 
-                    for i in vars["body"]:
-                        payload["template"]["components"][0]["parameters"].append(
-                            {"type": "text", "text": f"{vars['body'][i]}"})
+                    
                 payload = json.dumps(payload)
+                
         else:
             payload = {
                 "messaging_product": "whatsapp",
@@ -2532,11 +2985,9 @@ def advanceSend(record, API, mode):
                 for i in vars["body"]:
                     payload["template"]["components"][0]["parameters"].append({"type": "text", "text": f"{vars['body'][i]}"})
             payload = json.dumps(payload)
-            print(payload)
+            
 
     response = requests.request("POST", url, headers=headers, data=payload)
-
-    print(response.text)
 
     record.voiceshoot_req = url + str(headers)
     record.voiceshoot_res = response.text
@@ -2571,214 +3022,224 @@ def delete_oldData():
     o_data = OutBox.objects.filter(send_time__lte=today)
     for i in o_data:
         i.delete()
-
+    
 
 def conversation_update():
     hours = datetime.datetime.now(timezone.utc)+ datetime.timedelta(hours=5.5) - datetime.timedelta(hours=24)
+    days = datetime.datetime.now(timezone.utc)+ datetime.timedelta(hours=5.5) - datetime.timedelta(days=7)
     c_data = Conversation_Status.objects.filter(received_time__lte=hours).update(conversation_status="Pending")
+    Conversation_Status.objects.filter(inbox_msg="NO").update(conversation_status="Stopped")
+    Conversation_Status.objects.filter(received_time__lte=days).update(conversation_status="Stopped")
 
 def customerBotState(request):
-    bot_id = request.GET['bid']
-    p_id = request.GET['pid']
-    data = CustomerBotStop.objects.filter(provider_id=p_id)
-    return render(request, "customerBotState.html", {"data":data})
+    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        bot_id = request.GET['bid']
+        p_id = request.GET['pid']
+        data = CustomerBotStop.objects.filter(provider_id=p_id)
+        return render(request, "customerBotState.html", {"data":data})
 
 def botSettings(request):
-    if request.method == "POST":
-        msg_prods = WA_MSG_Provider.objects.get(phone_no=request.POST['provider'])
-        if not What_Bot.objects.filter(provider_id=msg_prods.id):
-            What_Bot.objects.create(bot_name=msg_prods.provider_name + "_Bot", message_pair={},
-                                    provider_id=msg_prods.id, user_id=msg_prods.user_id)
+    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        if request.method == "POST":
+            msg_prods = WA_MSG_Provider.objects.get(phone_no=request.POST['provider'])
+            if not What_Bot.objects.filter(provider_id=msg_prods.id):
+                What_Bot.objects.create(bot_name=msg_prods.provider_name + "_Bot", message_pair={},
+                                        provider_id=msg_prods.id, user_id=msg_prods.user_id)
+            else:
+                messages.error(request, "Bot already exist for provider")
+            return redirect("/botSettings")
         else:
-            messages.error(request, "Bot already exist for provider")
-        return redirect("/botSettings")
-    else:
-        providers = WA_MSG_Provider.objects.filter(user_id=request.COOKIES['id'])
-        bots = What_Bot.objects.filter(user_id=request.COOKIES['id'])
-        return render(request, "botSettings.html", {"bots": bots, "providers": providers})
+            providers = WA_MSG_Provider.objects.filter(user_id=request.COOKIES['id'])
+            bots = What_Bot.objects.filter(user_id=request.COOKIES['id'])
+            return render(request, "botSettings.html", {"bots": bots, "providers": providers})
 
 
 def button_status(request):
-    msg_prods = WA_MSG_Provider.objects.get(phone_no=request.GET['name'])
-    bot = What_Bot.objects.get(bot_name=msg_prods.provider_name + "_bot")
-    btn_id = bot.id
-    if bot.is_on:
-        btn_cls = "btn btn-danger"
-        btn_text = "Off"
-    else:
-        btn_cls = "btn btn-success"
-        btn_text = "On"
-    return JsonResponse({"btn_cls": btn_cls, "btn_text": btn_text, "btn_id":btn_id})
+    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        msg_prods = WA_MSG_Provider.objects.get(phone_no=request.GET['name'])
+        bot = What_Bot.objects.get(bot_name=msg_prods.provider_name + "_bot")
+        btn_id = bot.id
+        if bot.is_on:
+            btn_cls = "btn btn-danger"
+            btn_text = "Off"
+        else:
+            btn_cls = "btn btn-success"
+            btn_text = "On"
+        return JsonResponse({"btn_cls": btn_cls, "btn_text": btn_text, "btn_id":btn_id})
 
 
 def addMesPair(request):
-    phone = ""
-    if request.method == "POST":
-        try:
-            rec = str(request.POST["rec_mes"]).split(",")
-            rec = [x.lower().strip() for x in rec if x not in [" ",""]]
-        except Exception as e:
-            rec = str(request.POST["rec_mes"]).lower()
+    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        phone = ""
+        if request.method == "POST":
+            try:
+                rec = str(request.POST["rec_mes"]).split(",")
+                rec = [x.lower().strip() for x in rec if x not in [" ",""]]
+            except Exception as e:
+                rec = str(request.POST["rec_mes"]).lower()
+            
+            bot_id = request.POST['bid']
+            phone = request.POST['phone']
+            pid = WA_MSG_Provider.objects.get(phone_no=phone).id
         
-        bot_id = request.POST['bid']
-        phone = request.POST['phone']
-        pid = WA_MSG_Provider.objects.get(phone_no=phone).id
-    
-        data = Bot_Auto_Reply.objects.filter(provider_id=pid)
-        
-        checked_list = []
-        for d in data:
-            for r in rec:
-                if "," not in d.receive_message:
-                    to_check = d.receive_message.replace("['","").replace("']","").split(" ")
-                else:
-                    to_check = d.receive_message
-                
-                if r in to_check:
-                    print(d.receive_message)
-                    checked_list.append(r)
-        
-        checked_list = [j for j in filter(lambda x: x != "", checked_list)]
-        print(checked_list)
-        if not checked_list:        
-            bot = What_Bot.objects.get(pk=bot_id)
-            rep_opt = request.POST['reply_option']
-            if rep_opt == "catalogue":
-                save_urls = []
-                save_name = []
-                zip_file = request.FILES['catalogue_zip']
-                provider_name = WA_MSG_Provider.objects.get(pk=bot.provider_id).provider_name
-                if not os.path.exists("media_objects/UnzippedFiles/"+provider_name):
-                            os.makedirs("media_objects/UnzippedFiles/"+provider_name) 
-                i = 1
-                with zipfile.ZipFile(zip_file, mode="r") as archive:
+            data = Bot_Auto_Reply.objects.filter(provider_id=pid)
+            
+            checked_list = []
+            for d in data:
+                for r in rec:
+                    if "," not in d.receive_message:
+                        to_check = d.receive_message.replace("['","").replace("']","").split(" ")
+                    else:
+                        to_check = d.receive_message
                     
-                    for fileName in archive.namelist():
-                        file_type = fileName.split('.')[-1]
-                        file_type = file_type.lower()
-                        file= archive.extract(fileName, "media_objects/UnzippedFiles/"+provider_name)    
-                        save_urls.append({"type":file_type, "link":f"{settings.HOST_URL}/media/UnzippedFiles/{provider_name}/{fileName}"})
-                        i+=1
-                    save_name= f"{(zip_file.name).split('.')[0]} - {str(i)} Files"
-                Bot_Auto_Reply.objects.create(receive_message=rec, msg_type=rep_opt, reply_message={rep_opt:save_urls},show_reply_message=save_name, bot_id=bot_id, provider_id=bot.provider_id) 
-                
-            elif rep_opt == "template":
-                rep = request.POST["reply_mes"]
-                temp_obj = Templates.objects.get(temp_id=rep)
-                temp_name = f"{temp_obj.temp_name} [{temp_obj.lang_code}]"
-                Bot_Auto_Reply.objects.create(receive_message=rec, msg_type=rep_opt, reply_message={rep_opt:rep},show_reply_message=temp_name, bot_id=bot_id, provider_id=bot.provider_id)
-                print(rec, rep, bot_id)
-            elif rep_opt == "text":
-                rep = request.POST["reply_mes"]
-                Bot_Auto_Reply.objects.create(receive_message=rec, msg_type=rep_opt, reply_message={rep_opt:rep},show_reply_message=rep, bot_id=bot_id, provider_id=bot.provider_id)
-                print(rec, rep, bot_id)
-            elif rep_opt == "btn-w-text":
-                tex_rep = request.POST['text']
-                btn_c = request.POST['btn-count']
-                btn_text = request.POST.getlist('btn-text[]')
-                rep = {"btext":tex_rep, "bcount":btn_c, "btn_text":btn_text}
-                print(tex_rep, btn_c, btn_text)
-                Bot_Auto_Reply.objects.create(receive_message=rec, msg_type=rep_opt, reply_message={rep_opt:rep}, show_reply_message=tex_rep+"With Buttons" + str(btn_text), bot_id=bot_id, provider_id=bot.provider_id)
-            elif rep_opt == "list-btn":
-                body_tex = request.POST['body-text']
-                button_text = request.POST['btn-text']
-                list_c = request.POST['list-count']
-                list_title = request.POST.getlist('list-title[]')
-                list_desc = request.POST.getlist('list-desc[]')
-                rep = {"body_tex":body_tex,"button_text":button_text, "list_c":list_c, "list_title":list_title, "list_desc":list_desc}
-                Bot_Auto_Reply.objects.create(receive_message=rec, msg_type=rep_opt, reply_message={rep_opt:rep}, show_reply_message=body_tex+"With button list", bot_id=bot_id, provider_id=bot.provider_id)
-            messages.success(request, "Message Added Succesfully")
+                    if r in to_check:
+                        print(d.receive_message)
+                        checked_list.append(r)
+            
+            checked_list = [j for j in filter(lambda x: x != "", checked_list)]
+            print(checked_list)
+            if not checked_list:        
+                bot = What_Bot.objects.get(pk=bot_id)
+                rep_opt = request.POST['reply_option']
+                if rep_opt == "catalogue":
+                    save_urls = []
+                    save_name = []
+                    zip_file = request.FILES['catalogue_zip']
+                    provider_name = WA_MSG_Provider.objects.get(pk=bot.provider_id).provider_name
+                    if not os.path.exists("media_objects/UnzippedFiles/"+provider_name):
+                                os.makedirs("media_objects/UnzippedFiles/"+provider_name) 
+                    i = 1
+                    with zipfile.ZipFile(zip_file, mode="r") as archive:
+                        
+                        for fileName in archive.namelist():
+                            file_type = fileName.split('.')[-1]
+                            file_type = file_type.lower()
+                            file= archive.extract(fileName, "media_objects/UnzippedFiles/"+provider_name)    
+                            save_urls.append({"type":file_type, "link":f"{settings.HOST_URL}/media/UnzippedFiles/{provider_name}/{fileName}"})
+                            i+=1
+                        save_name= f"{(zip_file.name).split('.')[0]} - {str(i)} Files"
+                    Bot_Auto_Reply.objects.create(receive_message=rec, msg_type=rep_opt, reply_message={rep_opt:save_urls},show_reply_message=save_name, bot_id=bot_id, provider_id=bot.provider_id) 
+                    
+                elif rep_opt == "template":
+                    rep = request.POST["reply_mes"]
+                    temp_obj = Templates.objects.get(temp_id=rep)
+                    temp_name = f"{temp_obj.temp_name} [{temp_obj.lang_code}]"
+                    Bot_Auto_Reply.objects.create(receive_message=rec, msg_type=rep_opt, reply_message={rep_opt:rep},show_reply_message=temp_name, bot_id=bot_id, provider_id=bot.provider_id)
+                    print(rec, rep, bot_id)
+                elif rep_opt == "text":
+                    rep = request.POST["reply_mes"]
+                    Bot_Auto_Reply.objects.create(receive_message=rec, msg_type=rep_opt, reply_message={rep_opt:rep},show_reply_message=rep, bot_id=bot_id, provider_id=bot.provider_id)
+                    print(rec, rep, bot_id)
+                elif rep_opt == "btn-w-text":
+                    tex_rep = request.POST['text']
+                    btn_c = request.POST['btn-count']
+                    btn_text = request.POST.getlist('btn-text[]')
+                    rep = {"btext":tex_rep, "bcount":btn_c, "btn_text":btn_text}
+                    print(tex_rep, btn_c, btn_text)
+                    Bot_Auto_Reply.objects.create(receive_message=rec, msg_type=rep_opt, reply_message={rep_opt:rep}, show_reply_message=tex_rep+"With Buttons" + str(btn_text), bot_id=bot_id, provider_id=bot.provider_id)
+                elif rep_opt == "list-btn":
+                    body_tex = request.POST['body-text']
+                    button_text = request.POST['btn-text']
+                    list_c = request.POST['list-count']
+                    list_title = request.POST.getlist('list-title[]')
+                    list_desc = request.POST.getlist('list-desc[]')
+                    rep = {"body_tex":body_tex,"button_text":button_text, "list_c":list_c, "list_title":list_title, "list_desc":list_desc}
+                    Bot_Auto_Reply.objects.create(receive_message=rec, msg_type=rep_opt, reply_message={rep_opt:rep}, show_reply_message=body_tex+"With button list", bot_id=bot_id, provider_id=bot.provider_id)
+                messages.success(request, "Message Added Succesfully")
+            else:
+                messages.error(request, "Message Already exist")
+                print()
+            
+            return redirect(f"/addMesPair?bid={bot_id}&pid={pid}")
         else:
-            messages.error(request, "Message Already exist")
-            print()
-        
-        return redirect(f"/addMesPair?bid={bot_id}&pid={pid}")
-    else:
-        bot_id = request.GET["bid"]
-        pid = request.GET['pid']
-        phone = WA_MSG_Provider.objects.get(pk=pid).phone_no
-        bot_reply = Bot_Auto_Reply.objects.filter(bot_id=bot_id)
-        return render(request, "Bot_Messages.html", {"data": bot_reply, "pid":phone, "bid":bot_id, "bot_state":What_Bot.objects.get(pk=bot_id).is_on})
+            bot_id = request.GET["bid"]
+            pid = request.GET['pid']
+            phone = WA_MSG_Provider.objects.get(pk=pid).phone_no
+            bot_reply = Bot_Auto_Reply.objects.filter(bot_id=bot_id)
+            return render(request, "Bot_Messages.html", {"data": bot_reply, "pid":phone, "bid":bot_id, "bot_state":What_Bot.objects.get(pk=bot_id).is_on})
     
 
 def stopBot(request):
-    user_num = request.GET['user']
-    provider = request.GET['provider']
-    p = WA_MSG_Provider.objects.get(phone_no=provider)
-    data = CustomerBotStop.objects.filter(user_number=user_num, provider_name=p.provider_name)
-    if not data:
-        CustomerBotStop.objects.create(user_number=user_num, provider_name=p.provider_name, provider_id=p.id)
-    return redirect("/showMessages")
+    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        user_num = request.GET['user']
+        provider = request.GET['provider']
+        p = WA_MSG_Provider.objects.get(phone_no=provider)
+        data = CustomerBotStop.objects.filter(user_number=user_num, provider_name=p.provider_name)
+        if not data:
+            CustomerBotStop.objects.create(user_number=user_num, provider_name=p.provider_name, provider_id=p.id)
+        return redirect("/showMessages")
 
 
 def toggle_Bot_Stat(request):
-    if request.GET['type'] == 'bot':
-        bot_id = request.GET['bot_id']
-        bot = What_Bot.objects.get(pk=bot_id)
-        if bot.is_on:
-            bot.is_on = False
-        elif not bot.is_on:
-            bot.is_on = True
-        bot.save()
-        red_url = "/botSettings"
-    elif request.GET['type'] == "row":
-        row_id = request.GET['reply_row_id']
-        reply_row = Bot_Auto_Reply.objects.get(pk=row_id)
-        if reply_row.is_active:
-            reply_row.is_active = False
-        elif not reply_row.is_active:
-            reply_row.is_active = True
-        reply_row.save()
-        red_url = f"/addMesPair?bid={reply_row.bot_id}&pid={reply_row.provider_id}"
+    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        if request.GET['type'] == 'bot':
+            bot_id = request.GET['bot_id']
+            bot = What_Bot.objects.get(pk=bot_id)
+            if bot.is_on:
+                bot.is_on = False
+            elif not bot.is_on:
+                bot.is_on = True
+            bot.save()
+            red_url = "/botSettings"
+        elif request.GET['type'] == "row":
+            row_id = request.GET['reply_row_id']
+            reply_row = Bot_Auto_Reply.objects.get(pk=row_id)
+            if reply_row.is_active:
+                reply_row.is_active = False
+            elif not reply_row.is_active:
+                reply_row.is_active = True
+            reply_row.save()
+            red_url = f"/addMesPair?bid={reply_row.bot_id}&pid={reply_row.provider_id}"
 
-    
-    return redirect(red_url)
+        
+        return redirect(red_url)
 
 
 def editAutoReply(request):
-    if request.method == "POST":
-        try:
-            rec = str(request.POST["rec_mes"]).split(",")
-            rec = [x.lower().strip() for x in rec if x not in [" ",""]]
-        except Exception as e:
-            rec = str(request.POST["rec_mes"]).lower()
+    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        if request.method == "POST":
+            try:
+                rec = str(request.POST["rec_mes"]).split(",")
+                rec = [x.lower().strip() for x in rec if x not in [" ",""]]
+            except Exception as e:
+                rec = str(request.POST["rec_mes"]).lower()
+            
+            auto_rep_id = request.POST['mid']
+            bot_id = request.POST['bid']
+            phone = request.POST['pid']
+            pid = WA_MSG_Provider.objects.get(phone_no=phone).id
         
-        auto_rep_id = request.POST['mid']
-        bot_id = request.POST['bid']
-        phone = request.POST['pid']
-        pid = WA_MSG_Provider.objects.get(phone_no=phone).id
-    
-        data = Bot_Auto_Reply.objects.filter(provider_id=pid)
-        data = data & Bot_Auto_Reply.objects.exclude(pk=auto_rep_id)
-        print(data)
-        checked_list = []
-        for d in data:
-            for r in rec:
-                check = d.receive_message.replace("[","").replace("]","").split(" ")
-                if r in check:
-                    print(d.receive_message)
-                    checked_list.append(r)
-        
-        checked_list = [j for j in filter(lambda x: x != "", checked_list)]
-        print(checked_list)
-        if not checked_list:        
-            rep = request.POST['reply_mes']
-            if request.POST['rep_type'] == "text":      
-                Bot_Auto_Reply.objects.filter(pk=auto_rep_id).update(receive_message=rec, reply_message={"text":rep}, show_reply_message=rep)
-                messages.success(request, "Message Updated Succesfully")
-            if request.POST['rep_type'] == "template":
-                temp_name = Templates.objects.get(temp_id=rep)
-                messages.success(request, "Message Updated Succesfully")
-                Bot_Auto_Reply.objects.filter(pk=auto_rep_id).update(receive_message=rec, reply_message={"template":rep}, show_reply_message=f"{temp_name.temp_name} [{temp_name.lang_code}]")
-        pid = WA_MSG_Provider.objects.get(phone_no=request.POST['pid']).id
-        return redirect(f"/addMesPair?bid={bot_id}&pid={pid}")
-    else:  
-        auto_rep_id = request.GET['mid']
-        res_rep = Bot_Auto_Reply.objects.get(pk=auto_rep_id)
-        my_list = res_rep.receive_message
-        my_list = my_list.replace("\'","").replace("[","").replace("]","")
-        data = {"mid":res_rep.id,"receive_msg":my_list, "reply_message":res_rep.reply_message, "type":res_rep.msg_type}
-        return JsonResponse(data)
+            data = Bot_Auto_Reply.objects.filter(provider_id=pid)
+            data = data & Bot_Auto_Reply.objects.exclude(pk=auto_rep_id)
+            print(data)
+            checked_list = []
+            for d in data:
+                for r in rec:
+                    check = d.receive_message.replace("[","").replace("]","").split(" ")
+                    if r in check:
+                        print(d.receive_message)
+                        checked_list.append(r)
+            
+            checked_list = [j for j in filter(lambda x: x != "", checked_list)]
+            print(checked_list)
+            if not checked_list:        
+                rep = request.POST['reply_mes']
+                if request.POST['rep_type'] == "text":      
+                    Bot_Auto_Reply.objects.filter(pk=auto_rep_id).update(receive_message=rec, reply_message={"text":rep}, show_reply_message=rep)
+                    messages.success(request, "Message Updated Succesfully")
+                if request.POST['rep_type'] == "template":
+                    temp_name = Templates.objects.get(temp_id=rep)
+                    messages.success(request, "Message Updated Succesfully")
+                    Bot_Auto_Reply.objects.filter(pk=auto_rep_id).update(receive_message=rec, reply_message={"template":rep}, show_reply_message=f"{temp_name.temp_name} [{temp_name.lang_code}]")
+            pid = WA_MSG_Provider.objects.get(phone_no=request.POST['pid']).id
+            return redirect(f"/addMesPair?bid={bot_id}&pid={pid}")
+        else:  
+            auto_rep_id = request.GET['mid']
+            res_rep = Bot_Auto_Reply.objects.get(pk=auto_rep_id)
+            my_list = res_rep.receive_message
+            my_list = my_list.replace("\'","").replace("[","").replace("]","")
+            data = {"mid":res_rep.id,"receive_msg":my_list, "reply_message":res_rep.reply_message, "type":res_rep.msg_type}
+            return JsonResponse(data)
 
 
 def ShowFiles(request):
@@ -3043,118 +3504,314 @@ def check_bot_set(user, provider, to, message, msg_id, msg_log):
         return response.text
 
 
-def prepare_chat(cus_list):
+def prepare_chat(cus_list, uname):
     time_data  = {}
+    
     for i in range(len(cus_list)):
         sub = ""
         time_data[cus_list[i]] = []
+
         if i < len(cus_list)-1:
             sub = SubMessageLog.objects.filter(parent_msg_id=cus_list[i].id, send_time__gte=cus_list[i].received_time, 
                     send_time__lt=cus_list[i+1].received_time)
         else:
             sub = SubMessageLog.objects.filter(parent_msg_id=cus_list[i].id, send_time__gte=cus_list[i].received_time)
         for s in sub:
-            time_data[cus_list[i]].append(s)
+            if s.reply.split(".")[-1] in ['jpg', 'jpeg']:
+                time_data[cus_list[i]].append({"type":"img","reply":f'http://wotsapp-campaign.bonrix.in:8000/media/UnzippedFiles/{uname}/{s.reply}'})
+            elif "[" in s.reply or "]" in s.reply:
+                time_data[cus_list[i]].append({"type":"temp", "reply":""})
+            else:
+                time_data[cus_list[i]].append({"type":"text","reply":s.reply})
+            
     return time_data
 
 
 def what_gui(request):
-    uid = request.COOKIES["id"]
-    try:
-        to = request.GET['to']
-        rnum  =request.GET['from']
-        customers = MessageLog.objects.filter(reply_number=rnum, sender_number=to).order_by("received_time")
-    except:
-        customers = MessageLog.objects.filter(user_id=uid).order_by("received_time")
-        to, rnum = customers[len(customers)-1].sender_number, customers[len(customers)-1].reply_number
-    
-    users = MessageLog.objects.filter(user_id=uid).values("sender_number", "reply_number").distinct()
-    for u in users:
-        if u['sender_number'] == to:
-            u["active"] = "active"
-    print(users)
-    return render(request, "what_GUI.html", {"from":rnum, "to":to,"provider":WA_MSG_Provider.objects.get(phone_no=rnum).provider_name,"users": users,"time_data":prepare_chat(customers)})
+    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        uid = request.COOKIES["id"]
+        try:
+            to = request.GET['to']
+            rnum  =request.GET['from']
+            customers = MessageLog.objects.filter(reply_number=rnum, sender_number=to).order_by("received_time")
+        except:
+            customers = MessageLog.objects.filter(user_id=uid).order_by("received_time")
+            to, rnum = customers[len(customers)-1].sender_number, customers[len(customers)-1].reply_number
+        
+        users = MessageLog.objects.filter(user_id=uid).values("sender_number", "reply_number").distinct()
+        for u in users:
+            if u['sender_number'] == to:
+                u["active"] = "active"
+        print(users)
+        return render(request, "what_GUI.html", {"from":rnum, "to":to,"provider":WA_MSG_Provider.objects.get(phone_no=rnum).provider_name,"users": users,"time_data":prepare_chat(customers, User1.objects.get(pk=request.COOKIES['id']).user_name)})
 
 
 def chat_msg(request):
-    to = request.GET['to']
-    fom = request.GET['from']
-    msg = request.GET['msg']
+    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        to = request.GET['to']
+        fom = request.GET['from']
+        msg = request.GET['msg']
 
-    msg_log = MessageLog.objects.filter(sender_number=to)
-    msg_log = msg_log[len(msg_log) -1]
-    api = Voice_API.objects.get(whatsapp_name=fom)
-    payload = json.dumps({
-                "messaging_product": "whatsapp",
-                "recipient_type": "individual",
-                "to": f"{msg_log.sender_number}",
-                "type": "text",
-                "text": {
-                    "preview_url": False,
-                    "body": f"{msg}"
-                }
-            })
-    response = requests.post(url=api.message_API, data=payload, headers=api.header)
-    msg_log.reply = msg
-    msg_log.request = api.message_API
-    msg_log.response = response.text
-    msg_log.send_time = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5)
-    try:
-        msg_id = json.loads(response.text)["messages"][0]['id']
-        msg_log.msg_id = msg_id
-        msg_log.save()
-        # messages.success(request, f"Message sent successfully to {msg_log.sender_number}")
-    except:
-        msg_id = ""
-        msg_log.save()
-        # messages.error(request, f"Message not sent to {msg_log.sender_number}")
-    SubMessageLog.objects.create(parent_msg_id=msg_log.id, reply_number=msg_log.reply_number,
-                                    user_id=msg_log.user_id, reply=msg,
-                                    request=api.message_API,
-                                    send_time=datetime.datetime.now(
-                                        pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5),
-                                    response=response.text, msg_id=msg_id)
-    return redirect(f"what_gui?to={to}&from={WA_MSG_Provider.objects.get(provider_name=fom).phone_no}")
+        msg_log = MessageLog.objects.filter(sender_number=to)
+        msg_log = msg_log[len(msg_log) -1]
+        api = Voice_API.objects.get(whatsapp_name=fom)
+        payload = json.dumps({
+                    "messaging_product": "whatsapp",
+                    "recipient_type": "individual",
+                    "to": f"{msg_log.sender_number}",
+                    "type": "text",
+                    "text": {
+                        "preview_url": False,
+                        "body": f"{msg}"
+                    }
+                })
+        response = requests.post(url=api.message_API, data=payload, headers=api.header)
+        msg_log.reply = msg
+        msg_log.request = api.message_API
+        msg_log.response = response.text
+        msg_log.send_time = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5)
+        try:
+            msg_id = json.loads(response.text)["messages"][0]['id']
+            msg_log.msg_id = msg_id
+            msg_log.save()
+            # messages.success(request, f"Message sent successfully to {msg_log.sender_number}")
+        except:
+            msg_id = ""
+            msg_log.save()
+            # messages.error(request, f"Message not sent to {msg_log.sender_number}")
+        SubMessageLog.objects.create(parent_msg_id=msg_log.id, reply_number=msg_log.reply_number,
+                                        user_id=msg_log.user_id, reply=msg,
+                                        request=api.message_API,
+                                        send_time=datetime.datetime.now(
+                                            pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5),
+                                        response=response.text, msg_id=msg_id)
+        return redirect(f"what_gui?to={to}&from={WA_MSG_Provider.objects.get(provider_name=fom).phone_no}")
 
 def change_chat(request):
-    uid = request.COOKIES["id"]
-    to = request.GET['to']
-    customers = MessageLog.objects.filter(user_id=uid, sender_number=to).order_by("received_time")
-    return JsonResponse({"chat":  prepare_chat(customers)})
+    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        uid = request.COOKIES["id"]
+        to = request.GET['to']
+        customers = MessageLog.objects.filter(user_id=uid, sender_number=to).order_by("received_time")
+        return JsonResponse({"chat":  prepare_chat(customers)})
 
 
 def testgui(request):
     return render(request, "what_GUI.html")
 
-
 def createTemp(request):
-    if request.method == "POST":
-        if request.POST["type"] == "multiple":
-            template_name = str(request.POST['temp-name'])
-            provider = request.POST["provider"]
-            data = WA_MSG_Provider.objects.get(phone_no=provider)
-            body = request.POST["body"]
-            language = request.POST["language"]
-            category = request.POST['category']
+    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        if request.method == "POST":
+            if request.POST["type"] == "multiple":
+                template_name = str(request.POST['temp-name'])
+                provider = request.POST["provider"]
+                data = WA_MSG_Provider.objects.get(phone_no=provider)
+                database_temps = New_Templates.objects.filter(message_provider_id=data.id).values("temp_id")
+                table_temp_id_list = [x['temp_id'] for x in database_temps]
+                body = request.POST["body"]
+                language = request.POST["language"]
+                category = request.POST['category']
 
-            file = request.FILES.get('myfile')
-            rows, f_type, header_chars = prepare(file, request.COOKIES['id'])
+                response = requests.get(
+                    f"https://graph.facebook.com/v15.0/{data.business_id}/message_templates?access_token={data.token}")
+                try:
+                    response = json.loads(response.text)
+                    res_dt = response['data']
+                except KeyError:
+                    print("Fetch Problem")
+                    return JsonResponse({"response":response})
 
-            if f_type == "":
-                header_chars = header_chars.split(",")
+                file = request.FILES.get('myfile')
+                rows, f_type, header_chars = prepare(file, request.COOKIES['id'])
 
-                for i in range(1, len(rows) - 1):
+                if f_type == "":
+                    header_chars = header_chars.split(",")
 
-                    cols = rows[i].split(",")
+                    for i in range(1, len(rows) - 1):
 
-                    temp_n = cols[header_chars.index(template_name)].replace(" ","_").lower()
+                        cols = rows[i].split(",")
 
-                    temp_b = cols[header_chars.index(body)]
+                        temp_n = cols[header_chars.index(template_name)].replace(" ","_").lower()
 
-                    myli = temp_b.split("{#var#}")
+                        temp_b = cols[header_chars.index(body)]
+
+                        for td in res_dt:
+                            print("Checking")
+                            ind = next((index for (index, c) in enumerate(td['components']) if c["type"] == "BODY"), None)
+                            if ind and (td['id'] not in table_temp_id_list):
+                                c = td["components"][ind]
+                                excel_text = (temp_b+" Thank you").replace("{#var#}", "(.*)")
+                                p = re.compile(excel_text)
+                                variables = p.findall(c['text'])
+                                if variables:
+                                    print("Matched")
+                                    New_Templates.objects.create(user_id=request.COOKIES['id'], message_provider_id=data.id, temp_name=td['name'],
+                                                    text_msg=regexpstring(temp_b, 0), text_converted=c['text'], lang_code=td['language'], category=td['category'],
+                                                    temp_id=td['id'], status=td['status'])
+                                    break
+                        else:  
+                            myli = temp_b.split("{#var#}")
+                            myli = [j for j in filter(lambda x: x != "", myli)]
+
+                            vars = temp_b.count("{#var#}")
+
+                            final = ""
+                            n = 1
+                            for i in myli:
+                                if n > vars:
+                                    final += i
+                                    break
+                                final += i + "{{"+str(n)+"}}"
+                                n+=1
+                            final += " Thank you"
+                            
+
+                            payload = {
+                                "name": temp_n,
+                                "components":[
+                                    {
+                                        "type":"HEADER",
+                                        "format":"TEXT",
+                                        "text": data.temp_header
+                                    },
+                                    {
+                                        "type":"BODY",
+                                        "text":final
+                                    },
+                                    {
+                                        "type":"FOOTER",
+                                        "text":data.temp_footer
+                                    }
+                                ],
+                                "language":language,
+                                "category":category
+                            }
+                            if "isbutton" in request.POST:
+                                payload["components"].append({"type": "BUTTONS","buttons": [{"type": "QUICK_REPLY","text": request.POST['button-text']}]})
+                            payload = json.dumps(payload)
+                            url = f"https://graph.facebook.com/v15.0/{data.business_id}/message_templates?access_token={data.token}"
+                            header = {"Content-Type": "application/json", "Authorization": f"{data.token}"}
+
+                            response = requests.post(url=url, data=payload, headers=header)
+
+                            print(response.text)
+                            try:
+                                New_Templates.objects.create(user_id=request.COOKIES['id'], message_provider_id=data.id, temp_name=temp_n,
+                                                            text_msg=regexpstring(temp_b, 0), text_converted=final, lang_code=language, category=category,
+                                                            temp_id=json.loads(response.text)['id'], status="PENDING")         
+                            except:
+                                return JsonResponse({"Response":json.loads(response.text)})
+                    return redirect("/createTemp")
+                elif f_type == "tup":
+                    
+                    for i in range(0, len(rows)):
+                        cols = [x for x in rows[i]]
+
+                        temp_n = cols[header_chars.index(template_name)].replace(" ","_").lower()
+                        # temp_h = cols[header_chars.index(header)]
+                        temp_b = cols[header_chars.index(body)]
+                        # temp_f = cols[header_chars.index(footer)]
+
+                        for td in res_dt:
+                            print("checking")
+                            ind = next((index for (index, c) in enumerate(td['components']) if c["type"] == "BODY"), None)
+                            if ind and (td['id'] not in table_temp_id_list):
+                                c = td["components"][ind]
+                                excel_text = (temp_b+" Thank you").replace("{#var#}", "(.*)")
+                                p = re.compile(excel_text)
+                                variables = p.findall(c['text'])
+                                if variables:
+                                    print("Matched")
+                                    New_Templates.objects.create(user_id=request.COOKIES['id'], message_provider_id=data.id, temp_name=td['name'],
+                                                    text_msg=regexpstring(temp_b, 0), text_converted=c['text'], lang_code=td['language'], category=td['category'],
+                                                    temp_id=td['id'], status=td['status'])
+                                    break
+                        else:
+                            myli = temp_b.split("{#var#}")
+                            myli = [j for j in filter(lambda x: x != "", myli)]
+
+                            vars = temp_b.count("{#var#}")
+
+                            final = ""
+                            n = 1
+                            for i in myli:
+                                if n > vars:
+                                    final += i
+                                    break
+                                final += i + "{{"+str(n)+"}}"
+                                n+=1
+                            final += " Thank you"
+                            payload = {
+                                "name": temp_n,
+                                "components":[
+                                    {
+                                        "type":"HEADER",
+                                        "format":"TEXT",
+                                        "text": data.temp_header
+                                    },
+                                    {
+                                        "type":"BODY",
+                                        "text":final
+                                    },
+                                    {
+                                        "type":"FOOTER",
+                                        "text":data.temp_footer
+                                    }
+                                ],
+                                "language":language,
+                                "category":category
+                            }
+                            if "isbutton" in request.POST:
+                                payload["components"].append({"type": "BUTTONS","buttons": [{"type": "QUICK_REPLY","text": request.POST['button-text']}]})
+                            payload = json.dumps(payload)
+                            url = f"https://graph.facebook.com/v15.0/{data.business_id}/message_templates?access_token={data.token}"
+                            header = {"Content-Type": "application/json", "Authorization": f"{data.token}"}
+
+                            response = requests.post(url=url, data=payload, headers=header)
+                            print(response.text)
+                            try:
+                                New_Templates.objects.create(user_id=request.COOKIES['id'], message_provider_id=data.id, temp_name=temp_n,
+                                                            text_msg=regexpstring(temp_b, 0), text_converted=final, lang_code=language, category=category,
+                                                            temp_id=json.loads(response.text)['id'], status="PENDING")
+                            except:
+                                return JsonResponse({"Response":json.loads(response.text)})
+                    return redirect("/createTemp")
+            elif request.POST["type"] == "single":
+                print("Single")
+                template_name = str(request.POST['temp-name']).replace(" ","_").lower()
+                provider = request.POST["wa_provider"]
+                data = WA_MSG_Provider.objects.get(phone_no=provider)
+                body = request.POST["temp-body"]
+                language = request.POST["language"]
+                category = request.POST['category']
+
+                response = requests.get(
+                    f"https://graph.facebook.com/v15.0/{data.business_id}/message_templates?access_token={data.token}")
+                try:
+                    response = json.loads(response.text)
+                    res_dt = response['data']
+                except KeyError:
+                    print("Fetch Problem")
+                    return JsonResponse({"response":response})
+
+                for td in res_dt:
+                    print("checking")
+                    ind = next((index for (index, c) in enumerate(td['components']) if c["type"] == "BODY"), None)
+                    if ind and (td['id'] not in table_temp_id_list):
+                        c = td["components"][ind]
+                        excel_text = regexpstring(body, 0).replace("{#var#}", "(.*)")
+                        p = re.compile(excel_text)
+                        variables = p.findall(regexpstring(c['text'], 1))
+                        if variables:
+                            print("Matched")
+                            New_Templates.objects.create(user_id=request.COOKIES['id'], message_provider_id=data.id, temp_name=td['name'],
+                                            text_msg=regexpstring(temp_b, 0), text_converted=c['text'], lang_code=td['language'], category=td['category'],
+                                            temp_id=td['id'], status=td['status'])
+                            break
+                else:
+                    myli = body.split("{#var#}")
                     myli = [j for j in filter(lambda x: x != "", myli)]
 
-                    vars = temp_b.count("{#var#}")
+                    vars = body.count("{#var#}")
 
                     final = ""
                     n = 1
@@ -3166,181 +3823,158 @@ def createTemp(request):
                         n+=1
                     final += " Thank you"
 
-                    payload = json.dumps({
-                        "name": temp_n,
-                        "components":[
-                            {
-                                "type":"HEADER",
-                                "format":"TEXT",
-                                "text": data.temp_header
-                            },
-                            {
-                                "type":"BODY",
-                                "text":final
-                            },
-                            {
-                                "type":"FOOTER",
-                                "text":data.temp_footer
-                            }
-                        ],
-                        "language":language,
-                        "category":category
-                    })
                     url = f"https://graph.facebook.com/v15.0/{data.business_id}/message_templates?access_token={data.token}"
                     header = {"Content-Type": "application/json", "Authorization": f"{data.token}"}
 
-                    response = requests.post(url=url, data=payload, headers=header)
-
-                    print(response.text)
-                    New_Templates.objects.create(user_id=request.COOKIES['id'], message_provider_id=data.id, temp_name=temp_n,
-                                                text_msg=temp_b+" Thank you", text_converted=final, lang_code=language, category=category,
-                                                temp_id=json.loads(response.text)['id'], status="PENDING")
-
-                return redirect("/chat_token")
-            elif f_type == "tup":
-                
-                for i in range(0, len(rows)):
-                    cols = [x for x in rows[i]]
-
-                    temp_n = cols[header_chars.index(template_name)].replace(" ","_").lower()
-                    # temp_h = cols[header_chars.index(header)]
-                    temp_b = cols[header_chars.index(body)]
-                    # temp_f = cols[header_chars.index(footer)]
-                    
-                    myli = temp_b.split("{#var#}")
-                    myli = [j for j in filter(lambda x: x != "", myli)]
-
-                    vars = temp_b.count("{#var#}")
-
-                    final = ""
-                    n = 1
-                    for i in myli:
-                        if n > vars:
-                            final += i
-                            break
-                        final += i + "{{"+str(n)+"}}"
-                        n+=1
-                    final += "Thank you"
-                    payload = json.dumps({
-                        "name": temp_n,
-                        "components":[
-                            {
-                                "type":"HEADER",
-                                "format":"TEXT",
-                                "text": data.temp_header
-                            },
-                            {
-                                "type":"BODY",
-                                "text":final
-                            },
-                            {
-                                "type":"FOOTER",
-                                "text":data.temp_footer
+                    payload = {
+                                "name": template_name,
+                                "components":[
+                                    {
+                                        "type":"HEADER",
+                                        "format":"TEXT",
+                                        "text": data.temp_header
+                                    },
+                                    {
+                                        "type":"BODY",
+                                        "text":final
+                                    },
+                                    {
+                                        "type":"FOOTER",
+                                        "text":data.temp_footer
+                                    }
+                                ],
+                                "language":language,
+                                "category":category
                             }
-                        ],
-                        "language":language,
-                        "category":category
-                    })
-                    url = f"https://graph.facebook.com/v15.0/{data.business_id}/message_templates?access_token={data.token}"
-                    header = {"Content-Type": "application/json", "Authorization": f"{data.token}"}
 
-                    response = requests.post(url=url, data=payload, headers=header)
+                    if "isbutton" in request.POST:
+                        payload["components"].append({"type": "BUTTONS","buttons": [{"type": "QUICK_REPLY","text": request.POST['button-text']}]})
+                    payload = json.dumps(payload)
+                    response = requests.post(url=url, data=payload,headers=header)
+
                     print(response.text)
-                    New_Templates.objects.create(user_id=request.COOKIES['id'], message_provider_id=data.id, temp_name=temp_n,
-                                                text_msg=temp_b, text_converted=final, lang_code=language, category=category,
-                                                temp_id=json.loads(response.text)['id'], status="PENDING")
+                    try:
+                        New_Templates.objects.create(user_id=request.COOKIES['id'], message_provider_id=data.id, temp_name=template_name,
+                                                    text_msg=regexpstring(body, 0), text_converted=final, lang_code=language, category=category,
+                                                    temp_id=json.loads(response.text)['id'], status="PENDING")
+                    except:
+                        return JsonResponse({"response":json.loads(response.text)})
                 return redirect("/createTemp")
-        elif request.POST["type"] == "single":
-            print("Single")
-            template_name = str(request.POST['temp-name']).replace(" ","_").lower()
-            provider = request.POST["wa_provider"]
-            data = WA_MSG_Provider.objects.get(phone_no=provider)
-            body = request.POST["temp-body"]
-            language = request.POST["language"]
-            category = request.POST['category']
+        else:
+            uid = request.COOKIES['id']
+            data = WA_MSG_Provider.objects.filter(user_id=uid)
+            templates = New_Templates.objects.filter(user_id=uid).order_by("id")
+            
+            sms_set = SMS_Settings.objects.filter(usr_id=uid)
+            if sms_set:
+                sms_set = sms_set[0]
+            else:
+                sms_set = ""
+            return render(request, "create_temp.html", {"data":data, "templates": templates, "header":data[0].temp_header, "footer":data[0].temp_footer, "sms_set":sms_set})
 
-            myli = body.split("{#var#}")
-            myli = [j for j in filter(lambda x: x != "", myli)]
+def add_SMS_setting(request):
+    if request.method == "POST":
+        mes_set = SMS_Settings.objects.filter(usr_id=request.COOKIES['id'])
+        if not mes_set:
+            SMS_Settings.objects.create(usr_id=request.COOKIES['id'])
 
-            vars = body.count("{#var#}")
+        if "both" in request.POST:
+            mes_set.update(both=True)
+        else:
+            mes_set.update(both=False)
 
-            final = ""
-            n = 1
-            for i in myli:
-                if n > vars:
-                    final += i
-                    break
-                final += i + "{{"+str(n)+"}}"
-                n+=1
-            final += " Thank you"
+        if "wa" in request.POST:
+            mes_set.update(whatsapp=True)
+        else:
+            mes_set.update(whatsapp=False)
 
-            url = f"https://graph.facebook.com/v15.0/{data.business_id}/message_templates?access_token={data.token}"
-            header = {"Content-Type": "application/json", "Authorization": f"{data.token}"}
+        if "mes" in request.POST:
+            mes_set.update(sms=True)
+        else:
+            mes_set.update(sms=False)
+        
+        if "seletive" in request.POST:
+            mes_set.update(selective=True)
+            mes_set.update(keywords=request.POST["keywords"])
+            if "sel_wa" in request.POST:
+                mes_set.update(sel_whatsapp=True)
+            else:
+                mes_set.update(sel_whatsapp=False)
 
-            payload = json.dumps({
-                        "name": template_name,
-                        "components":[
-                            {
-                                "type":"HEADER",
-                                "format":"TEXT",
-                                "text": data.temp_header
-                            },
-                            {
-                                "type":"BODY",
-                                "text":final
-                            },
-                            {
-                                "type":"FOOTER",
-                                "text":data.temp_footer
-                            }
-                        ],
-                        "language":language,
-                        "category":category
-                    })
+            if "sel_mes" in request.POST:
+                mes_set.update(sel_sms=True)
+            else:
+                mes_set.update(sel_sms=False)
+        else:
+            mes_set.update(selective=False)
+        
+        mes_set.update(sms_url=request.POST["sms-url"])
+        
+        return redirect("/createTemp")
 
-            response = requests.post(url=url, data=payload, headers=header)
-
-            print(response.text)
-            New_Templates.objects.create(user_id=request.COOKIES['id'], message_provider_id=data.id, temp_name=template_name,
-                                        text_msg=body, text_converted=final, lang_code=language, category=category,
-                                        temp_id=json.loads(response.text)['id'], status="PENDING")
-            return redirect("/createTemp")
-    else:
-        uid = request.COOKIES['id']
-        data = WA_MSG_Provider.objects.filter(user_id=uid)
-        templates = New_Templates.objects.filter(user_id=uid).order_by("id")
-        return render(request, "create_temp.html", {"data":data, "templates": templates, "header":data[0].temp_header, "footer":data[0].temp_footer})
-
+def regexpstring(text, isGram):
+     try:
+        text = text.replace("\r\n"," ").replace("\n"," ").replace("\t"," ").replace("*", "").replace("?", "") 
+        newString = ""
+        previousIsWhitespace = False
+        for t in text:
+            if t.isspace():
+                if previousIsWhitespace:
+                    continue
+                previousIsWhitespace = True
+            else:
+                previousIsWhitespace = False
+            
+            newString += t
+        if isGram:
+            return newString
+        else:
+            return newString + " Thank you"
+           
+     except:
+            text = text.replace("\r\n"," ").replace("\n"," ").replace("\t"," ").replace("*", "").replace("?", "")
+            if isGram:
+                return text
+            else:
+                return text + " Thank you"
 
 @csrf_exempt
 def getMatchTemp(request):
-    if request.method == "POST":
-        data = json.loads(request.body)
-        print(data)
-        phone = data["prod"]
-        text = data["text"]
-        
+    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        if request.method == "POST":
+            data = json.loads(request.body)
+            # print(data)
+            phone = data["prod"]
+            text = regexpstring(data["text"], 0)
+            print(text)
 
-        to_check_data = New_Templates.objects.filter(message_provider_id=WA_MSG_Provider.objects.get(phone_no=phone))
-        temps = []
-        for t in to_check_data:
-            data = t.text_msg.replace("{#var#}", "(.*)")
-            p = re.compile(data)
-            variables = p.findall(text)
-            if variables:
-                temps.append(f"{t.temp_name} [{t.lang_code}]")
-        return JsonResponse({"data":temps})
+            to_check_data = New_Templates.objects.filter(message_provider_id=WA_MSG_Provider.objects.get(phone_no=phone))
+            temps = []
+            for t in to_check_data:
+                
+                data = regexpstring(t.text_msg, 1).replace("{#var#}", "(.*)")
+                print(data)
+                
+                p = re.compile(data)
+                
+                variables = p.findall(text)
+                
+                if variables:
+                    temps.append(f"{t.temp_name} [{t.lang_code}]")
+                    print("Matched......................................") 
+            return JsonResponse({"data":temps})
 
 
 def ChangeHeaderorFooter(request):
-    if request.method == "POST":
-        phone = request.POST["wa_provider"]
-        WA_MSG_Provider.objects.filter(phone_no=phone).update(temp_header=request.POST["header"], temp_footer=request.POST["footer"])
-        return redirect("/createTemp")
-    else:
-        print(request.GET["phone"])
-        h = WA_MSG_Provider.objects.get(phone_no=request.GET["phone"])
-        return JsonResponse({"head": h.temp_header,"foot":h.temp_footer})
+    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        if request.method == "POST":
+            phone = request.POST["wa_provider"]
+            WA_MSG_Provider.objects.filter(phone_no=phone).update(temp_header=request.POST["header"], temp_footer=request.POST["footer"])
+            return redirect("/createTemp")
+        else:
+            print(request.GET["phone"])
+            h = WA_MSG_Provider.objects.get(phone_no=request.GET["phone"])
+            return JsonResponse({"head": h.temp_header,"foot":h.temp_footer})
 
 def fetch_New(request):
     print(request.GET.get('pname'))
@@ -3358,7 +3992,7 @@ def fetch_New(request):
             response = json.loads(response.text)
             data = response['data']
         except KeyError:
-            pass
+            return JsonResponse({"alert": response})
         api_temp_ids = set()
         temp_ids_query = New_Templates.objects.filter(message_provider_id=p.id).values('temp_id')
         tab_temp_id = set()
@@ -3374,6 +4008,6 @@ def fetch_New(request):
         
         to_delete = tab_temp_id - api_temp_ids
         print(to_delete)
-        # for t_d in to_delete:
-        #     New_Templates.objects.get(temp_id=t_d).delete()
+        for t_d in to_delete:
+            New_Templates.objects.get(temp_id=t_d).delete()
         return JsonResponse({"alert": ""})

@@ -164,16 +164,7 @@
                                                     style="width: 180.863px;">Message</th>
                                                 <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
                                                     colspan="1" aria-label="Title: activate to sort column ascending"
-                                                    style="width: 180.863px;">Variables</th>
-                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
-                                                    colspan="1" aria-label="Title: activate to sort column ascending"
                                                     style="width: 180.863px;">Send Time</th>
-                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
-                                                    colspan="1" aria-label="Title: activate to sort column ascending"
-                                                    style="width: 180.863px;">Sender</th>
-                                                <!-- <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
-                                                    colspan="1" aria-label="Title: activate to sort column ascending"
-                                                    style="width: 180.863px;">MSG_ID</th> -->
                                                 <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
                                                     colspan="1" aria-label="Title: activate to sort column ascending"
                                                     style="width: 180.863px;">Status</th>
@@ -189,9 +180,7 @@
                                                 <td class="sorting_1"><input type="checkbox" name="row-check" id="{{ c.id }}"></td>
                                                 <td class="sorting_1">{{ c.to_number }}</td>
                                                 <td class="sorting_1">{{ c.message }}</td>
-                                                <td class="sorting_1">{{ c.variables }}</td>
                                                 <td class="sorting_1">{{ c.send_time }}</td>
-                                                <td class="sorting_1">{{ c.reply_number }}</td>
                                                 <td class="sorting_1"> <img src='../static/assets/img/{{c.status}}.png' width="20%" height="20%" alt=""> </td>
                                                     <!-- /startCamp?id={{ c.id }} <i class="fa fa-check"></i>-->
                                                 <td><button type="button" onclick="addReqRes(this)" class="btn btn-round btn-warning txt-toggle" data-toggle="modal" data-target="#exampleModalCenter2"> Show </button><p id="req" class="hide-text" style="display: none;">{{ c.request }}<p><p id="res" class="hide-text" style="display: none;">{{ c.response }}<p></p></td>
@@ -303,7 +292,7 @@
                 $.ajax({
                     "async": true,
                     "crossDomain": true,
-                    url: "/deleteAll?name=outbox",
+                    url: "/deleteAll?name=sms_outbox",
                     type: 'GET',
                     success: function(res) {
                         console.log(res);
@@ -322,7 +311,7 @@
         });
         $('#kt_search').on("click", function(){
             $.ajax({
-                url: "/searchTable/?name=outbox",
+                url: "/searchTable/?name=sms_outbox",
                 type: "POST",
                 data: $("#advance-srch").serialize(),
                 success: function(response){
@@ -353,7 +342,7 @@
                         selected.push(t.attr('id'));
                     }
                 });
-                var json = { name: "outbox", data: selected }
+                var json = { name: "sms_outbox", data: selected }
                 console.log(json);
                 $.ajax({
                     type: 'POST',
@@ -373,7 +362,7 @@
             for(var i=0, n=checkboxes.length;i<n;i++) {
                 selected.push(checkboxes[i]);
             }
-            var json = { name: "outbox", data: selected }
+            var json = { name: "sms_outbox", data: selected }
             $.ajax({
                     type: 'POST',
                     url: "/export_selected_excel",
@@ -398,7 +387,7 @@
                     selected.push(t.attr('id'));
                 }
             });
-            var json = { name: "outbox", data: selected }
+            var json = { name: "sms_outbox", data: selected }
             $.ajax({
                     type: 'POST',
                     url: "/export_selected_excel",

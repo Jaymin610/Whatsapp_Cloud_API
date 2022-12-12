@@ -93,6 +93,14 @@
                 <div class="card-body ">
                     <div class="table-scrollable">
                         <div id="example4_wrapper" class="dataTables_wrapper container-fluid dt-bootstrap4 no-footer">
+                            <div class="row" style="margin-left: 5px;">
+                                Async &nbsp;
+                                <label class="switch">
+                                    <input type="checkbox" name="as" id="sync-async" value="text">
+                                    <span class="slider-my round" ></span>
+                                </label> &nbsp;
+                                Sync
+                            </div>
                             <div class="row" style="margin-bottom: 10px;">
                                 <div class="col-sm-12 col-md-3"> 
                                     <div class="btn-group">
@@ -357,9 +365,13 @@
         
         $("#strtal").on("click", function(){
             let mode = $('input[name="mode"]:checked').val();
+            // let s_as = $('input[name="as"]:checked').val();
             if (!mode){
                 mode = 'temp';
             }
+            // if (!as){
+            //     s_as = 'async';
+            // }
             console.log(mode)
             let url = '/start_all?mode='+mode+'&type=normal';
             $.ajax({

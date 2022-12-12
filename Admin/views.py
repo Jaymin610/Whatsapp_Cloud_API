@@ -7,7 +7,7 @@ from PIL import Image
 from django.contrib import messages
 import requests
 from django.core.files.storage import FileSystemStorage
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 from user.models import *
 from django.contrib.auth.models import User
@@ -104,6 +104,7 @@ def get_tempJson(request):
         body_var.sort()
 
     try:
+        
         del json_data["paging"]
     except:
         pass
@@ -307,7 +308,17 @@ def addSettings(request):
                 messages.error("API setting already exist")
         return render(request, "Admin_AddSettings.html", {"action": "/admin/addSettings",
                                                     "set": "/admin/settings?uid=" + request.COOKIES['id']})
-
+from django.views.decorators.csrf import csrf_exempt
+@csrf_exempt
+def updateuser(request):
+    if request.user.is_authenticated:
+        if request.method == "POST":
+            user_id = request.POST['id']
+            date = request.POST['update-user']
+            User1.objects.filter(pk=user_id).update(validity=date)
+            messages.success(request,"User validity updated successfully")
+            print(date)
+    return redirect("/admin/dashboard")
 
 def editSettings(request):
     if request.user.is_authenticated:

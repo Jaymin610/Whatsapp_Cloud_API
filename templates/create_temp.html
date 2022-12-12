@@ -30,16 +30,32 @@
             <div class="col-sm-12 col-md-12 col-xl-12">
                 <div class="card-box">
                     <div class="card-head">
+                        <div class="btn-group">
+                            <div class="btn-group btn btn-primary" data-toggle="modal" data-target="#exampleModalCenter3">
+                                Add Templates
+                            </div>
+                        </div>
+                        <div class="btn-group">
+                            <div class="btn-group btn btn-danger" data-toggle="modal" data-target="#exampleModalCenter6">
+                                Add Single Template
+                            </div>
+                        </div>
+                        <div class="btn-group">
+                            <div class="btn-group btn btn-warning" data-toggle="modal" data-target="#exampleModalCenter7">
+                                SMS settings
+                            </div>
+                        </div>
+                        <div class="btn-group pull-right" id="change-h">
+                            <div class="btn-group btn btn-primary" data-toggle="modal" data-target="#exampleModalCenter2">
+                                change Header and footer
+                            </div>
+                        </div>
                     </div>
-
-
                     <div class="card-body ">
                         <div class="table-scrollable">
                             <div id="example4_wrapper"
                                 class="dataTables_wrapper container-fluid dt-bootstrap4 no-footer">
                                 <div class="row" style="margin-bottom: 10px;">
-
-
                                     <div class="col-md-3 col-sm-12">
                                         <select name="provider" class="form-control input-height" id="provider">
                                             <option value="">Select...</option>
@@ -148,7 +164,7 @@
             </div>
         </div>   
     </div>
-    <div class="row">
+    {% comment %} <div class="row">
         <div class="col-md-12 col-sm-12">
             <div class="card card-box">
                 <div class="card-head">
@@ -239,8 +255,8 @@
                 </div>
             </div>
         </div>
-    </div>
-    <div class="row">
+    </div> {% endcomment %}
+    {% comment %} <div class="row">
         <div class="col-md-12 col-sm-12">
             <div class="card card-box">
                 <div class="card-head">
@@ -310,7 +326,7 @@
                 </div>
             </div>
         </div>   
-    </div>
+    </div> {% endcomment %}
 </div>
 
 
@@ -352,10 +368,297 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="exampleModalCenter3" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true" >
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 825px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle">Add Template</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" >
+                <div class="col-md-12 col-sm-12">
+                    <div class="card card-box">
+                        <div class="card-head">
+                            
+                        </div>
+                        <div class="card-body" id="bar-parent">
+                            <form action="/createTemp" method="post" id="form_sample_1" class="form-horizontal"
+                                novalidate="novalidate" enctype="multipart/form-data">{% csrf_token %}
+                                <input type="text" name="type" value="multiple" style="display: none;">
+                                <div class="form-group row">
+                                    <label class="control-label col-md-3">Excel Data
+                                        <span class="required" aria-required="true"> * </span>
+                                    </label>
+                                    <div class="col-md-5">
+                                        <input class="form-control" type="file" id="formFile" name="myfile">
+                                    </div>
+                                </div>
+        
+                                <div class="form-group row">
+                                    <label class="control-label col-md-3">Template Name
+                                        <span class="required" aria-required="true"> * </span>
+                                    </label>
+                                    <div class="col-md-5" id="mob-select">
+                                        <select class="form-control header-to-inject" name="temp-name">
+                                            <option value="">Select...</option>
+                                        </select>
+                                    </div>
+                                </div>
+        
+                                <div class="form-group row">
+                                    <label class="control-label col-md-3">Body
+                                        <span class="required" aria-required="true"> * </span>
+                                    </label>
+                                    <div class="col-md-5" id="mob-select">
+                                        <select class="form-control header-to-inject" name="body">
+                                            <option value="">Select...</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="control-label col-md-3">Language
+                                        <span class="required" aria-required="true"> * </span>
+                                    </label>
+                                    <div class="col-md-5" id="mob-select">
+                                        <input class="form-control header-to-inject" name="language">
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="control-label col-md-3">Category
+                                        <span class="required" aria-required="true"> * </span>
+                                    </label>
+                                    <div class="col-md-5" id="">
+                                        <select class="form-control" name="category">
+                                            <option value="">Select...</option>
+                                            <option value="transactional">Transactional</option>
+                                            <option value="otp">OTP</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="control-label col-md-3">Whatsapp user
+                                        <span class="required" aria-required="true"> * </span>
+                                    </label>
+        
+                                    <div class="col-md-5">
+                                        <select name="provider" class="form-control input-height">
+                                            <option value="">Select...</option>
+                                            {% for d in data %}
+                                            <option value="{{d.phone_no}}"> {{ d.provider_name }} [{{ d.phone_no }}] </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="control-label col-md-3">Button</label>
+                                    <div class="col-md-5" id="">
+                                        <input type="checkbox" name="isbutton">
+                                        <input type="text" name="button-text" class="form-control" placeholder="Button Text">
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <div class="row">
+                                        <div class="offset-md-3 col-md-9">
+                                            <button type="submit" class="btn btn-danger">Create</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="exampleModalCenter6" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true" >
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 825px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle">Add Template</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" >
+                <div class="col-md-12 col-sm-12">
+                    <div class="card card-box">
+                        <div class="card-head">
+                            <header> Add Single Template </header>
+                        </div>
+                        <div class="card-body" id="bar-parent">
+                            <form action="/createTemp" method="POST" class="form-horizontal"> {% csrf_token %}
+                                <input type="text" name="type" value="single" style="display: none;">
+                                <div class="form-group row">
+                                    <label class="control-label col-md-3">Whatsapp User
+                                        <span class="required" aria-required="true"> * </span>
+                                    </label>
+                                    <div class="col-md-5">
+                                        <select name="wa_provider" class="form-control input-height prod-forh">
+                                            <option value="">Select...</option>
+                                            {% for d in data %}
+                                            <option value='{{d.phone_no}}'> {{d.provider_name }} [{{d.phone_no}}] </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="control-label col-md-3">Template Name
+                                        <span class="required" aria-required="true"> * </span>
+                                    </label>
+                                    <div class="col-md-5">
+                                        <input type="text" name="temp-name" class="form-control">
+                                    </div>
+                                </div>
+        
+                                <div class="form-group row">
+                                    <label class="control-label col-md-3">Body
+                                        <span class="required" aria-required="true"> * </span>
+                                    </label>
+                                    <div class="col-md-5">
+                                        <textarea name="temp-body" id="" cols="30" rows="5" class="form-control"></textarea>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="control-label col-md-3">Language
+                                        <span class="required" aria-required="true"> * </span>
+                                    </label>
+                                    <div class="col-md-5" id="mob-select">
+                                        <input class="form-control" name="language">
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="control-label col-md-3">Category
+                                        <span class="required" aria-required="true"> * </span>
+                                    </label>
+                                    <div class="col-md-5" id="">
+                                        <select class="form-control" name="category">
+                                            <option value="">Select...</option>
+                                            <option value="transactional">Transactional</option>
+                                            <option value="otp">OTP</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="control-label col-md-3">Button</label>
+                                    <div class="col-md-5" id="">
+                                        <input type="checkbox" name="isbutton">
+                                        <input type="text" name="button-text" class="form-control" placeholder="Button Text">
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <div class="row">
+                                        <div class="offset-md-3 col-md-9">
+                                            <button type="submit" class="btn btn-danger">Create</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="exampleModalCenter7" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true" >
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 825px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" >
+                <div class="col-md-12 col-sm-12">
+                    <div class="card card-box">
+                        <div class="card-head">
+                            <header> Message Settings </header>
+                        </div>
+                        <div class="card-body" id="bar-parent">
+                            <form action="/smsurl" method="POST" class="form-horizontal set_form"> {% csrf_token %}
+                                <input type="text" name="type" value="single" style="display: none;">
+                                <div class="form-group">
+                                    <label>SMS Url:</label>
+                                    <input type="text" name="sms-url" class="form-control" value="{{sms_set.sms_url}}">
+                                    <p style="color: #555;">Example: http(s)://abc.com?mobile=&#60;mobile&#62;&message=&#60;message&#62;</p>
+                                </div>
+                                
+                                <div class="col-lg-12 p-t-20"> 
+                                        <input type="checkbox" id="" class="mdl-checkbox__input" name="both" {% if sms_set.both %}checked{% endif %}>
+                                        <span class="mdl-checkbox__label">Send On Both</span> 
+                                </div>
+                                <div class="col-lg-12 p-t-20"> 
+                                        <input type="checkbox" id="" class="mdl-checkbox__input" name="wa" {% if sms_set.whatsapp %}checked{% endif %}>
+                                        <span class="mdl-checkbox__label">Only Whatsapp</span>
+                                </div>
+                                <div class="col-lg-12 p-t-20"> 
+                                        <input type="checkbox" id="" class="mdl-checkbox__input" name="mes" {% if sms_set.sms %}checked{% endif %}>
+                                        <span class="mdl-checkbox__label">Only Message</span>
+                                </div>
+                                <div class="col-lg-12 p-t-20"> 
+                                        <input type="checkbox" id="checkbox-1" class="mdl-checkbox__input" name="seletive" {% if sms_set.selective %}checked{% endif %}>
+                                        <span class="mdl-checkbox__label">Selective</span>
+                                </div>
+                                <div class="form-group sele" style="display: none;">
+                                    <label>Keywords:</label>
+                                    <input type="text" name="keywords" class="form-control" value="{{sms_set.keywords}}">
+                                </div>
+                                <div class="col-lg-12 p-t-20 sele" style="display: none;"> 
+                                    <input type="checkbox" id="" class="mdl-checkbox__input" name="sel_wa" {% if sms_set.sel_whatsapp %}checked{% endif %}>
+                                    <span class="mdl-checkbox__label">Only Whatsapp</span>
+                                </div>
+                                <div class="col-lg-12 p-t-20 sele" style="display: none;"> 
+                                    <input type="checkbox" id="" class="mdl-checkbox__input" name="sel_mes" {% if sms_set.sel_sms %}checked{% endif %}>
+                                    <span class="mdl-checkbox__label">Only Message</span>
+                                </div>
+                                
+                                <div class="form-actions">
+                                    <div class="row">
+                                        <div class="offset-md-3 col-md-9">
+                                            <button type="submit" class="btn btn-primary">Save</button>
+                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
     $(document).ready(function () {
 
         $("#temp-json").val()
+
+        if ($("#checkbox-1").is(":checked")){
+            $(".sele").css("display", "") 
+        }
+        else{
+            console.log("False")
+            $(".sele").css("display", "none") 
+        }
+
+        $("#checkbox-1").on("click", function(){
+            if ($(this).is(":checked")){
+                $(".sele").css("display", "") 
+            }
+            else{
+                console.log("False")
+                $(".sele").css("display", "none") 
+            }
+        })
 
         $("#check-btn").on("click", function(){
             console.log($("#check-text").val())
@@ -411,8 +714,8 @@
                 url: url,
                 type: 'GET',
                 success: function (res) {
-                    if (res["alert"]) {
-                        alert(res['alert']);
+                    if (res.alert) {
+                        alert(res.alert.error.message);
                     }
                     else { location.reload(); }
                 }

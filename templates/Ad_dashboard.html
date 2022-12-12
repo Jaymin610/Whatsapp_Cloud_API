@@ -1,5 +1,18 @@
 {% extends 'Ad_base.html' %}
 {% block content %}
+{% if messages %}
+    {% for message in messages %}
+<div class="container-fluid p-0">
+  <div class="alert {{ message.tags }} alert-dismissible" role="alert" >
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="">&times;close</span>
+      <i class="fa fa-close"></i>
+    </button>
+    {{ message }}
+  </div>
+</div>
+{% endfor %}
+{% endif %}
 
 <div class="page-content" style="min-height:1539px; width:1450px; margin-left: auto; margin-right: auto;">
     
@@ -107,6 +120,9 @@
                                                 <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
                                                     colspan="1" aria-label="Title: activate to sort column ascending"
                                                     style="width: 180.863px;">Active Status</th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;">Validity</th>
                                                 
                                             </tr>
                                         </thead>
@@ -118,8 +134,10 @@
                                                 <td>{{ c.email }} </td>
                                                 <td>{{ c.phone_no }} </td>
                                                 <td>{{ c.is_active }} </td>
+                                                <td>{{ c.validity }} </td>
                                                 <td>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<a href="/admin/settings?uid={{c.id}}"><button type="button" class="btn deepPink-bgcolor">Settings</button></a> 
                                                     &nbsp; <a href="/admin/AdminTemp?uid={{c.id}}"><button type="button" class="btn btn-primary"> Templates </button></a>
+                                                    <button type="button" class="btn btn-success edit-btn" data-toggle="modal" id="{{c.id}}" name="{{c.validity}}" data-target="#exampleModalCenter1"> Edit </button>
                                                 </td>
                                             </tr>
                                             {% endfor %}
@@ -135,10 +153,70 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="exampleModalCenter1" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true" >
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 825px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle">Update Status</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" >
+                <div class="col-md-12 col-sm-12">
+                    <div class="card card-box">
+                        <div class="card-head">
+                        </div>
+                        <div class="card-body" id="bar-parent">
+                            <form action="/admin/updateuser" method="POST" class="form-horizontal" id="update-form">
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
    
     
     $(document).ready(function(){
+
+        $(".edit-btn").on("click", function(){
+            let date = $(this).attr("name")
+            let id = $(this).attr("id")
+
+            $("#update-form").html(`<input type="text" value="${id}" name="id" style="display: none;">
+                                    <div class="form-group row">
+                                        <label class="control-label col-md-3">Validity
+                                            <span class="required" aria-required="true"> * </span>
+                                        </label>
+                                        <div class="col-md-5">
+                                            <input type="date" name="update-user" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="form-actions">
+                                        <div class="row">
+                                            <div class="offset-md-3 col-md-9">
+                                                <button type="button" data-dismiss="modal" class="btn btn-secondary">Cancel</button>
+                                                <button type="submit" class="btn btn-success">Submit</button>
+                                            </div>
+                                        </div>
+                                    </div>
+            `)
+            
+            if (date != "None"){
+                let d = new Date(date)
+                let day = new Intl.DateTimeFormat('en', { day: '2-digit' }).format(d);
+                let month = new Intl.DateTimeFormat('en', { month: 'numeric' }).format(d);
+                let year = new Intl.DateTimeFormat('en', { year: 'numeric' }).format(d);
+                let fdate = `${year}-${month}-${day}`
+                
+                $('[name="update-user"]').val(fdate)
+            }
+        })
+
         $("#deleteCamp").on("click", function(){
             if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true){
                 $.ajax({

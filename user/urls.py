@@ -40,6 +40,7 @@ urlpatterns = [
     path('check/', views.check, name='check'),
     path('searchTable/', views.searchTable, name='searchTable'),
     path('outBox/', views.outBox, name='outBox'),
+    path('sms_outBox/', views.SMS_outbox, name='sms_outBox'),
     path('generateToken/', views.generateToken, name='generateToken'),
     path('refresh_temp/', views.refresh_temp, name='refresh_temp'),
     path('updateTokenTemp/', views.updateTokenTemp, name='updateTokenTemp'),
@@ -67,7 +68,12 @@ urlpatterns = [
     path('testgui', views.testgui, name='testgui'),
     path('createTemp', views.createTemp, name='createTemp'),
     path('fetch_New', views.fetch_New, name='fetch_New'),
+    path('send_media_SMS', views.send_media_SMS, name='send_media_SMS'),
     path('getMatchTemp', views.getMatchTemp, name='getMatchTemp'),
     path('changeHorF', views.ChangeHeaderorFooter, name='ChangeHeaderorFooter'),
+    path('smsurl', views.add_SMS_setting, name='smsurl'),
+    path('missmatched', views.getMisMatchedData, name='missmatched'),
+    path('send_check', views.send_check, name='send_check'),
+    
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

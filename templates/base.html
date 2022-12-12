@@ -51,8 +51,14 @@
             <li class="nav-item">
               <a class="nav-link" href="/showMessages"><i class="fa fa-envelope"></i> Inbox</a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/outBox"><i class="fa fa-paper-plane"></i> Outbox</a>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Outbox
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                <a class="dropdown-item" href="/sms_outBox"><i class="fa fa-envelope"></i>SMS Outbox</a>
+                <a class="dropdown-item" href="/outBox"><i class="fa fa-whatsapp"></i>Whatsapp Outbox</a>
+              </div>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="/generateToken"><i class="fa fa-link"></i> Generate Token</a>
@@ -68,6 +74,9 @@
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="/createTemp">Dynamic Templates</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/missmatched">Missed Message</a>
             </li>
             {% comment %} <li class="nav-item">
                 <a class="nav-link" href="/what_gui"><i class="fa fa-forum"></i> Chat window</a>

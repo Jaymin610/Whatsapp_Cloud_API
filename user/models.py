@@ -9,6 +9,7 @@ class User1(models.Model):
         return self.user_name
     class Meta:
         verbose_name_plural = 'Users'
+    
     @staticmethod
     def authenticate(email, passw):
         return User1.objects.filter(email=email.lower(), password=passw, is_active=True)
@@ -32,6 +33,7 @@ class User1(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True, blank=False)
     updated_at = models.DateTimeField(auto_now=True, blank=False)
+    validity = models.DateField(null=True)
     is_auth = models.BooleanField(default=False)
 
 
@@ -65,7 +67,7 @@ class Data_Summary(models.Model):
     template = models.CharField(max_length=255, null=True, blank=True)
     lang = models.CharField(max_length=20, null=True, blank=True)
     text = models.CharField(max_length=1000, null=True, blank=True)
-    msg_id = models.CharField(max_length=255, blank=True, null=True)
+    msg_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
     voiceshoot_req = models.CharField(max_length=255, null=True, blank=True)
     voiceshoot_res = models.JSONField(max_length=255, null=True, blank=True)
     status = models.CharField(max_length=10, default="Pending")
@@ -80,7 +82,7 @@ class Advance_Data(models.Model):
     lang = models.CharField(max_length=20, null=True, blank=True)
     variables = models.JSONField(max_length=1000, null=True, blank=True)
     text = models.CharField(max_length=1000, null=True, blank=True)
-    msg_id = models.CharField(max_length=255, blank=True, null=True)
+    msg_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
     voiceshoot_req = models.CharField(max_length=255, null=True, blank=True)
     voiceshoot_res = models.JSONField(max_length=255, null=True, blank=True)
     status = models.CharField(max_length=10, default="Pending")
@@ -113,7 +115,7 @@ class MessageLog(models.Model):
     json = models.JSONField(max_length=1000, null=True)
     request = models.CharField(max_length=255, null=True)
     response = models.CharField(max_length=1000, null=True)
-    msg_id = models.CharField(max_length=255, blank=True, null=True)
+    msg_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
 
 
 class SubMessageLog(models.Model):
@@ -126,14 +128,14 @@ class SubMessageLog(models.Model):
     json = models.JSONField(max_length=1000, null=True)
     request = models.CharField(max_length=255, null=True)
     response = models.CharField(max_length=1000, null=True)
-    msg_id = models.CharField(max_length=255, blank=True, null=True)
+    msg_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
 
 
 class CallBack_Data(models.Model):
     user = models.ForeignKey(User1, on_delete=models.CASCADE, null=True)
     Received = models.TextField(null=True)
     received_time = models.DateTimeField(null=True)
-    msg_id = models.CharField(max_length=255, blank=True, null=True)
+    msg_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
     msg_status = models.CharField(max_length=50, blank=True, null=True)
 
 
@@ -144,7 +146,18 @@ class OutBox(models.Model):
     variables = models.CharField(max_length=500, null=True)
     send_time = models.DateTimeField(null=True)
     reply_number = models.CharField(max_length=100)
-    msg_id = models.CharField(max_length=255, blank=True, null=True)
+    msg_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+    status = models.CharField(max_length=10, null=True)
+    request = models.CharField(max_length=255, null=True)
+    response = models.TextField(null=True)
+    media_url = models.CharField(max_length=1000, null=True, blank=True)
+
+
+class SMS_OutBox(models.Model):
+    user = models.ForeignKey(User1, on_delete=models.CASCADE, null=True)
+    to_number = models.CharField(max_length=15, null=True)
+    message = models.CharField(max_length=1000, null=True, blank=True)
+    send_time = models.DateTimeField(null=True)
     status = models.CharField(max_length=10, null=True)
     request = models.CharField(max_length=255, null=True)
     response = models.TextField(null=True)
@@ -177,7 +190,7 @@ class New_Templates(models.Model):
     user = models.ForeignKey(User1, on_delete=models.CASCADE, null=True)
     message_provider = models.ForeignKey(WA_MSG_Provider, on_delete=models.CASCADE, null=True)
     temp_name = models.CharField(max_length=100, null=True, blank=True)
-    text_msg = models.CharField(max_length=1000, null=True, blank=True)
+    text_msg = models.TextField(null=True, blank=True)
     text_converted = models.CharField(max_length=1000, null=True, blank=True)
     lang_code = models.CharField(max_length=15, null=True, blank=True)
     category = models.CharField(max_length=255, null=True, blank=True)
@@ -219,4 +232,21 @@ class CustomerBotStop(models.Model):
     user_number = models.CharField(max_length=15, null=True)
     provider_name = models.CharField(max_length=100, null=True)
     bot = models.ForeignKey(What_Bot, on_delete=models.CASCADE, null=True)
-    provider = models.ForeignKey(WA_MSG_Provider, on_delete=models.CASCADE, null=True) 
+    provider = models.ForeignKey(WA_MSG_Provider, on_delete=models.CASCADE, null=True)
+
+
+class SMS_Settings(models.Model):
+    sms_url = models.CharField(max_length=1000, null=True, blank=True)
+    both = models.BooleanField(null=True)
+    whatsapp = models.BooleanField(null=True)
+    sms = models.BooleanField(null=True)
+    selective = models.BooleanField(null=True)
+    keywords = models.CharField(max_length=500, blank=True, null=True)
+    sel_whatsapp = models.BooleanField(null=True)
+    sel_sms = models.BooleanField(null=True)
+    usr = models.ForeignKey(User1, on_delete=models.CASCADE, null=True)
+
+class MissMatched_Temps(models.Model):
+    text_msg = models.CharField(max_length=1000, null=True)
+    provider = models.ForeignKey(WA_MSG_Provider, on_delete=models.CASCADE, null=True)
+    usr = models.ForeignKey(User1, on_delete=models.CASCADE, null=True)

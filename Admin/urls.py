@@ -17,4 +17,5 @@ urlpatterns = [
     path('editSettings', views.editSettings, name='editSettings'),
     path('delete_Settings', views.delete_setting, name='delete_setting'),
     path('checkTemp', views.get_CheckJSOn, name='get_CheckJSOn'),
+    path('updateuser', views.updateuser, name='updateuser'),
 ]
