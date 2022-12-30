@@ -29,11 +29,12 @@
         <!-- <a href="https://www.flaticon.com/free-icons/whatsapp" title="whatsapp icons">Whatsapp icons created by Freepik - Flaticon</a> -->
         <link rel="shortcut icon" href="{% static 'assets/img/whatsapp.png' %}">
         <!-- jquery  -->
-        <link> 
+        {% comment %} <link rel="stylesheet" type="text/css" href="{% static 'DataTables/datatables.min.css' %}"/>
+        <script type="text/javascript" src=" {% static 'DataTables/datatables.min.js' %}"></script>  {% endcomment %}
     </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        {% comment %} <a class="navbar-brand" href="#">{{u_name}}</a> {% endcomment %}
+        <a class="navbar-brand" href="#"></a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -49,51 +50,37 @@
               <a class="nav-link" href="/settings"><i class="fa fa-cog"></i> Settings</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="/showMessages"><i class="fa fa-envelope"></i> Inbox</a>
-            </li>
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                Outbox
-              </a>
-              <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-                <a class="dropdown-item" href="/sms_outBox"><i class="fa fa-envelope"></i>SMS Outbox</a>
-                <a class="dropdown-item" href="/outBox"><i class="fa fa-whatsapp"></i>Whatsapp Outbox</a>
-              </div>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/generateToken"><i class="fa fa-link"></i> Generate Token</a>
-            </li>
-            <li class="nav-item">
                 <a class="nav-link" href="/manageTemplate"><i class="fa fa-list"></i> Manage Templates</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/customerStat"><i class="fa fa-comment"></i> Conversations</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="/botSettings"><i class="fa fa-android"></i> Bot Settings</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/createTemp">Dynamic Templates</a>
+                <a class="nav-link" href="/createTemp"><i class="fa-regular fa-memo"></i> Dynamic Templates</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/missmatched">Missed Message</a>
-            </li>
-            {% comment %} <li class="nav-item">
-                <a class="nav-link" href="/what_gui"><i class="fa fa-forum"></i> Chat window</a>
-            </li> {% endcomment %}
-            {% comment %} <li class="nav-item">
-              <a class="nav-link" href=""> </a>
-            </li> {% endcomment %}
-            {% comment %} <li class="nav-item dropdown">
+            <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                More
+                <i class="fa fa-chat"></i> Messages
               </a>
               <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-                <a class="dropdown-item" href="/generateToken"><i class="fa fa-link"></i>Generate Token</a>
-                <a class="dropdown-item" href="/manageTemplate"><i class="fa fa-list"></i> Manage Templates</a>
-                <a class="dropdown-item" href="/customerStat">Conversations</a>
+                <a class="dropdown-item" href="/showMessages"><i class="fa fa-envelope"></i> Inbox</a>
+                <a class="dropdown-item" href="/sms_outBox"><i class="fa fa-forum"></i> SMS Outbox</a>
+                <a class="dropdown-item" href="/outBox"><i class="fa fa-whatsapp"></i> Whatsapp Outbox</a>
+                <a class="dropdown-item" href="/customerStat"><i class="fa fa-comment"></i> Conversations</a>
               </div>
-            </li> {% endcomment %}
+            </li>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fa-regular fa-memo"></i>API Token
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                <a class="dropdown-item" href="/generateToken"><i class="fa fa-link"></i> Generate Token</a>
+                <a class="dropdown-item" href="/what_token"><i class="fa fa-whatsapp"></i> Whatsapp Token</a>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/reminders"><i class="fa-regular fa-memo"></i> Reminders</a>
+          </li>
           </ul>
         </div>
         <div class="btn-group pull-right">
@@ -102,6 +89,7 @@
             </a>
         </div>
       </nav>
+      
     <!-- start js include path -->
     <script src="{% static 'assets/plugins/jquery/jquery.min.js' %}" ></script>
     <script src="{% static 'assets/plugins/popper/popper.js' %}" ></script>
@@ -122,9 +110,32 @@
     <!-- dropzone -->
     <script src="{% static 'assets/plugins/dropzone/dropzone.js' %}" ></script>
     <script src="{% static 'assets/plugins/dropzone/dropzone-call.js' %}" ></script>
+    <!-- chart js -->
+    <script src="{% static 'assets/js/pages/chart/chartjs/home-data.js' %}"></script>
+    <script src="{% static 'assets/plugins/chart-js/Chart.bundle.js' %}"></script>
+    <script src="{% static 'assets/plugins/chart-js/utils.js' %}"></script>
+    <!-- <script src="{% static 'assets/js/pages/chart/chartjs/chartjs-data.js' %}"></script> -->
     <!-- end js include path -->
     <div class="jaymin" style="max-width: 99vw; padding: 1.5rem;">
     {% block content %}{% endblock  %}
 </div>
 </body>
+<script>
+  function getCookie(cname) {
+    let name = cname + "=";
+    let decodedCookie = decodeURIComponent(document.cookie);
+    let ca = decodedCookie.split(';');
+    for(let i = 0; i <ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) == ' ') {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) == 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return "";
+  }
+  $(".navbar-brand").text(getCookie("uname"));
+</script>
 </html>

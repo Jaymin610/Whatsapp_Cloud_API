@@ -70,6 +70,116 @@
             </div>
         </div>
     </div>
+    <div class="state-overview">
+        <div class="row">
+            <div class="col-xl-3 col-md-6 col-15">
+                <div class="info-box bg-b-yellow">
+                  <span class="info-box-icon push-bottom"><i class="material-icons">monetization_on</i></span>
+                  <div class="info-box-content">
+                    <span class="info-box-text">Total</span>
+                    <span class="info-box-number">{{total}}</span>
+                    <div class="progress">
+                      <div class="progress-bar" style="width: 100%"></div>
+                    </div>
+                    <span class="progress-description">
+                          Total Records
+                        </span>
+                  </div>
+                  <!-- /.info-box-content -->
+                </div>
+                <!-- /.info-box -->
+              </div>
+            <div class="col-xl-3 col-md-6 col-15">
+              <div class="info-box bg-b-green">
+                <span class="info-box-icon push-bottom"><i class="material-icons">group</i></span>
+                <div class="info-box-content">
+                  <span class="info-box-text">Success</span>
+                  <span class="info-box-number">{{success.c}}</span>
+                  <div class="progress">
+                    <div class="progress-bar" style="width: {{success.p}}%"></div>
+                  </div>
+                  <span class="progress-description">
+                        {{success.p}}% Record has been campaigned
+                      </span>
+                </div>
+                <!-- /.info-box-content -->
+              </div>
+              <!-- /.info-box -->
+            </div>
+            <!-- /.col -->
+            <div class="col-xl-3 col-md-6 col-15">
+              <div class="info-box bg-b-yellow">
+                <span class="info-box-icon push-bottom"><i class="material-icons">person</i></span>
+                <div class="info-box-content">
+                  <span class="info-box-text">Sent</span>
+                  <span class="info-box-number">{{sent}}</span>
+                    <div class="progress">
+                    <div class="progress-bar" style="width: {{sent}}%"></div>
+                  </div>
+                  <span class="progress-description">
+                        Sent on Whatsapp
+                      </span>
+                </div>
+                <!-- /.info-box-content -->
+              </div>
+              <!-- /.info-box -->
+            </div>
+            <!-- /.col -->
+            <div class="col-xl-3 col-md-6 col-15">
+              <div class="info-box bg-b-pink">
+                <span class="info-box-icon push-bottom"><i class="material-icons">school</i></span>
+                <div class="info-box-content">
+                  <span class="info-box-text">Delivered</span>
+                  <span class="info-box-number">{{delivered}}</span>
+                  <div class="progress">
+                    <div class="progress-bar" style="width: {{delivered}}%"></div>
+                  </div>
+                  <span class="progress-description">
+                        {{delivered}} delivered to customers
+                      </span>
+                </div>
+                <!-- /.info-box-content -->
+              </div>
+              <!-- /.info-box -->
+            </div>
+            <!-- /.col -->
+            <div class="col-xl-3 col-md-6 col-15">
+              <div class="info-box bg-b-blue">
+                <span class="info-box-icon push-bottom"><i class="material-icons">monetization_on</i></span>
+                <div class="info-box-content">
+                  <span class="info-box-text">Read</span>
+                  <span class="info-box-number">{{read.c}}</span>
+                  <div class="progress">
+                    <div class="progress-bar" style="width: {{read.p}}%"></div>
+                  </div>
+                  <span class="progress-description">
+                        {{read.p}}% Messages are read
+                      </span>
+                </div>
+                <!-- /.info-box-content -->
+              </div>
+              <!-- /.info-box -->
+            </div>
+          <div class="col-xl-3 col-md-6 col-15">
+            <div class="info-box bg-b-pink">
+              <span class="info-box-icon push-bottom"><i class="material-icons">monetization_on</i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">Failed</span>
+                <span class="info-box-number">{{failed.c}}</span>
+                <div class="progress">
+                  <div class="progress-bar" style="width: {{failed.p}}%"></div>
+                </div>
+                <span class="progress-description">
+                      {{failed.p}}% Messages cant'be send
+                    </span>
+              </div>
+              <!-- /.info-box-content -->
+            </div>
+            <!-- /.info-box -->
+          </div>
+          <!-- /.col -->
+        </div>
+    </div>
     {% if messages %}
     {% for message in messages %}
 <div class="container-fluid p-0">
@@ -324,6 +434,7 @@
   
 <script>
     $(document).ready(function () {
+        $("#example4").Datatable();
         $("#deleteAll").on("click", function(){
             if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true) {
                 $.ajax({

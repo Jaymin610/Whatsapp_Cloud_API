@@ -31,6 +31,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-@jo)g-idr*!fs4)#3al8!xr9mbk9oia%^zgc+twkab87l92t+7'
+PRIVATE_TOKEN = 'jng610'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -48,6 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'user.apps.UserConfig',
     'Admin.apps.AdminConfig',
+    'APIs.apps.ApisConfig',
 ]
 
 MIDDLEWARE = [
@@ -88,15 +90,17 @@ WSGI_APPLICATION = 'TTS.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
+        'ENGINE': 'dj_db_conn_pool.backends.mysql',
         'NAME': 'WA_API_Server',
         'USER': 'root',
         'PASSWORD': '',
         'HOST': 'localhost',
         'PORT': '3306',
-        'OPTIONS': {
-           "init_command": "SET GLOBAL max_connections = 1000",
-    }
+        'POOL_OPTIONS' : {
+            'POOL_SIZE': 2000,
+            'MAX_OVERFLOW': 4000,
+            'RECYCLE': 4 * 60 * 60
+        }
     }
 }
 
@@ -127,6 +131,7 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
+
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
@@ -154,3 +159,6 @@ EMAIL_HOST_USER = 'societyfunds@gmail.com'
 EMAIL_HOST_PASSWORD = 'ohkuqtqgbbcyloqq'
 EMAIL_PORT = 587
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+USER_VALIDITY = 7
+BLOCK_NUMBER_LIMIT = 7

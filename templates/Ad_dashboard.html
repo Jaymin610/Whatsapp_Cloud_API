@@ -1,4 +1,5 @@
 {% extends 'Ad_base.html' %}
+{% load static %}
 {% block content %}
 {% if messages %}
     {% for message in messages %}
@@ -52,11 +53,12 @@
                                     Copy Templates
                                 </a>
                             </div>
-                            <!-- <div class="btn-group">
-                                <a href="/deleteAll?name=Camp" id="" class="btn btn-danger">
-                                    Delete All
+                            <div class="btn-group">
+                                <a href="/admin/appSettings" id="" class="btn btn-warning">
+                                    App settings
                                </a>
                             </div>
+                            <!-- 
                             <div class="btn-group">
                                 <a href="/settings" id="" class="btn btn-success">
                                     settings
@@ -123,21 +125,28 @@
                                                 <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
                                                     colspan="1" aria-label="Title: activate to sort column ascending"
                                                     style="width: 180.863px;">Validity</th>
+                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                    style="width: 180.863px;"></th>
                                                 
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {% for c in Data %}
-                                            <tr class="odd" role="row">
+                                            <tr style="text-align: center;" class="odd" role="row">
                                                 <td class="sorting_1"><input type="checkbox" name="{{ c.id }}" id="{{ c.id }}"></td>
-                                                <td>{{ c.user_name }} </td>
-                                                <td>{{ c.email }} </td>
-                                                <td>{{ c.phone_no }} </td>
-                                                <td>{{ c.is_active }} </td>
-                                                <td>{{ c.validity }} </td>
-                                                <td>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<a href="/admin/settings?uid={{c.id}}"><button type="button" class="btn deepPink-bgcolor">Settings</button></a> 
-                                                    &nbsp; <a href="/admin/AdminTemp?uid={{c.id}}"><button type="button" class="btn btn-primary"> Templates </button></a>
-                                                    <button type="button" class="btn btn-success edit-btn" data-toggle="modal" id="{{c.id}}" name="{{c.validity}}" data-target="#exampleModalCenter1"> Edit </button>
+                                                <td class="sorting_1">{{ c.user_name }} </td>
+                                                <td class="sorting_1">{{ c.email }} </td>
+                                                <td class="sorting_1">{{ c.phone_no }} </td>
+                                                <td class="sorting_1">
+                                                    <img src="/static/assets/img/{{c.is_active}}.png" alt="" srcset="" width="25px" height="25px">
+                                                </td>
+                                                <td class="sorting_1"><i class="fa fa-edit" data-toggle="modal" onclick="addValidity(this)" id="{{c.id}}" name="{{c.validity}}" data-target="#exampleModalCenter1" style="color: rgb(51, 153, 255); font-size:1.5rem"></i>
+                                                    {{ c.validity }} 
+                                                </td>
+                                                <td class="sorting_1">
+                                                    <a href="/admin/settings?uid={{c.id}}"><button type="button" class="btn deepPink-bgcolor">Settings</button></a> 
+                                                    <a href="/admin/AdminTemp?uid={{c.id}}"><button type="button" class="btn btn-primary"> Templates </button></a>
                                                 </td>
                                             </tr>
                                             {% endfor %}
@@ -178,14 +187,54 @@
         </div>
     </div>
 </div>
+<link rel="stylesheet" type="text/css" href="{% static 'DataTables/datatables.min.css' %}"/>
+<script type="text/javascript" src=" {% static 'DataTables/datatables.min.js' %}"></script>
 <script>
-   
-    
+    function addValidity(t){
+        let date = $(t).attr("name")
+        let id = $(t).attr("id")
+        console.log(date, id)
+
+        $("#update-form").html(`<input type="text" value="${id}" name="id" style="display: none;">
+                                <div class="form-group row">
+                                    <label class="control-label col-md-3">Validity
+                                        <span class="required" aria-required="true"> * </span>
+                                    </label>
+                                    <div class="col-md-5">
+                                        <input type="date" name="update-user" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <div class="row">
+                                        <div class="offset-md-3 col-md-9">
+                                            <button type="button" data-dismiss="modal" class="btn btn-secondary">Cancel</button>
+                                            <button type="submit" class="btn btn-success">Submit</button>
+                                        </div>
+                                    </div>
+                                </div>
+        `)
+        
+        if (date != "None"){
+            let d = new Date(date)
+            let day = new Intl.DateTimeFormat('en', { day: '2-digit' }).format(d);
+            let month = new Intl.DateTimeFormat('en', { month: 'numeric' }).format(d);
+            let year = new Intl.DateTimeFormat('en', { year: 'numeric' }).format(d);
+            let fdate = `${year}-${month}-${day}`
+            
+            $('[name="update-user"]').val(fdate)
+        }
+        else{
+            console.log("Here")
+            $('[name="update-user"]').val()
+        }
+    }
     $(document).ready(function(){
+        $("#example4").DataTable();
 
         $(".edit-btn").on("click", function(){
             let date = $(this).attr("name")
             let id = $(this).attr("id")
+            console.log(date, id)
 
             $("#update-form").html(`<input type="text" value="${id}" name="id" style="display: none;">
                                     <div class="form-group row">
@@ -214,6 +263,9 @@
                 let fdate = `${year}-${month}-${day}`
                 
                 $('[name="update-user"]').val(fdate)
+            }
+            else{
+                $('[name="update-user"]').val()
             }
         })
 

@@ -30,10 +30,11 @@
         <h2>Login to your account</h2>
         <form action="/" method="post"> {% csrf_token %}
             <input name="email" type="email" placeholder="Email Address" required/>
-            <input name="password" type="password" placeholder="Password" required/>
+            <input name="password" type="password" placeholder="Password" id="pass" required style="position: relative;"/>
+            <label for="pass" style="position: absolute; top: 157px; right: 14px;"><i onclick="changetype(this)" class="fa fa-eye-slash"></i></label>
             <div class="remember text-left">
                 <div class="checkbox checkbox-primary">
-                    <input id="checkbox2" type="checkbox" checked>
+                    <input id="checkbox2" type="checkbox">
                     <label for="checkbox2">
                         Remember me
                     </label>
@@ -86,6 +87,20 @@
 {% endif %}
 
 <script>
+    function changetype(t){
+        if (t.classList.contains("fa-eye")){
+            
+            $("#pass").attr("type", "password");
+            t.classList.remove("fa-eye")
+            t.classList.add("fa-eye-slash")
+        }
+        else if (t.classList.contains("fa-eye-slash")){
+            
+            $("#pass").attr("type", "text");
+            t.classList.remove("fa-eye-slash")
+            t.classList.add("fa-eye")
+        }
+    }
     $(document).ready(function(){
         $("#register").on("click", function(){
             console.log("CLicked")

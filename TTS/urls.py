@@ -22,4 +22,5 @@ urlpatterns = [
     path('myadmin', admin.site.urls),
     path('admin/', include('Admin.urls')),
     path('', include('user.urls')),
+    path('whatsapp', include('APIs.urls')),
 ]

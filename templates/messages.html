@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
+<link rel="stylesheet" type="text/css" href="{% static 'DataTables/datatables.min.css' %}"/>
+<script type="text/javascript" src=" {% static 'DataTables/datatables.min.js' %}"></script>
 <div class="page-content" style="min-height:1539px; width:1450px; margin-left: auto; margin-right: auto;">
     <div class="row">
         <div class="col-sm-12 col-md-12 col-xl-12">
@@ -29,6 +31,25 @@
                         </ul>
                     </div>
                 </div>
+                <div class="row">
+                    <div class="col-md-6" style="margin: auto;">
+                        <div class="card card-topline-lightblue">
+                            <div class="card-head">
+                                <header>Inbox Bar</header>
+                                <div class="tools">
+                                    <a class="fa fa-repeat btn-color box-refresh" href="javascript:;"></a>
+                                    <a class="t-collapse btn-color fa fa-chevron-down" href="javascript:;"></a>
+                                    <a class="t-close btn-color fa fa-times" href="javascript:;"></a>
+                                </div>
+                            </div>
+                            <div class="card-body " id="chartjs_bar_parent">
+                                <div class="row"><iframe class="chartjs-hidden-iframe" tabindex="-1" style="display: block; overflow: hidden; border: 0px; margin: 0px; inset: 0px; height: 100%; width: 100%; position: absolute; pointer-events: none; z-index: -1;"></iframe>
+                                    <canvas id="chartjs_bar" width="1890" height="944" style="display: block; height: 472px; width: 945px;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 {% csrf_token %}
                 <div class="card-body ">
                     <div class="table-scrollable">
@@ -52,10 +73,6 @@
                                             {% endfor %}
                                         </select>
                                     </div>
-                                    <!-- <div class="col-lg-3 mb-lg-0 mb-6">
-                                        <label>Agent:</label>
-                                        <input type="text" class="form-control datatable-input" placeholder="Agent ID or name" data-col-index="4">
-                                    </div> -->
                                 </div>
                                 <div class="row mb-8">
                                     <div class="col-lg-3 mb-lg-0 mb-6">
@@ -196,15 +213,13 @@
                                                 <td class="sorting_1"><a target="_blank" href="/what_gui?to={{ c.sender_number }}&from={{c.reply_number}}">{{ c.sender_number }}</a> </td>
                                                 <td class="sorting_1">{{ c.received_msg }}</td>
                                                 <td class="sorting_1">{{ c.received_time }}</td>
-                                                <td class="sorting_1">{{ c.reply }}</td>
+                                                <td class="sorting_1" style="max-width: 100px; overflow: hidden;">{{ c.reply }}</td>
                                                 <td class="sorting_1"><p>{{ c.reply_number }}<p></td>
                                                 <td class="sorting_1"> <img src='../static/assets/img/{{c.status}}.png' width="20%" height="20%" alt=""> </td>
                                                 <td class="sorting_1"><a href="/send_message_panel?id={{c.id}}"> <button name="{{ c.id }}" type="button" class="btn btn-round btn-primary"> Reply </button></a><p></p></td>
                                                 <td class="sorting_1"><a href="/submessage_panel?id={{c.id}}"> <button name="{{ c.id }}" type="button" class="btn btn-round btn-primary"> Sub Message </button></a><p></p></td>
                                                 <td class="sorting_1"><button type="button" onclick="addReqRes(this)" class="btn btn-round btn-warning txt-toggle" data-toggle="modal" data-target="#exampleModalCenter2"> Show </button><p id="req" class="hide-text" style="display: none;">{{ c.request }}<p><p id="res" class="hide-text" style="display: none;">{{ c.response }}<p></p></td>
-                                                <td class="sorting_1"><a href="/stopBot?user={{c.sender_number}}&provider={{ c.reply_number }}" class="btn btn-round btn-danger">Stop Bot</button></td>
-                                                <!-- {% if c.status == 'Sent' %}<i class="fa fa-check"> {% elif c.status == 'delivered' %}<i class="fa fa-double-check"> {% elif c.status == 'read' %} read {% endif %} -->
-                                                    
+                                                <td class="sorting_1"><a href="/stopBot?user={{c.sender_number}}&provider={{ c.reply_number }}" class="btn btn-round btn-danger">Stop Bot</button></td>     
                                             </tr>
                                             {% endfor %}
                                         </tbody>
@@ -278,7 +293,7 @@
         </div>
     </div>
     </div>
-
+<div class="ithink" data-json="{{analysis}}"></div>
 <div class="modal fade" id="exampleModalCenter2" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
 <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content" style="width: 700px;">
@@ -298,8 +313,7 @@
     </div>
 </div>
 </div>
-<link rel="stylesheet" href="//cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
-<script src="//cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+
 <script>
     function addReqRes(t){ 
         var q = $(t).siblings("#req");
@@ -318,7 +332,53 @@
     }
     $(document).ready(function () {
 
+        $.ajax({
+        "async": true,
+        "crossDomain": true,
+        url: "/get_state?phone="+'{{phone}}',
+        type: 'GET',
+        success: function(res) {
+            let label = [];
+            let value = [];
+            jQuery.each(res['data'], (k, v)=>{
+                label.push(v['m']);
+                value.push(v['c'])
+            
+            })
+            
+            var color = Chart.helpers.color;
+            var barChartData = {
+            labels: label,
+            
+            datasets: [{
+                label: 'Message',
+                backgroundColor: color(window.chartColors.blue).rgbString(),
+                borderColor: window.chartColors.black,
+                borderWidth: 5,
+                data: value
+                }]
+            }
+            var ctx = document.getElementById("chartjs_bar").getContext("2d");
+            window.myBar = new Chart(ctx, {
+            type: 'bar',
+            data: barChartData,
+            options: {
+                responsive: true,
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Customer Survey'
+                }
+            }
+        })
         
+            console.log(res);
+         }
+        })
+
+        $("#example4").DataTable();
         
         $('.form-check-label').on("change", function () {
             console.log($("#form_sample_1").children(".form-group"))
@@ -335,9 +395,6 @@
                 template.style.display = "none";
             }
         });
-
-
-
 
         $("#send_multiple").on("click", function(){
             var selected = [];
@@ -391,8 +448,6 @@
             var _href = $("#downloadBtn").attr("href");
             $("#downloadBtn").attr("href", _href + "&to="+$(this).val())
         });
-
-        $('#example4').DataTable({'iDisplayLength': 1000});
 
         $('#kt_search').on("click", function(){
             $.ajax({

@@ -12,11 +12,15 @@ class User1(models.Model):
     
     @staticmethod
     def authenticate(email, passw):
-        return User1.objects.filter(email=email.lower(), password=passw, is_active=True)
+        return User1.objects.filter(email=email.lower(), password=passw)
 
     def login(self):
-        self.is_auth = True
-        self.save()
+        if self.is_active:
+            self.is_auth = True
+            self.save()
+        else:
+            self.is_auth = False
+            self.save()
 
     def logout(self):
         self.is_auth = False
@@ -33,7 +37,7 @@ class User1(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True, blank=False)
     updated_at = models.DateTimeField(auto_now=True, blank=False)
-    validity = models.DateField(null=True)
+    validity = models.DateField(null=True, db_index=True)
     is_auth = models.BooleanField(default=False)
 
 
@@ -102,20 +106,37 @@ class WA_MSG_Provider(models.Model):
     temp_footer = models.CharField(max_length=100, blank=True)
 
 
+class Message_History(models.Model):
+    user = models.ForeignKey(User1, on_delete=models.CASCADE, null=True)
+    provider = models.ForeignKey(WA_MSG_Provider, on_delete=models.CASCADE, null=True)
+    message = models.TextField(blank=True, null=True)
+    time = models.DateTimeField(auto_now_add=True, blank=True)
+    msg_type = models.TextField(null=True)
+    media_url = models.CharField(max_length=1000, null=True, blank=True)
+    customer_number = models.CharField(max_length=15, null=True)
+    api_number = models.CharField(max_length=15, null=True)
+    msg_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+    status = models.CharField(max_length=10, null=True)
+    sent_time = models.DateTimeField(null=True)
+    delivered_time = models.DateTimeField(null=True)
+    read_time = models.DateTimeField(null=True)
+
+
 class MessageLog(models.Model):
     user = models.ForeignKey(User1, on_delete=models.CASCADE, null=True)
     sender_number = models.CharField(max_length=15)
-    received_msg = models.CharField(max_length=1000, null=True, blank=True)
+    received_msg = models.CharField(max_length=1000, null=True, blank=True, db_index=True)
     received_time = models.DateTimeField()
     is_read = models.BooleanField(default=0)
     reply = models.CharField(max_length=1000, null=True, blank=True)
     send_time = models.DateTimeField(null=True)
-    reply_number = models.CharField(max_length=15)
+    reply_number = models.CharField(max_length=15, db_index=True)
     status = models.CharField(max_length=10, null=True)
     json = models.JSONField(max_length=1000, null=True)
     request = models.CharField(max_length=255, null=True)
     response = models.CharField(max_length=1000, null=True)
     msg_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+    media_content = models.CharField(max_length=500, blank=True, null=True)
 
 
 class SubMessageLog(models.Model):
@@ -129,6 +150,7 @@ class SubMessageLog(models.Model):
     request = models.CharField(max_length=255, null=True)
     response = models.CharField(max_length=1000, null=True)
     msg_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+    media_content = models.CharField(max_length=500, blank=True, null=True)
 
 
 class CallBack_Data(models.Model):
@@ -144,7 +166,7 @@ class OutBox(models.Model):
     to_number = models.CharField(max_length=15, null=True)
     message = models.CharField(max_length=1000, null=True, blank=True)
     variables = models.CharField(max_length=500, null=True)
-    send_time = models.DateTimeField(null=True)
+    send_time = models.DateTimeField(null=True, db_index=True)
     reply_number = models.CharField(max_length=100)
     msg_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
     status = models.CharField(max_length=10, null=True)
@@ -186,6 +208,19 @@ class Templates(models.Model):
     variables = models.CharField(max_length=255, null=True, blank=True)
 
 
+class Chat_Templates(models.Model):
+    user = models.ForeignKey(User1, on_delete=models.CASCADE, null=True)
+    message_provider = models.ForeignKey(WA_MSG_Provider, on_delete=models.CASCADE, null=True)
+    temp_id = models.CharField(max_length=200, blank=True)
+    temp_name = models.CharField(max_length=100, null=True, blank=True)
+    lang_code = models.CharField(max_length=15, null=True, blank=True)
+    med_id = models.CharField(max_length=255, null=True, blank=True)
+    is_media = models.BooleanField(default=0)
+    json = models.JSONField(null=True)
+    temp_preview = models.JSONField(null=True)
+    status = models.CharField(max_length=100, blank=True)
+
+
 class New_Templates(models.Model):
     user = models.ForeignKey(User1, on_delete=models.CASCADE, null=True)
     message_provider = models.ForeignKey(WA_MSG_Provider, on_delete=models.CASCADE, null=True)
@@ -202,10 +237,10 @@ class New_Templates(models.Model):
 class Conversation_Status(models.Model):
     to = models.CharField(max_length=15, null=True)
     provider = models.CharField(max_length=100, null=True)
-    inbox_msg = models.CharField(max_length=255, null=True, blank=True)
+    inbox_msg = models.CharField(max_length=255, null=True, blank=True, db_index=True)
     template = models.CharField(max_length=100, null=True, blank=True)
     send_time = models.DateTimeField()
-    received_time = models.DateTimeField(null=True)
+    received_time = models.DateTimeField(null=True, db_index=True)
     conversation_status = models.CharField(max_length=100, default="Pending")
     user_id = models.ForeignKey(User1, on_delete=models.CASCADE, null=True)
 
@@ -250,3 +285,45 @@ class MissMatched_Temps(models.Model):
     text_msg = models.CharField(max_length=1000, null=True)
     provider = models.ForeignKey(WA_MSG_Provider, on_delete=models.CASCADE, null=True)
     usr = models.ForeignKey(User1, on_delete=models.CASCADE, null=True)
+
+class APP_Setting(models.Model):
+    key = models.CharField(max_length=100, null=True, unique=True)
+    value = models.CharField(max_length=1000, null=True)
+    description = models.CharField(max_length=255, null=True, blank=True)
+
+class Whatsapp_Token(models.Model):
+    user = models.ForeignKey(User1, on_delete=models.CASCADE, null=True)
+    prod = models.ForeignKey(WA_MSG_Provider, on_delete=models.CASCADE, null=True)
+    token = models.CharField(max_length=100, null=True, unique=True)
+    created_at = models.DateTimeField(null=True)
+    valid_till = models.IntegerField(default=8)
+    user_vice = models.BooleanField(default=0)
+    provider_vice = models.BooleanField(default=0)
+    provider_cus_pair = models.BooleanField(default=0)
+    campaign_vice = models.BooleanField(default=0)
+    customer_num = models.CharField(max_length=15, null=True)
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, null=True)
+    adv_campaign = models.ForeignKey(AdvanceCampaign, on_delete=models.CASCADE, null=True)
+
+class Reminder_Setting(models.Model):
+    user = models.ForeignKey(User1, on_delete=models.CASCADE, null=True)
+    wap = models.ForeignKey(WA_MSG_Provider, on_delete=models.CASCADE, null=True)
+    birthday_temp = models.CharField(max_length=255,null=True) 
+    anyversary_temp = models.CharField(max_length=255,null=True)
+    scheduled_time = models.TimeField(null=True)
+    is_active = models.BooleanField(default=1)
+
+class Reminder_User(models.Model):
+    user_name = models.CharField(max_length=100, null=True)
+    user_mobile = models.CharField(max_length=15, null=True)
+    birthdate = models.DateField(null=True)
+    anniversary = models.DateField(null=True)
+    remark = models.CharField(max_length=500, null=True, blank=True)
+    setting = models.ForeignKey(Reminder_Setting, on_delete=models.CASCADE, null=True)
+    is_active = models.BooleanField(default=1)
+    b_sent = models.DateField(null=True)
+    a_sent = models.DateField(null=True)
+    b_msg_id = models.CharField(null=True, max_length=500)
+    b_status = models.CharField(null=True, max_length=500)
+    a_msg_id = models.CharField(null=True, max_length=500)
+    a_status = models.CharField(null=True, max_length=500)

@@ -1,14 +1,14 @@
 import datetime
+from itertools import count
 import json
 import os
 import pathlib
 import re
-import shutil
 import string
 import threading
 import zipfile
 from django.conf import settings
- 
+from django.db.models import Count, Max
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect
@@ -27,8 +27,26 @@ import pytz
 from django.core.files.storage import FileSystemStorage
 from PIL import Image
 from django import db
+from django.db.models import CharField
+from django.db.models.functions import Length
+
+CharField.register_lookup(Length, 'length')
+
 for con in db.connections:
     print("Databases connections..........",con)
+
+try:
+    APP_Setting.objects.create(key="EMAIL_USE_TLS", value="True")
+    APP_Setting.objects.create(key="EMAIL_HOST",value = 'smtp.gmail.com')
+    APP_Setting.objects.create(key="EMAIL_HOST_USER", value = 'societyfunds@gmail.com')
+    APP_Setting.objects.create(key="EMAIL_HOST_PASSWORD ", value= 'ohkuqtqgbbcyloqq')
+    APP_Setting.objects.create(key="EMAIL_PORT", value = 587)
+    APP_Setting.objects.create(key="DEFAULT_FROM_EMAIL", value = "EMAIL_HOST_USER")
+    APP_Setting.objects.create(key="USER_VALIDITY", value=7)
+    APP_Setting.objects.create(key="BLOCK_NUMBER_LIMIT", value=7)
+except:
+    pass
+
 
 
 # Create your views here.
@@ -37,40 +55,67 @@ def index(request):
 
 
 def send_SMS(request):
+    
     to = request.GET.get('to')
     text = request.GET.get('text')
     token = request.GET.get('token')
     user_id = Developers_token.objects.get(u_token=token).user_id
-    response = ""
-    if len(to) == 10:
-        to = "91" + to
+    if User1.objects.get(pk=user_id).is_active:  
+        response = ""
+        if len(to) == 10:
+            to = "91" + to
 
-    try:
-        msg_provider = Developers_token.objects.get(u_token=token)
-    except:
-        return JsonResponse({"message": "Parameters are not valid."})
+        try:
+            msg_provider = Developers_token.objects.get(u_token=token)
+        except:
+            return JsonResponse({"message": "Parameters are not valid."})
 
-    wmp = WA_MSG_Provider.objects.get(id=msg_provider.message_provider_id)
-    url_data = Voice_API.objects.get(whatsapp_name=wmp.provider_name)
+        wmp = WA_MSG_Provider.objects.get(id=msg_provider.message_provider_id)
+        url_data = Voice_API.objects.get(whatsapp_name=wmp.provider_name)
 
-    time_check = Conversation_Status.objects.filter(to=to, provider=wmp.provider_name)
-    print(time_check)
-    # After First time
-    if time_check:
-        lat_entry = time_check[len(time_check) - 1]
-        
-        if lat_entry.received_time and lat_entry.conversation_status == "Stopped":
-            return JsonResponse({"message": "Your messages are blocked by user"})
-        else:
-            if (not lat_entry.received_time) or  (lat_entry.conversation_status == "Pending"):
-                t = Templates.objects.get(temp_name=msg_provider.template, lang_code=msg_provider.lang,
-                                          message_provider_id=wmp.id)
-                print("Working Properly")
-                if t.is_media:
-                    if t.med_id is None:
-                        return JsonResponse({"message": "Please Upload media content first."})
+        time_check = Conversation_Status.objects.filter(to=to, provider=wmp.provider_name)
+        print(time_check)
+        # After First time
+        if time_check:
+            lat_entry = time_check[len(time_check) - 1]
+            
+            if lat_entry.received_time and lat_entry.conversation_status == "Stopped":
+                return JsonResponse({"message": "Your messages are blocked by user"})
+            else:
+                if (not lat_entry.received_time) or  (lat_entry.conversation_status == "Pending"):
+                    t = Templates.objects.get(temp_name=msg_provider.template, lang_code=msg_provider.lang,
+                                            message_provider_id=wmp.id)
+                    print("Working Properly")
+                    if t.is_media:
+                        if t.med_id is None:
+                            return JsonResponse({"message": "Please Upload media content first."})
+                        else:
+                            js = json.loads(t.med_id)
+                            payload = json.dumps({
+                                "messaging_product": "whatsapp",
+                                "recipient_type": "individual",
+                                "to": f"{to}",
+                                "type": "template",
+                                "template": {
+                                    "name": f"{msg_provider.template}",
+                                    "language": {
+                                        "code": f"{msg_provider.lang}"
+                                    },
+                                    "components": [
+                                        {
+                                            "type": "header",
+                                            "parameters": [
+                                                {
+                                                    "type": "image",
+                                                    "image": {"link": f"{js['link']}"} if js["type"] == "what" else {
+                                                        "id": f"{js['med_obj']}"}
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            })
                     else:
-                        js = json.loads(t.med_id)
                         payload = json.dumps({
                             "messaging_product": "whatsapp",
                             "recipient_type": "individual",
@@ -81,21 +126,82 @@ def send_SMS(request):
                                 "language": {
                                     "code": f"{msg_provider.lang}"
                                 },
-                                "components": [
-                                    {
-                                        "type": "header",
-                                        "parameters": [
-                                            {
-                                                "type": "image",
-                                                "image": {"link": f"{js['link']}"} if js["type"] == "what" else {
-                                                    "id": f"{js['med_obj']}"}
-                                            }
-                                        ]
-                                    }
-                                ]
+
                             }
                         })
+
+                    response = requests.request("POST", url_data.message_API, headers=url_data.header, data=payload)
+                    try:
+                        msgid = json.loads(response.text)['messages'][0]['id']
+                        status = "sent"
+                    except KeyError:
+                        msgid, status = None, None
+                    OutBox.objects.create(message=msg_provider.template,
+                                            send_time=datetime.datetime.now(
+                                                timezone.utc) + datetime.timedelta(
+                                                hours=5.5),
+                                            reply_number=wmp.provider_name, status=status, request=url_data.message_API,
+                                            response=response.text, user_id=wmp.user_id, to_number=to, msg_id=msgid)
+                    Message_History.objects.create(message=msg_provider.template, msg_type="send", customer_number=to, 
+                                        api_number=wmp.phone_no, user_id=wmp.user_id,
+                                        provider_id=wmp.id, msg_id=msgid)
+                    OutBox.objects.create(message=text,
+                                            send_time=datetime.datetime.now(
+                                                timezone.utc) + datetime.timedelta(
+                                                hours=5.5),
+                                            reply_number=wmp.provider_name, status="in_queue", user_id=wmp.user_id,
+                                            to_number=to)
+                    con_stat = Conversation_Status.objects.get(to=to, provider=wmp.provider_name)
+                    con_stat.inbox_msg = ""
+                    con_stat.template = msg_provider.template
+                    con_stat.send_time = datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5)
+                    con_stat.received_time = None
+                    con_stat.conversation_status = "Pending"
+                    con_stat.save()
+
                 else:
+                    # if lat_entry.inbox_msg == "No" or lat_entry.inbox_msg == "":
+                    #     OutBox.objects.create(message=text,
+                    #                           send_time=datetime.datetime.now(
+                    #                               timezone.utc) + datetime.timedelta(
+                    #                               hours=5.5),
+                    #                           reply_number=wmp.provider_name, status="in_queue", user_id=wmp.user_id,
+                    #                           to_number=to)
+                    #     return JsonResponse({"message": "Message added to queue"})
+                    # else:
+                    payload = json.dumps({
+                        "messaging_product": "whatsapp",
+                        "recipient_type": "individual",
+                        "to": f"{to}",
+                        "type": "text",
+                        "text": {
+                            "preview_url": False,
+                            "body": f"{text}"
+                        }
+                    })
+                    response = requests.request("POST", url_data.message_API, headers=url_data.header, data=payload)
+                    try:
+                        msgid = json.loads(response.text)['messages'][0]['id']
+                    except KeyError:
+                        msgid = ""
+                    OutBox.objects.create(message=text,
+                                            send_time=datetime.datetime.now(
+                                                timezone.utc) + datetime.timedelta(
+                                                hours=5.5), reply_number=wmp.provider_name,
+                                            status="sent", request=url_data.message_API, response=response.text,
+                                            user_id=wmp.user_id, to_number=to, msg_id=msgid)
+                    Message_History.objects.create(message=text, msg_type="send", customer_number=to, 
+                                        api_number=wmp.phone_no, user_id=wmp.user_id,
+                                        provider_id=wmp.id, msg_id=msgid)
+        # First Time API call
+        else:
+            t = Templates.objects.get(temp_name=msg_provider.template, lang_code=msg_provider.lang,
+                                    message_provider_id=wmp.id)
+            if t.is_media:
+                if t.med_id is None:
+                    return JsonResponse({"message": "Please Upload media content first."})
+                else:
+                    js = json.loads(t.med_id)
                     payload = json.dumps({
                         "messaging_product": "whatsapp",
                         "recipient_type": "individual",
@@ -106,76 +212,21 @@ def send_SMS(request):
                             "language": {
                                 "code": f"{msg_provider.lang}"
                             },
-
+                            "components": [
+                                {
+                                    "type": "header",
+                                    "parameters": [
+                                        {
+                                            "type": "image",
+                                            "image": {"link": f"{js['link']}"} if js["type"] == "what" else {
+                                                "id": f"{js['med_obj']}"}
+                                        }
+                                    ]
+                                }
+                            ]
                         }
                     })
-
-                response = requests.request("POST", url_data.message_API, headers=url_data.header, data=payload)
-                try:
-                    msgid = json.loads(response.text)['messages'][0]['id']
-                    status = "sent"
-                except KeyError:
-                    msgid, status = None, None
-                OutBox.objects.create(message=msg_provider.template,
-                                        send_time=datetime.datetime.now(
-                                            pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
-                                            hours=5.5),
-                                        reply_number=wmp.provider_name, status=status, request=url_data.message_API,
-                                        response=response.text, user_id=wmp.user_id, to_number=to, msg_id=msgid)
-                OutBox.objects.create(message=text,
-                                        send_time=datetime.datetime.now(
-                                            pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
-                                            hours=5.5),
-                                        reply_number=wmp.provider_name, status="in_queue", user_id=wmp.user_id,
-                                        to_number=to)
-                con_stat = Conversation_Status.objects.get(to=to, provider=wmp.provider_name)
-                con_stat.inbox_msg = ""
-                con_stat.template = msg_provider.template
-                con_stat.send_time = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5)
-                con_stat.received_time = None
-                con_stat.conversation_status = "Pending"
-                con_stat.save()
-
             else:
-                # if lat_entry.inbox_msg == "No" or lat_entry.inbox_msg == "":
-                #     OutBox.objects.create(message=text,
-                #                           send_time=datetime.datetime.now(
-                #                               pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
-                #                               hours=5.5),
-                #                           reply_number=wmp.provider_name, status="in_queue", user_id=wmp.user_id,
-                #                           to_number=to)
-                #     return JsonResponse({"message": "Message added to queue"})
-                # else:
-                payload = json.dumps({
-                    "messaging_product": "whatsapp",
-                    "recipient_type": "individual",
-                    "to": f"{to}",
-                    "type": "text",
-                    "text": {
-                        "preview_url": False,
-                        "body": f"{text}"
-                    }
-                })
-                response = requests.request("POST", url_data.message_API, headers=url_data.header, data=payload)
-                try:
-                    msgid = json.loads(response.text)['messages'][0]['id']
-                except KeyError:
-                    msgid = ""
-                OutBox.objects.create(message=text,
-                                        send_time=datetime.datetime.now(
-                                            pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
-                                            hours=5.5), reply_number=wmp.provider_name,
-                                        status="sent", request=url_data.message_API, response=response.text,
-                                        user_id=wmp.user_id, to_number=to, msg_id=msgid)
-    # First Time API call
-    else:
-        t = Templates.objects.get(temp_name=msg_provider.template, lang_code=msg_provider.lang,
-                                  message_provider_id=wmp.id)
-        if t.is_media:
-            if t.med_id is None:
-                return JsonResponse({"message": "Please Upload media content first."})
-            else:
-                js = json.loads(t.med_id)
                 payload = json.dumps({
                     "messaging_product": "whatsapp",
                     "recipient_type": "individual",
@@ -186,87 +237,92 @@ def send_SMS(request):
                         "language": {
                             "code": f"{msg_provider.lang}"
                         },
-                        "components": [
-                            {
-                                "type": "header",
-                                "parameters": [
-                                    {
-                                        "type": "image",
-                                        "image": {"link": f"{js['link']}"} if js["type"] == "what" else {
-                                            "id": f"{js['med_obj']}"}
-                                    }
-                                ]
-                            }
-                        ]
+
                     }
                 })
-        else:
-            payload = json.dumps({
-                "messaging_product": "whatsapp",
-                "recipient_type": "individual",
-                "to": f"{to}",
-                "type": "template",
-                "template": {
-                    "name": f"{msg_provider.template}",
-                    "language": {
-                        "code": f"{msg_provider.lang}"
-                    },
 
-                }
-            })
+            response = requests.request("POST", url_data.message_API, headers=url_data.header, data=payload)
+            try:
+                msgid = json.loads(response.text)['messages'][0]['id']
+            except KeyError:
+                msgid = ""
+            OutBox.objects.create(message=msg_provider.template,
+                                send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(
+                                    hours=5.5),
+                                reply_number=wmp.provider_name, status="sent", request=url_data.message_API,
+                                response=response.text, user_id=wmp.user_id, to_number=to, msg_id=msgid)
+            Message_History.objects.create(message=msg_provider.template, msg_type="send", customer_number=to, 
+                                        api_number=wmp.phone_no, user_id=wmp.user_id,
+                                        provider_id=wmp.id, msg_id=msgid)
+            OutBox.objects.create(message=text,
+                                send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(
+                                    hours=5.5),
+                                reply_number=wmp.provider_name, status="in_queue", user_id=wmp.user_id, to_number=to)
+            Conversation_Status.objects.create(to=to, provider=wmp.provider_name, template=msg_provider.template,
+                                            send_time=datetime.datetime.now(
+                                                timezone.utc) + datetime.timedelta(
+                                                hours=5.5), user_id_id=user_id)
 
-        response = requests.request("POST", url_data.message_API, headers=url_data.header, data=payload)
-        try:
-            msgid = json.loads(response.text)['messages'][0]['id']
-        except KeyError:
-            msgid = ""
-        OutBox.objects.create(message=msg_provider.template,
-                              send_time=datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
-                                  hours=5.5),
-                              reply_number=wmp.provider_name, status="sent", request=url_data.message_API,
-                              response=response.text, user_id=wmp.user_id, to_number=to, msg_id=msgid)
-        OutBox.objects.create(message=text,
-                              send_time=datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
-                                  hours=5.5),
-                              reply_number=wmp.provider_name, status="in_queue", user_id=wmp.user_id, to_number=to)
-        Conversation_Status.objects.create(to=to, provider=wmp.provider_name, template=msg_provider.template,
-                                           send_time=datetime.datetime.now(
-                                               pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
-                                               hours=5.5), user_id_id=user_id)
-
-    return JsonResponse(json.loads(response.text))
-
+        return JsonResponse(json.loads(response.text))
+    else:
+        return JsonResponse({"message":"User validity has been expired. Please recharge"})
 
 def send_Template(request):
     to = request.GET.get('to')
     template = request.GET.get('temp')
     lang = request.GET.get('language')
     token = request.GET.get('token')
-    if to != "" and template != "" and lang != "" and token != "":
-        if len(to) == 10:
-            to = "91" + to
+    if User1.objects.get(pk=Developers_token.objects.get(u_token=token).user_id).is_active:
+        if to != "" and template != "" and lang != "" and token != "":
+            if len(to) == 10:
+                to = "91" + to
 
-        msg_provider = Developers_token.objects.get(u_token=token)
-        user = WA_MSG_Provider.objects.get(id=msg_provider.message_provider_id)
-        url_data = Voice_API.objects.get(u_ID_id=user.user_id)
+            msg_provider = Developers_token.objects.get(u_token=token)
+            user = WA_MSG_Provider.objects.get(id=msg_provider.message_provider_id)
+            url_data = Voice_API.objects.get(u_ID_id=user.user_id)
 
-        time_check = MessageLog.objects.filter(sender_number=to, reply_number=user.phone_no)
-        if time_check:
-            lat_entry = time_check[len(time_check) - 1]
-            this = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5)
+            time_check = MessageLog.objects.filter(sender_number=to, reply_number=user.phone_no)
+            if time_check:
+                lat_entry = time_check[len(time_check) - 1]
+                this = datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5)
 
-            if lat_entry.received_msg == "No":
-                OutBox.objects.create(to_number=to, reply_number=user.provider_name, response='No message',
-                                      user_id=user.user_id)
-                return JsonResponse({"Message": "User unsubscribed"})
+                if lat_entry.received_msg == "No":
+                    OutBox.objects.create(to_number=to, reply_number=user.provider_name, response='No message',
+                                        user_id=user.user_id)
+                    return JsonResponse({"Message": "User unsubscribed"})
 
-        t = Templates.objects.get(temp_name=template, lang_code=lang, message_provider_id=user.id)
+            t = Templates.objects.get(temp_name=template, lang_code=lang, message_provider_id=user.id)
 
-        if t.is_media:
-            if t.med_id is None:
-                return JsonResponse({"message": "Please Upload media content first."})
+            if t.is_media:
+                if t.med_id is None:
+                    return JsonResponse({"message": "Please Upload media content first."})
+                else:
+                    js = json.loads(t.med_id)
+                    payload = json.dumps({
+                        "messaging_product": "whatsapp",
+                        "recipient_type": "individual",
+                        "to": f"{to}",
+                        "type": "template",
+                        "template": {
+                            "name": f"{template}",
+                            "language": {
+                                "code": f"{lang}"
+                            },
+                            "components": [
+                                {
+                                    "type": "header",
+                                    "parameters": [
+                                        {
+                                            "type": "image",
+                                            "image": {"link": f"{js['link']}"} if js["type"] == "what" else {
+                                                "id": f"{js['med_obj']}"}
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    })
             else:
-                js = json.loads(t.med_id)
                 payload = json.dumps({
                     "messaging_product": "whatsapp",
                     "recipient_type": "individual",
@@ -277,47 +333,27 @@ def send_Template(request):
                         "language": {
                             "code": f"{lang}"
                         },
-                        "components": [
-                            {
-                                "type": "header",
-                                "parameters": [
-                                    {
-                                        "type": "image",
-                                        "image": {"link": f"{js['link']}"} if js["type"] == "what" else {
-                                            "id": f"{js['med_obj']}"}
-                                    }
-                                ]
-                            }
-                        ]
+
                     }
                 })
+            response = requests.request("POST", url_data.message_API, headers=url_data.header, data=payload)
+            try:
+                msgid = json.loads(response.text)['messages'][0]['id']
+            except KeyError:
+                msgid = ""
+            OutBox.objects.create(message=msg_provider.template,
+                                send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(
+                                    hours=5.5),
+                                reply_number=user.provider_name, status="sent", request=url_data.message_API,
+                                response=response.text, user_id=user.user_id, to_number=to, msg_id=msgid)
+            Message_History.objects.create(message=msg_provider.template, msg_type="send", customer_number=to, 
+                                        api_number=user.phone_no, user_id=user.user_id,
+                                        provider_id=user.id, msg_id=msgid)
+            return JsonResponse(json.loads(response.text))
         else:
-            payload = json.dumps({
-                "messaging_product": "whatsapp",
-                "recipient_type": "individual",
-                "to": f"{to}",
-                "type": "template",
-                "template": {
-                    "name": f"{template}",
-                    "language": {
-                        "code": f"{lang}"
-                    },
-
-                }
-            })
-        response = requests.request("POST", url_data.message_API, headers=url_data.header, data=payload)
-        try:
-            msgid = json.loads(response.text)['messages'][0]['id']
-        except KeyError:
-            msgid = ""
-        OutBox.objects.create(message=msg_provider.template,
-                              send_time=datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
-                                  hours=5.5),
-                              reply_number=user.provider_name, status="sent", request=url_data.message_API,
-                              response=response.text, user_id=user.user_id, to_number=to, msg_id=msgid)
-        return JsonResponse(json.loads(response.text))
+            return JsonResponse({"Message": "Required all params"})
     else:
-        return JsonResponse({"Message": "Required all params"})
+        return JsonResponse({"message":"User validity has been expired. Please recharge"})
 
 def send_matched_temps(token_data, to, msg):
     provider = WA_MSG_Provider.objects.get(id=token_data.message_provider_id)
@@ -333,9 +369,9 @@ def send_matched_temps(token_data, to, msg):
         variables = p.findall(msg+ " Thank you")
         
         if variables:
-            print(data)
-            print(msg+ " Thank you")
-            print(variables)
+            # print(data)
+            # print(msg+ " Thank you")
+            # print(variables)
             print(a.temp_name, a.lang_code)
             payload = {
             "messaging_product": "whatsapp",
@@ -371,18 +407,22 @@ def send_matched_temps(token_data, to, msg):
                 to_save[i] = v
                 i += 1
             payload = json.dumps(payload)
-            print(payload)
+            # print(payload)
             response = requests.request("POST", api.message_API, headers=api.header, data=payload)
             print(response.text)
             try:
                 msgid = json.loads(response.text)['messages'][0]['id']
-                OutBox.objects.create(message=a.temp_name,
-                        send_time=datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+            except KeyError:
+                msgid = ""
+            print("Objects Crating .....................")
+            OutBox.objects.create(message=a.temp_name,
+                        send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(
                             hours=5.5),
                         reply_number=provider.provider_name, status="sent", request=api.message_API,
                         response=response.text, user_id=provider.user_id, to_number=to, msg_id=msgid, variables=to_save)
-            except KeyError:
-                pass
+            Message_History.objects.create(message=a.temp_name, msg_type="send", customer_number=to, 
+                            api_number=provider.phone_no, user_id=provider.user_id,
+                            provider_id=provider.id, msg_id=msgid)
             
             return json.loads(response.text)
     MissMatched_Temps.objects.create(text_msg=msg, provider_id=token_data.message_provider_id, usr_id=token_data.user_id)
@@ -395,7 +435,7 @@ def getMisMatchedData(request):
 
 def check_matched(token_data, to, msg):
     provider = WA_MSG_Provider.objects.get(id=token_data.message_provider_id)
-
+    msg = regexpstring(msg, 0).replace("  "," ")
     api = Voice_API.objects.get(whatsapp_name=provider.provider_name)
     all_temp = New_Templates.objects.filter(message_provider_id=token_data.message_provider_id)
     for a in all_temp:
@@ -445,7 +485,7 @@ def check_matched(token_data, to, msg):
                 to_save[i] = v
                 i += 1
             payload = json.dumps(payload)
-            print(payload)
+            # print(payload)
             response = requests.request("POST", api.message_API, headers=api.header, data=payload)
             print(response.text)
             try:
@@ -455,10 +495,13 @@ def check_matched(token_data, to, msg):
                 msgid = None
                 status = None
             OutBox.objects.create(message=a.temp_name,
-                        send_time=datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+                        send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(
                             hours=5.5),
                         reply_number=provider.provider_name, status=status, request=api.message_API,
                         response=response.text, user_id=provider.user_id, to_number=to, msg_id=msgid, variables=to_save)
+            Message_History.objects.create(message=a.temp_name, msg_type="send", customer_number=to, 
+                                        api_number=provider.phone_no, user_id=provider.user_id,
+                                        provider_id=provider.id, msg_id=msgid)
             return json.loads(response.text)
     MissMatched_Temps.objects.create(text_msg=msg, provider_id=token_data.message_provider_id, usr_id=token_data.user_id)
     return {"message":"Data not found"}
@@ -467,104 +510,294 @@ def send_check(request):
     to = request.GET.get('to')
     msg = request.GET.get('msg')
     token = request.GET.get('token')
-    if to != "" and msg != "" and token != "":
-        if len(to) == 10:
-            to = "91" + to
-        
-        token_data = Developers_token.objects.get(u_token=token)
-        response = check_matched(token_data, to=to, msg=regexpstring(msg, 0))
-        return JsonResponse(response)
-
-def send_dynamic_template(request):
-    to = request.GET.get('to')
-    msg = request.GET.get('msg')
-    msg = msg.replace("  ", " ").replace("   ", " ")
-    print(msg+" Thank you")
-    token = request.GET.get('token')
-    if to != "" and msg != "" and token != "":
-        if len(to) == 10:
-            to = "91" + to
-        
-        token_data = Developers_token.objects.get(u_token=token)
-        msg_state = SMS_Settings.objects.get(usr_id=token_data.user_id)
-        print(msg_state.selective)
-
-        if msg_state.selective:
-            if "," not in msg_state.keywords:
-                to_check = msg_state.keywords.replace("['","").replace("']","").split(",")
+    try:
+        tk = Developers_token.objects.get(u_token=token)
+    except Exception as e:
+        return JsonResponse({"status":"error", "message": "Please create a valid token"})
+    if User1.objects.get(pk=tk.user_id).is_active:
+        if to != "" and msg != "" and token != "":
+            if len(to) == 10:
+                to = "91" + to
             
-            else:
-                ar = msg_state.keywords.split(",")
-                to_check = [x.replace("[","").replace("]","").replace("'","").strip() for x in ar]
-            print(to_check)
-            
-            for i in to_check:
-                if i in msg:
-                    print("Matched")
-                    if msg_state.sel_whatsapp and msg_state.sel_sms:
-                        response2 = send_matched_temps(token_data, to=to, msg=request.GET.get('msg'))
-                        url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
-                        s_response = requests.get(url).text
-                        SMS_OutBox.objects.create(message=msg,
-                        send_time=datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5),
-                        status="sent", request=url,response=s_response, user_id=token_data.user_id, to_number=to)
-                        return JsonResponse({"SMS":s_response, "whatsapp":response2}, safe=False)
-                    if msg_state.sel_whatsapp:
-                        response2 = send_matched_temps(token_data, to=to, msg=request.GET.get('msg'))
-                        s_response = ""
-                        if msg_state.sms:
+            token_data = Developers_token.objects.get(u_token=token)
+            msg_state = SMS_Settings.objects.get(usr_id=token_data.user_id)
+            if msg_state.selective:
+                if "," not in msg_state.keywords:
+                    to_check = msg_state.keywords.replace("['","").replace("']","").split(",")
+                
+                else:
+                    ar = msg_state.keywords.split(",")
+                    to_check = [x.replace("[","").replace("]","").replace("'","").strip() for x in ar]
+                print(to_check)
+
+                for i in to_check:
+                    if i in msg:
+                        print("Matched")
+                        if msg_state.sel_whatsapp and msg_state.sel_sms:
+                            response2 = check_matched(token_data, to=to, msg=msg)
                             url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
                             s_response = requests.get(url).text
                             SMS_OutBox.objects.create(message=msg,
-                            send_time=datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5),
+                            send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5),
                             status="sent", request=url,response=s_response, user_id=token_data.user_id, to_number=to)
-                        return JsonResponse({"whatsapp":response2, "SMS":s_response}, safe=False)
-                        
-                    if msg_state.sel_sms:
+                            return JsonResponse({"SMS":s_response, "whatsapp":response2}, safe=False)
+                        if msg_state.sel_whatsapp:
+                            response2 = check_matched(token_data, to=to, msg=msg)
+                            s_response= ""
+                            if (msg_state.sms or (("error" in response2) and response2["error"]["message"] == "(#100) Invalid parameter")) and msg_state.sms_url:
+                                    url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
+                                    s_response = requests.get(url).text
+                                    SMS_OutBox.objects.create(message=msg,
+                                    send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5),
+                                    status="sent", request=url,response=s_response, user_id=token_data.user_id, to_number=to)
+                            return JsonResponse({"whatsapp":response2, "SMS":s_response}, safe=False)
+                            
+                        if msg_state.sel_sms:
 
-                        url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
-                        s_response = requests.get(url).text
-                        response2 = ""
-                        SMS_OutBox.objects.create(message=msg,
-                            send_time=datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5),
+                            url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
+                            s_response = requests.get(url).text
+                            response2 = ""
+                            SMS_OutBox.objects.create(message=msg,
+                                send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5),
+                                status="sent", request=url,response=s_response, user_id=token_data.user_id, to_number=to)
+                            if msg_state.whatsapp:
+                                response2 = check_matched(token_data, to=to, msg=msg)
+                            return JsonResponse({"SMS":s_response, "whatsapp":response2}, safe=False)
+                else:
+                    pass
+            if msg_state.both or (msg_state.sms and msg_state.whatsapp):
+                url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
+                s_response = requests.get(url).text
+                OutBox.objects.create(message=msg,
+                            send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(
+                                hours=5.5),
+                            reply_number="SMS_url", status="sent", request=url,
+                            response=s_response, user_id=token_data.user_id, to_number=to)
+                w_response = check_matched(token_data, to=to, msg=msg)
+                return JsonResponse({"sms":s_response, "whatsapp":w_response}, safe=False)
+
+            elif msg_state.sms:
+                url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
+                s_response = requests.get(url).text
+                SMS_OutBox.objects.create(message=msg,
+                            send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5),
                             status="sent", request=url,response=s_response, user_id=token_data.user_id, to_number=to)
-                        if msg_state.whatsapp:
-                            response2 = send_matched_temps(token_data, to=to, msg=request.GET.get('msg'))
-                        return JsonResponse({"SMS":s_response, "whatsapp":response2}, safe=False)
-            else:
-                pass
+                return JsonResponse(s_response, safe=False)
 
-        if msg_state.both or (msg_state.sms and msg_state.whatsapp):
-            url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
-            s_response = requests.get(url).text
-            OutBox.objects.create(message=msg,
-                        send_time=datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
-                            hours=5.5),
-                        reply_number="SMS_url", status="sent", request=url,
-                        response=s_response, user_id=token_data.user_id, to_number=to)
-            w_response = send_matched_temps(token_data, to=to, msg=request.GET.get('msg'))
-            return JsonResponse({"sms":s_response, "whatsapp":w_response}, safe=False)
+            elif msg_state.whatsapp:
+                response = check_matched(token_data, to=to, msg=msg)
+                if ("error" in response) and response["error"]["message"] == "(#100) Invalid parameter" and msg_state.sms_url:
+                    url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
+                    s_response = requests.get(url).text
+                s_response = ""
+                return JsonResponse({"whatsapp":response, "SMS":s_response})
 
-        elif msg_state.sms:
-            url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
-            s_response = requests.get(url).text
-            SMS_OutBox.objects.create(message=msg,
-                        send_time=datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5),
-                        status="sent", request=url,response=s_response, user_id=token_data.user_id, to_number=to)
-            return JsonResponse(s_response, safe=False)
+            if (not msg_state.both) and (not msg_state.sms) and (not msg_state.whatsapp) and (not msg_state.selective):
+                response = check_matched(token_data, to=to, msg=msg)
+                s_response = ""
+                if ("error" in response) and response["error"]["message"] == "(#100) Invalid parameter" and msg_state.sms_url: 
+                    url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
+                    s_response = requests.get(url).text
+                return JsonResponse({"whatsapp":response, "SMS":s_response})
+    else:
+        return JsonResponse({"message":"User validity has been expired. Please recharge"})
 
-        elif msg_state.whatsapp:
-            response = send_matched_temps(token_data, to=to, msg=request.GET.get('msg'))
-            return JsonResponse(response)
+@csrf_exempt
+def send_dynamic_template(request):
+    if request.method == "GET":
+        to = request.GET.get('to')
+        msg = request.GET.get('msg')
+        msg = msg.replace("  ", " ").replace("   ", " ")
+        print(msg+" Thank you")
+        token = request.GET.get('token')
+        if User1.objects.get(pk=Developers_token.objects.get(u_token=token).user_id).is_active:
+            if to != "" and msg != "" and token != "":
+                if len(to) == 10:
+                    to = "91" + to
+                
+                token_data = Developers_token.objects.get(u_token=token)
+                msg_state = SMS_Settings.objects.get(usr_id=token_data.user_id)
 
-        if (not msg_state.both) and (not msg_state.sms) and (not msg_state.whatsapp) and (not msg_state.selective):
-            return JsonResponse({"message":"Please select options in settings"})
-        return HttpResponse("Send")
+                if msg_state.selective:
+                    if "," not in msg_state.keywords:
+                        to_check = msg_state.keywords.replace("['","").replace("']","").split(",")
+                    
+                    else:
+                        ar = msg_state.keywords.split(",")
+                        to_check = [x.replace("[","").replace("]","").replace("'","").strip() for x in ar]
+                    print(to_check)
+                    
+                    for i in to_check:
+                        if i in msg:
+                            print("Matched")
+                            if msg_state.sel_whatsapp and msg_state.sel_sms:
+                                response2 = send_matched_temps(token_data, to=to, msg=request.GET.get('msg'))
+                                url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
+                                s_response = requests.get(url).text
+                                SMS_OutBox.objects.create(message=msg,
+                                send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5),
+                                status="sent", request=url,response=s_response, user_id=token_data.user_id, to_number=to)
+                                return JsonResponse({"SMS":s_response, "whatsapp":response2}, safe=False)
+                            if msg_state.sel_whatsapp:
+                                response2 = send_matched_temps(token_data, to=to, msg=request.GET.get('msg'))
+                                s_response = ""
+                                if msg_state.sms:
+                                    url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
+                                    s_response = requests.get(url).text
+                                    SMS_OutBox.objects.create(message=msg,
+                                    send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5),
+                                    status="sent", request=url,response=s_response, user_id=token_data.user_id, to_number=to)
+                                return JsonResponse({"whatsapp":response2, "SMS":s_response}, safe=False)
+                                
+                            if msg_state.sel_sms:
 
-# all_u = User1.objects.all()
-# for u in all_u:
-#     if not SMS_Settings.objects.filter(usr_id=u.id):
-#         SMS_Settings.objects.create(whatsapp=True, usr_id=u.id)
+                                url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
+                                s_response = requests.get(url).text
+                                response2 = ""
+                                SMS_OutBox.objects.create(message=msg,
+                                    send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5),
+                                    status="sent", request=url,response=s_response, user_id=token_data.user_id, to_number=to)
+                                if msg_state.whatsapp:
+                                    response2 = send_matched_temps(token_data, to=to, msg=request.GET.get('msg'))
+                                return JsonResponse({"SMS":s_response, "whatsapp":response2}, safe=False)
+                    else:
+                        pass
+
+                if msg_state.both or (msg_state.sms and msg_state.whatsapp):
+                    url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
+                    s_response = requests.get(url).text
+                    OutBox.objects.create(message=msg,
+                                send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(
+                                    hours=5.5),
+                                reply_number="SMS_url", status="sent", request=url,
+                                response=s_response, user_id=token_data.user_id, to_number=to)
+                    w_response = send_matched_temps(token_data, to=to, msg=request.GET.get('msg'))
+                    return JsonResponse({"sms":s_response, "whatsapp":w_response}, safe=False)
+
+                elif msg_state.sms:
+                    url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
+                    s_response = requests.get(url).text
+                    SMS_OutBox.objects.create(message=msg,
+                                send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5),
+                                status="sent", request=url,response=s_response, user_id=token_data.user_id, to_number=to)
+                    return JsonResponse(s_response, safe=False)
+
+                elif msg_state.whatsapp:
+                    response = send_matched_temps(token_data, to=to, msg=request.GET.get('msg'))
+                    return JsonResponse(response)
+
+                if (not msg_state.both) and (not msg_state.sms) and (not msg_state.whatsapp) and (not msg_state.selective):
+                    return JsonResponse({"message":"Please select options in settings"})
+                return HttpResponse("Send")
+        else:
+            return JsonResponse({"message":"User validity has been expired. Please recharge"})
+    else:
+        to = request.POST['to']
+        token = request.POST['token']
+        pdf = request.FILES['pdf']
+        msg = request.POST['message']
+
+        token_obj = Developers_token.objects.get(u_token=token)
+        user_id = token_obj.user_id
+
+        user_obj = User1.objects.get(pk=user_id)
+        wa_obj = WA_MSG_Provider.objects.get(pk=token_obj.message_provider_id)
+
+        object_path = settings.MEDIA_ROOT+ "/media_msg/" + user_obj.user_name + "/" + wa_obj.provider_name
+        if not os.path.exists(object_path):
+            os.mkdir(settings.MEDIA_ROOT+ "/media_msg/" + user_obj.user_name)
+            os.mkdir(settings.MEDIA_ROOT+ "/media_msg/" + user_obj.user_name + "/" + wa_obj.provider_name)
+
+        if pdf:
+            fss = FileSystemStorage()
+            file_s = fss.save(object_path+"/"+pdf.name, pdf)
+            furl = fss.url(file_s)
+            vname = fss.get_valid_name(file_s)
+            furl = "http://wotsapp-campaign.bonrix.in:8000" + furl
+        token_data = Developers_token.objects.get(u_token=token)
+        provider = WA_MSG_Provider.objects.get(id=token_data.message_provider_id)
+        msg = regexpstring(msg, 0).replace("  "," ")
+        api = Voice_API.objects.get(whatsapp_name=provider.provider_name)
+        all_temp = New_Templates.objects.filter(message_provider_id=token_data.message_provider_id)
+        for a in all_temp:
+            
+            data = regexpstring(a.text_msg, 1).replace("{#var#}", "(.*)")
+            p = re.compile(data)
+            variables = p.findall(msg)
+            
+            if variables:
+                print(variables)
+                print(a.temp_name, a.lang_code)
+                payload = {
+                "messaging_product": "whatsapp",
+                "recipient_type": "individual",
+                "to": f"{to}",
+                "type": "template",
+                "template": {
+                    "name": f"{a.temp_name}",
+                    "language": {
+                        "code": f"{a.lang_code}"
+                    },
+                    "components": [
+                                        {
+                                "type": "header",
+                                "parameters": [
+                                    {
+                                        "type": "document",
+                                        "document": {
+                                            "link": f"{furl}"
+                                        }
+                                    }
+                                ]
+                            },
+
+                        ]
+                    }
+                }
+                
+                payload["template"]["components"].append({
+                    "type": "body",
+                    "parameters": []
+                })
+                payload["template"]["components"].append({
+                    "type": "button",
+                    "sub_type": "URL",
+                    "index": "0",
+                    "parameters": [
+                        {
+                            "type": "payload",
+                            "payload": f"{vname}"
+                        }
+                    ]
+                })
+
+                to_save  = {}
+                i = 1
+                if type(variables[0]) is str:
+                    to_roam = variables
+                elif type(variables[0]) is tuple:
+                    to_roam = variables[0]
+                print(to_roam)
+                for v in to_roam:
+                    payload["template"]["components"][1]["parameters"].append({"type": "text", "text": f"{v}"})
+                    to_save[i] = v
+                    i += 1
+                payload = json.dumps(payload)
+                response = requests.request("POST", api.message_API, headers=api.header, data=payload)
+                print(response.text)
+                try:
+                    msgid = json.loads(response.text)['messages'][0]['id']
+                except KeyError:
+                    msgid = None
+                OutBox.objects.create(message=a.temp_name, send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5),
+                        reply_number=provider.provider_name, request=api.message_API,
+                        response=response.text, user_id=provider.user_id, to_number=to, msg_id=msgid, variables=to_save, media_url=furl)
+                Message_History.objects.create(message=a.temp_name, msg_type="send", customer_number=to, 
+                                            api_number=provider.phone_no, user_id=provider.user_id,
+                                            provider_id=provider.id, msg_id=msgid, media_url=furl)
+                return JsonResponse(json.loads(response.text))
+
+
 
 @csrf_exempt
 def send_media_SMS(request):
@@ -677,20 +910,23 @@ def send_media_SMS(request):
                     msgid = json.loads(response.text)['messages'][0]['id']
                     OutBox.objects.create(message=msg_provider.template,
                                           send_time=datetime.datetime.now(
-                                              pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+                                              timezone.utc) + datetime.timedelta(
                                               hours=5.5),
                                           reply_number=wmp.provider_name, status="sent", request=url_data.message_API,
                                           response=response.text, user_id=wmp.user_id, to_number=to, msg_id=msgid)
+                    Message_History.objects.create(message=msg_provider.template, msg_type="send", customer_number=to, 
+                                        api_number=wmp.phone_no, user_id=wmp.user_id,
+                                        provider_id=wmp.id, msg_id=msgid)
                     OutBox.objects.create(message=text,
                                           send_time=datetime.datetime.now(
-                                              pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+                                              timezone.utc) + datetime.timedelta(
                                               hours=5.5),
                                           reply_number=wmp.provider_name, status="in_queue", user_id=wmp.user_id,
                                           to_number=to, media_url=furl)
                     con_stat = Conversation_Status.objects.get(to=to, provider=wmp.provider_name)
                     con_stat.inbox_msg = ""
                     con_stat.template = msg_provider.template
-                    con_stat.send_time = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+                    con_stat.send_time = datetime.datetime.now(timezone.utc) + datetime.timedelta(
                         hours=5.5)
                     con_stat.received_time = None
                     con_stat.conversation_status = "Pending"
@@ -699,15 +935,6 @@ def send_media_SMS(request):
                     pass
 
             else:
-                # if lat_entry.inbox_msg == "No" or lat_entry.inbox_msg == "":
-                #     OutBox.objects.create(message=text,
-                #                           send_time=datetime.datetime.now(
-                #                               pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
-                #                               hours=5.5),
-                #                           reply_number=wmp.provider_name, status="in_queue", user_id=wmp.user_id,
-                #                           to_number=to)
-                #     return JsonResponse({"message": "Message added to queue"})
-                # else:
                 if furl.split(".")[-1] in ['jpg', 'jpeg']:
                     con_type = "image"
                 elif furl.split(".")[-1] in ['docx', 'pdf']:
@@ -730,10 +957,13 @@ def send_media_SMS(request):
                     msgid = ""
                 OutBox.objects.create(message=text,
                                         send_time=datetime.datetime.now(
-                                            pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+                                            timezone.utc) + datetime.timedelta(
                                             hours=5.5), reply_number=wmp.provider_name,
                                         status="sent", request=url_data.message_API, response=response.text,
                                         user_id=wmp.user_id, to_number=to, msg_id=msgid)
+                Message_History.objects.create(message=text, msg_type="send", customer_number=to, 
+                                        api_number=wmp.phone_no, user_id=wmp.user_id,
+                                        provider_id=wmp.id, msg_id=msgid)
     # First Time API call
     else:
         t = Templates.objects.get(temp_name=msg_provider.template, lang_code=msg_provider.lang,
@@ -788,34 +1018,37 @@ def send_media_SMS(request):
         except KeyError:
             msgid = ""
         OutBox.objects.create(message=msg_provider.template,
-                              send_time=datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+                              send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(
                                   hours=5.5),
                               reply_number=wmp.provider_name, status="sent", request=url_data.message_API,
                               response=response.text, user_id=wmp.user_id, to_number=to, msg_id=msgid)
+        Message_History.objects.create(message=msg_provider.template, msg_type="send", customer_number=to, 
+                                        api_number=wmp.phone_no, user_id=wmp.user_id,
+                                        provider_id=wmp.id, msg_id=msgid)
         OutBox.objects.create(message=text,
-                              send_time=datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+                              send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(
                                   hours=5.5),
                               reply_number=wmp.provider_name, status="in_queue", user_id=wmp.user_id, to_number=to, media_url=furl)
         Conversation_Status.objects.create(to=to, provider=wmp.provider_name, template=msg_provider.template,
                                            send_time=datetime.datetime.now(
-                                               pytz.timezone('Asia/Kolkata')) + datetime.timedelta(
+                                               timezone.utc) + datetime.timedelta(
                                                hours=5.5), user_id_id=user_id)
 
     return JsonResponse(json.loads(response.text))
+    
 
 
-def dashboard(request):
-    if 'id' in request.COOKIES:
+def dashboard(request): 
+    if 'id' in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         u_id = request.COOKIES['id']
-        if User1.objects.get(id=u_id).is_authenticated():
-            u_name = request.COOKIES['uname']
-            data = Campaign.objects.filter(user_key_id=u_id)
-            advData = AdvanceCampaign.objects.filter(user_key_id=u_id)
-            try:
-                validity = User1.objects.get(id=u_id).validity - datetime.date.today()
-            except:
-                validity = ""
-            return render(request, "dashboard.html", {'u_name': u_name, 'data': data, 'advData': advData, 'validity':validity})
+        u_name = request.COOKIES['uname']
+        data = Campaign.objects.filter(user_key_id=u_id)
+        advData = AdvanceCampaign.objects.filter(user_key_id=u_id)
+        try:
+            validity = User1.objects.get(id=u_id).validity - datetime.date.today()
+        except:
+            validity = ""
+        return render(request, "dashboard.html", {'u_name': u_name, 'data': data, 'advData': advData, 'validity':validity})
     else:
         return redirect('/')
 
@@ -834,7 +1067,10 @@ def register(request):
             email = request.POST['email']
             password = request.POST['password']
             phone_no = request.POST['phoneno']
-            User1.objects.create(user_name=u_name.lower(), email=email.lower(), password=password, phone_no=phone_no)
+            
+            validity = datetime.date.today() + datetime.timedelta(days=int(APP_Setting.objects.get(key="USER_VALIDITY").value))
+            User1.objects.create(user_name=u_name.lower(), email=email.lower(), password=password, phone_no=phone_no, validity=validity)
+            SMS_Settings.objects.create(whatsapp=True, usr_id=User1.objects.get(email=email.lower()).id)
             return redirect('/')
 
 
@@ -844,13 +1080,16 @@ def login(request):
         password = request.POST['password']
         user = User1.authenticate(email, password)
         if user:
-            User1.login(user[0])
-            response = redirect('dashboard')
-            response.set_cookie('uname', user[0].user_name)
-            response.set_cookie('id', user[0].id)
-            response.set_cookie('mobile', user[0].phone_no)
-            print('redirect', {'user': user[0]})
-            return response
+            if user[0].is_active:
+                User1.login(user[0])
+                response = redirect('dashboard')
+                response.set_cookie('uname', user[0].user_name)
+                response.set_cookie('id', user[0].id)
+                response.set_cookie('mobile', user[0].phone_no)
+                print('redirect', {'user': user[0]})
+                return response
+            else:
+                messages.error(request, 'Your validity have been expired')
         else:
             messages.error(request, 'Email or Password is Invalid.')
     return render(request, 'login.html')
@@ -892,8 +1131,8 @@ def sendmail(subject, template, to, context):
 
 
 def addCamp(request):
-    uid = User1.objects.get(phone_no=request.COOKIES["mobile"])
-    if uid.is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES["id"]).is_authenticated():
+        uid = User1.objects.get(phone_no=request.COOKIES["mobile"])
         if request.method == 'POST':
             name = str(request.POST['camp-name'])
             name = name.replace(" ", "_")
@@ -907,38 +1146,57 @@ def addCamp(request):
             else:
                 messages.error(request, "Campaign Already exist.")
         return redirect("/dashboard/")
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def addComposer(request):
-    id = request.GET.get('unique')
-    u_id = request.COOKIES["id"]
-    if User1.objects.get(id=u_id).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES["id"]).is_authenticated():
+        u_id = request.COOKIES["id"]
+        id = request.GET.get('unique')
         print(u_id)
         data = WA_MSG_Provider.objects.filter(user_id=u_id)
         print(data)
         return render(request, 'AddCompo.html', {'id': id, 'data': data})
     else:
-        messages.error(request, "Login Please")
-        return redirect("/")
+        return JsonResponse({"Error":"Login required to access this page"})
 
 
 def record(request):
-    u_id = request.GET.get('unique')
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES["id"]).is_authenticated():
+        u_id = request.GET.get('unique')
         record = Data_Summary.objects.filter(recordID_id=u_id)
         url_data = Voice_API.objects.filter(u_ID_id=u_id)
         campaign = Campaign.objects.filter(id=u_id)[0].CampaignName
         campStat = Campaign.objects.filter(id=u_id)[0].CampaignStatus
         providers = WA_MSG_Provider.objects.filter(user_id=request.COOKIES['id'])
-        response = render(request, "record.html",
-                          {"Campaign": campaign, "record": record, "url_data": url_data, "CampStat": campStat,
-                           "providers": providers})
+        success = Data_Summary.objects.filter(recordID_id=u_id,status="Success").count()
+        sent = Data_Summary.objects.filter(recordID_id=u_id,what_status="Sent").count()
+        delivered = Data_Summary.objects.filter(recordID_id=u_id,what_status="delivered").count()
+        read = Data_Summary.objects.filter(recordID_id=u_id,what_status="read").count()
+        failed = Data_Summary.objects.filter(recordID_id=u_id,what_status="failed").count()
+        try:
+            comp_ratio = (read/record.count())*100
+            print(success)
+            response = render(request, "record.html",
+                            {"Campaign": campaign, "record": record, "url_data": url_data, "CampStat": campStat,
+                            "providers": providers, 
+                            "success":{"c":success, "p":int((success/record.count())*100)}, 
+                            "sent":sent, 
+                            "delivered":delivered, "read":{"c":read,"p": int((read/record.count())*100)},
+                            "total":record.count(), 
+                            "failed":{"c":failed,"p": int((failed/record.count())*100)}, "comp_ratio":comp_ratio})
+        except ZeroDivisionError:
+            response = render(request, "record.html",
+                            {"Campaign": campaign, "record": record, "url_data": url_data, "CampStat": campStat,
+                            "providers": providers})
         response.set_cookie("camp_id", u_id)
         return response
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 
 def pendingAll(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         campID = request.COOKIES["camp_id"]
         if request.GET['name'] == "advance":
             pending = Advance_Data.objects.filter(recordID_id=campID, status="Success")
@@ -952,6 +1210,8 @@ def pendingAll(request):
                 p.status = "Pending"
                 p.save()
             return redirect(f"/composerList/?unique={campID}")
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 
 def deleteAll(request):
@@ -962,7 +1222,7 @@ def deleteAll(request):
         Campaign.objects.filter(user_key_id=request.COOKIES['id']).delete()
         return redirect("/dashboard")
     if name == "AdvCamp":
-        Advance_Data.objects.filter(user_key_id=request.COOKIES['id']).delete()
+        AdvanceCampaign.objects.filter(user_key_id=request.COOKIES['id']).delete()
         return redirect("/dashboard")
     if name == "Rec":
         camp = request.COOKIES['camp_id']
@@ -991,11 +1251,15 @@ def deleteAll(request):
 
 
 def delete(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         name = request.GET.get('name')
         if name == 'Camp':
             campid = request.GET.get('cid')
             print(Campaign.objects.get(id=campid).delete())
+            return redirect("/dashboard")
+        if name == 'AdvCamp':
+            campid = request.GET.get('cid')
+            print(AdvanceCampaign.objects.get(id=campid).delete())
             return redirect("/dashboard")
         
         if name == 'Tok':
@@ -1025,11 +1289,12 @@ def delete(request):
             bot_auto.delete()
             messages.success(request, "Data deleted Successfully")
             return JsonResponse({"Status":"Success"})
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 @csrf_exempt
 def deleteRec(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         result = json.load(request)
         data = result['data']
         name = result['name']
@@ -1071,21 +1336,29 @@ def deleteRec(request):
         if name == "botSetting":
             What_Bot.objects.filter(pk__in=data).delete()
 
-        return JsonResponse({"Name": "DeleteFunction"})
+        if name == "appSetting":
+            APP_Setting.objects.filter(pk__in=data).delete()
 
+        if name == "reminduser":
+            Reminder_User.objects.filter(pk__in=data).delete()
+
+        return JsonResponse({"Name": "DeleteFunction"})
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def show_settings(request):
-    u_id = request.COOKIES['id']
-    if User1.objects.get(id=u_id).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        u_id = request.COOKIES['id']
         print(u_id)
         data = WA_MSG_Provider.objects.filter(user_id=u_id)
         return render(request, "settings.html",
                       {"data": data, "home": "/dashboard", "addS": "/addSettings", "delete": "/delete_setting/",
                        "edit": "/editSettings"})
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def addSettings(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         message = {"MSG": ""}
         if request.method == "POST":
             mobile = request.POST['phone_no'].replace(" ", "")
@@ -1105,10 +1378,11 @@ def addSettings(request):
             else:
                 message = {"MSG": "API setting already exist"}
         return render(request, "AddSettings.html", {"action": "/addSettings/", "set": "/settings"})
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def editSettings(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         if request.method == "POST":
             sid = request.POST['sid']
             data = WA_MSG_Provider.objects.get(id=sid)
@@ -1129,20 +1403,22 @@ def editSettings(request):
             data = WA_MSG_Provider.objects.get(id=sid)
             return render(request, "editSettings.html",
                           {'sid': sid, 'data': data, "action": "/editSettings/", "set": "/settings"})
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def delete_setting(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         sid = request.GET.get('sid')
         data = WA_MSG_Provider.objects.get(id=sid)
         if Voice_API.objects.filter(u_ID_id=data.user_id, whatsapp_name=data.provider_name):
             Voice_API.objects.get(u_ID_id=data.user_id, whatsapp_name=data.provider_name).delete()
         data.delete()
         return redirect("/settings")
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def start(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         id = request.GET.get('id')
         mode = request.GET.get('mode')
         record = Data_Summary.objects.get(id=id)
@@ -1154,10 +1430,11 @@ def start(request):
             return JsonResponse({"url": url, "text": resp, "img": img_link})
         else:
             return JsonResponse({"url": url, "text": "Message has been already sent", "img": "img_link"})
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def send_multiple_msg(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         data = json.loads(request.body)
         if data['type'] == "record":
             mode = data['mode']
@@ -1186,13 +1463,15 @@ def send_multiple_msg(request):
                 resp_list.append(resp)
             
             return JsonResponse({"text": resp_list, "img": img_link})
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def hit_voice(record, API, mode):
     url = API.message_API
     headers = API.header
     payload = ""
     if mode == "text":
+        msg = record.mobile
         payload = json.dumps({
             "messaging_product": "whatsapp",
             "recipient_type": "individual",
@@ -1204,6 +1483,7 @@ def hit_voice(record, API, mode):
             }
         })
     elif mode == "temp":
+        msg = f"{record.template} [{record.lang}]"
         p = WA_MSG_Provider.objects.get(provider_name=API.whatsapp_name).id
         print(p, record.lang, record.template)
         t = Templates.objects.get(temp_name=record.template, lang_code=record.lang, message_provider_id=p)
@@ -1238,6 +1518,7 @@ def hit_voice(record, API, mode):
                     }
                 })
         else:
+            msg = f"{record.template} [{record.lang}]" 
             payload = json.dumps({
                 "messaging_product": "whatsapp",
                 "recipient_type": "individual",
@@ -1264,12 +1545,25 @@ def hit_voice(record, API, mode):
         id = json.loads(response.text)["messages"][0]["id"]
         record.msg_id = id
         record.save()
+        wap = WA_MSG_Provider.objects.get(provider_name=API.whatsapp_name)
+        Message_History.objects.create(message=msg, msg_type="send", customer_number=record.mobile, 
+                                        api_number=wap.phone_no, user_id=wap.user_id,
+                                        provider_id=wap.id, msg_id=id)
         return f"Message sent Successfully.\nOn Whatsapp Number {record.mobile}\nMessage ID is:" + id, "http://craftizen.org/wp-content/uploads/2019/02/successful_payment_388054.png"
     except KeyError:
         return response.text, "http://craftizen.org/wp-content/uploads/2019/02/global_hint_failure_595796.png"
 
 
 def check(request):
+    
+    # all_u = User1.objects.all()
+    # for u in all_u:
+    #     if not u.validity:
+    #         u.validity=datetime.date.today()
+    #         u.save()
+        # if not SMS_Settings.objects.filter(usr_id=u.id):
+        #     print(u.id)
+        #     SMS_Settings.objects.create(whatsapp=True, usr_id=u.id)
     # data = Conversation_Status.objects.all()
     # prds = WA_MSG_Provider.objects.all()
     # data = []
@@ -1333,7 +1627,7 @@ def background_process(id, mode, is_adv):
                 advanceSend(i, API, mode)
                 i.status = "Success"
                 i.save()
-                db.connections.close_all()
+                db.close_old_connections()
                 print(i.status)
             else:
                 print("Done")
@@ -1352,7 +1646,7 @@ def background_process(id, mode, is_adv):
                 hit_voice(i, API, mode)
                 i.status = "Success"
                 i.save()
-                db.connections.close_all()
+                db.close_old_connections()
                 print(i.status)
             else:
                 print("Done")
@@ -1364,7 +1658,7 @@ def background_process(id, mode, is_adv):
 
 
 def start_all(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         my_id = request.COOKIES['camp_id']
         mode = request.GET.get('mode')
         camp_type = request.GET.get("type")
@@ -1390,14 +1684,12 @@ def start_all(request):
             t.join()
             url = f"/advanceRecord?unique={my_id}"
             return redirect(url)
-
-for thread in threading.enumerate(): 
-    print("Thread working........",thread.name, thread.isDaemon() )
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 
 def stop(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         my_id = request.COOKIES['camp_id']
         if request.GET['type'] == "advance":
             obj = AdvanceCampaign.objects.get(id=my_id)
@@ -1413,12 +1705,13 @@ def stop(request):
             messages.info(request, "Campaign Stopped")
             url = f"/composerList?unique={my_id}"
             return redirect(url)
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 @csrf_exempt
 def preview_composer(request):
     global chars, my_csv_data
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         if request.method == 'POST':
             type = request.POST['compType']
             mobile = ""
@@ -1514,7 +1807,8 @@ def preview_composer(request):
             response = requests.request("POST", message_API, headers=header, data=payload)
             print(response.text)
             return JsonResponse({"text": response.text})
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def prepare(file, id):
     if file.name.lower().endswith('.xlsx'):
@@ -1534,7 +1828,7 @@ def prepare(file, id):
 
 @csrf_exempt
 def process_composer(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         if request.method == 'POST':
             print(request.COOKIES['id'])
             id = request.POST['id']
@@ -1636,10 +1930,11 @@ def process_composer(request):
                 count.record_count += 1
                 count.save()
                 return redirect("/dashboard")
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def DownloadZip(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         uname = User1.objects.get(id=request.COOKIES["id"]).user_name
         camp = Campaign.objects.get(id=request.COOKIES["camp_id"]).CampaignName
         final = uname + "/" + camp
@@ -1661,10 +1956,11 @@ def DownloadZip(request):
         response['Content-Disposition'] = 'attachment; filename=%s' % zip_name
 
         return response
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def export_excel(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         table_name = request.GET.get('table')
         # content-type of response
         response = HttpResponse(content_type='application/ms-excel')
@@ -1785,11 +2081,12 @@ def export_excel(request):
                 ws.write(row_num, 6, my_row.conversation_status, font_style)
         wb.save(response)
         return response
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 selected_Ecxel_file = ""
 
 def export_selected_excel(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         result = json.load(request)
         table_name = result["name"]
         # content-type of response
@@ -1915,7 +2212,8 @@ def export_selected_excel(request):
         global selected_Ecxel_file
         selected_Ecxel_file = response
         return JsonResponse({"url":"/getExcel"})
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def getExcel(request):
     
@@ -1931,7 +2229,7 @@ def refresh_temp(request):
         return JsonResponse({"alert": "Please select api provider first"})
     else:
         prods = WA_MSG_Provider.objects.filter(phone_no=request.GET.get('pname'))
-        #
+        
     data = []
     if prods:
         p = prods[0]
@@ -1951,6 +2249,41 @@ def refresh_temp(request):
 
         for i in data:
             api_temp_ids.add(i["id"])
+            chat_temp = Chat_Templates.objects.filter(temp_id=i['id'])
+            if not chat_temp:
+                temp_compo = i['components']
+                temp_preview = {}
+                for j in range(len(temp_compo)):
+
+                    is_media= False
+                    if temp_compo[j]['type'].lower() == "header" and temp_compo[j]['format'].lower() == "text":
+                        temp_preview[temp_compo[j]["type"]] = temp_compo[j]["text"]
+                    elif temp_compo[j]['type'].lower() == "header" and temp_compo[j]['format'].lower() in ["image", "document"]:
+                        if "example" in temp_compo[j]:
+                            temp_preview[temp_compo[j]["type"]] = temp_compo[j]["example"]["header_handle"][0]
+                        else:
+                            temp_preview[temp_compo[j]["type"]] = temp_compo[j]["type"]
+                        is_media = True
+                        pass
+                    elif temp_compo[j]['type'].lower() == "body":
+                        temp_preview[temp_compo[j]["type"]] = temp_compo[j]["text"]
+                    elif temp_compo[j]['type'].lower() == "buttons":
+                        cont = 0
+                        for b, d in enumerate(temp_compo[j]["buttons"]):
+                            temp_preview[temp_compo[j]["type"] + str(b + 1)] = temp_compo[j]["buttons"][b]["text"]
+                            cont += 1
+                    elif temp_compo[j]['type'].lower() == "footer":
+                        temp_preview[temp_compo[j]["type"]] = temp_compo[j]["text"]
+                Chat_Templates.objects.create(user_id=p.user_id, message_provider_id=p.id, temp_name=i['name'], is_media = is_media,
+                                            lang_code=i['language'], temp_id=i['id'], json=i, temp_preview=temp_preview, status=i['status'])
+            else:
+                temp_compo = i['components']
+                im = False
+                for j in range(len(temp_compo)):
+                    if temp_compo[j]['type'].lower() == "header" and temp_compo[j]['format'].lower() != "text":
+                        im=True
+                chat_temp.update(is_media=im, status=i['status'])
+
             if Templates.objects.filter(temp_id=i['id']):
                 Templates.objects.filter(temp_id=i['id']).update(status=i['status'])
                 continue
@@ -1963,11 +2296,13 @@ def refresh_temp(request):
                     Templates.objects.create(user_id=p.user_id, message_provider_id=p.id, temp_name=i['name'],
                                              lang_code=i['language'], is_media=0, temp_id=i['id'],
                                              status=i['status'])
+            
         to_delete = tab_temp_id - api_temp_ids
         for t_d in to_delete:
             Templates.objects.get(temp_id=t_d).delete()
         return JsonResponse({"alert": ""})
-
+    else:
+        JsonResponse({"alert":"No data found"})
 
 def fetch_Temp(request):
     phone = request.GET.get("phone")
@@ -1991,7 +2326,7 @@ def receive_msg(request):
         intern = data['entry'][0]["changes"][0]["value"]["statuses"]
         msgid = intern[0]['id']
         status = intern[0]['status']
-        t = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5)
+        t = datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5)
         entry = WA_MSG_Provider.objects.get(phone_id=rec_phone_id)
         CallBack_Data.objects.create(Received=data, received_time=t, user_id=entry.user_id, msg_id=msgid,
                                      msg_status=status)
@@ -2007,7 +2342,18 @@ def receive_msg(request):
         Data_Summary.objects.filter(msg_id=msgid).update(what_status=status)
         OutBox.objects.filter(msg_id=msgid).update(status=status)
         Advance_Data.objects.filter(msg_id=msgid).update(what_status=status)
-        
+        Message_History.objects.filter(msg_id=msgid).update(status=status)
+        Reminder_User.objects.filter(b_msg_id=msgid).update(b_status=status)
+        Reminder_User.objects.filter(a_msg_id=msgid).update(a_status=status)
+
+        tem = datetime.datetime.fromtimestamp(int(intern[0]['timestamp']), tz=timezone.utc) + datetime.timedelta(hours=5.5)
+        if status == "sent":
+            Message_History.objects.filter(msg_id=msgid).update(sent_time=tem)
+        if status == "delivered":
+            
+            Message_History.objects.filter(msg_id=msgid).update(delivered_time=tem)
+        if status == "read":
+            Message_History.objects.filter(msg_id=msgid).update(read_time=tem)
         # for thread in threading.enumerate():
         #     if not thread.is_alive():
         #         thread.join()
@@ -2022,7 +2368,8 @@ def receive_msg(request):
             message = data['entry'][0]["changes"][0]["value"]["messages"][0]['text']['body']
         elif data['entry'][0]["changes"][0]["value"]["messages"][0]['type'] == 'button':
             message = data['entry'][0]["changes"][0]["value"]["messages"][0]['button']['text']
-        t = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5)
+        t = datetime.datetime.now(timezone.utc) + timezone.timedelta(hours=5.5)
+        # + datetime.timedelta(hours=5.5)
         rec_phone_id = data['entry'][0]["changes"][0]["value"]['metadata']['phone_number_id']
 
         try:
@@ -2036,6 +2383,9 @@ def receive_msg(request):
         CallBack_Data.objects.create(Received=data, received_time=t, user_id=entry.user_id, msg_id=incom_msg_id)
         MessageLog.objects.create(sender_number=number, received_msg=message, received_time=t, is_read=True,
                                   reply_number=p_num, json=data, user_id=entry.user_id)
+        Message_History.objects.create(message=message, msg_type="received", customer_number=number, 
+                                        api_number=p_num, user_id=entry.user_id,
+                                        provider_id=pid)
         print("..............................", message)
         msg_log = MessageLog.objects.filter(received_msg=message, received_time=t,sender_number=number,reply_number=p_num,)
         
@@ -2047,7 +2397,7 @@ def receive_msg(request):
         
         print(check_out, check_conv)
         
-        if (message.lower() in ["yes", "हां", "ok"]) and (check_out or check_conv):
+        if (message.lower() in ["yes", "हां", "ok", "interested"]) and (check_out or check_conv):
             print("Yes Matched Hindi")
             pend_msg = check_out
             url_data = Voice_API.objects.get(whatsapp_name=entry.provider_name)
@@ -2090,6 +2440,9 @@ def receive_msg(request):
                 p.request = url_data.message_API
                 p.resonse = response.text
                 p.save()
+                Message_History.objects.create(message=p.message, msg_type="sent", customer_number=number, 
+                                        api_number=p_num, user_id=entry.user_id,
+                                        provider_id=pid, msg_id=msgid)
             print("Reaching")
             update_conv.update(conversation_status="Started")
         elif message.lower() in ["yes", "हां", "ok", 'start']:
@@ -2104,7 +2457,7 @@ def receive_msg(request):
 
 
 def send_message_panel(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         if request.method == "POST":
             data = json.loads(request.body)
             row_ids = data["data"]
@@ -2118,18 +2471,21 @@ def send_message_panel(request):
             row_id = request.GET.get("id")
             phone = MessageLog.objects.get(id=row_id).reply_number
             return render(request, 'send_message_panel.html', {"phone": phone, "id": row_id})
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def submessage_panel(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         row_id = request.GET.get("id")
         messages = SubMessageLog.objects.filter(parent_msg_id=row_id).order_by('-id').values()
         return render(request, 'subMessages.html', {'messages': messages})
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 
 @csrf_exempt
 def getHeaderExcel(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         if request.method == "POST":
             file = request.FILES.get('myfile')
             if file.name.lower().endswith('.xlsx'):
@@ -2143,11 +2499,12 @@ def getHeaderExcel(request):
                 csv_data = rows[0].split(",")
                 print(csv_data)
             return JsonResponse({"data": csv_data})
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 @csrf_exempt
 def send_message(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         phone = request.POST['phone']
         try:
             ids = str(request.POST['id']).replace("]", "").replace("[","").split(",")
@@ -2164,7 +2521,7 @@ def send_message(request):
         print(numbers)
         for num in numbers:
             print(num)
-            msg_log = MessageLog.objects.filter(sender_number=num["sender_number"]).latest("id")
+            msg_log = MessageLog.objects.filter(sender_number=num["sender_number"], reply_number=phone).latest("id")
             id = msg_log.id
             if request.POST['method'].lower() == "temp":
                 t = Templates.objects.get(temp_name=template, lang_code=lang, message_provider_id=msg_p.id)
@@ -2217,7 +2574,7 @@ def send_message(request):
                 print(response.text)
                 msg_log.reply = f"{template} [{lang}]"
                 msg_log.request = api.message_API
-                msg_log.send_time = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5)
+                msg_log.send_time = datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5)
                 msg_log.response = response.text
                 try:
                     msg_id = json.loads(response.text)["messages"][0]['id']
@@ -2229,8 +2586,11 @@ def send_message(request):
                 SubMessageLog.objects.create(parent_msg_id=msg_log.id, reply_number=msg_log.reply_number,
                                             user_id=msg_log.user_id, reply=f"{template} [{lang}]", request=api.message_API,
                                             send_time=datetime.datetime.now(
-                                                pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5),
+                                                timezone.utc) + datetime.timedelta(hours=5.5),
                                             response=response.text, msg_id=msg_id)
+                p = WA_MSG_Provider.objects.get(phone_no=msg_log.reply_number).id
+                Message_History.objects.create(message=request.POST['message'], msg_type="send", customer_number=msg_log.reply_number, 
+                                        api_number=msg_log.reply_number, user_id=msg_log.user_id, provider_id=p, msg_id=msg_id)
                     
 
             elif request.POST['method'].lower() == "mes":
@@ -2249,7 +2609,7 @@ def send_message(request):
                 msg_log.reply = request.POST['message']
                 msg_log.request = api.message_API
                 msg_log.response = response.text
-                msg_log.send_time = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5)
+                msg_log.send_time = datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5)
                 try:
                     msg_id = json.loads(response.text)["messages"][0]['id']
                     msg_log.msg_id = msg_id
@@ -2263,34 +2623,59 @@ def send_message(request):
                                                 user_id=msg_log.user_id, reply=request.POST['message'],
                                                 request=api.message_API,
                                                 send_time=datetime.datetime.now(
-                                                    pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5),
+                                                    timezone.utc) + datetime.timedelta(hours=5.5),
                                                 response=response.text, msg_id=msg_id)
+                p = WA_MSG_Provider.objects.get(phone_no=msg_log.reply_number).id
+                Message_History.objects.create(message=request.POST['message'], msg_type="send", customer_number=msg_log.reply_number, 
+                                        api_number=msg_log.reply_number, user_id=msg_log.user_id, provider_id=p,msg_id=msg_id)
                     
         return redirect("/showMessages/")
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def showMessages(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         id = request.COOKIES['id']
         messages = MessageLog.objects.filter(user_id=id).order_by('-id').values()
         providers = WA_MSG_Provider.objects.filter(user_id=id)
-        return render(request, 'messages.html', {'messages': messages, 'provider': providers})
+        
+        return render(request, 'messages.html', {'messages': messages, 'provider': providers, "phone":providers[0].phone_no})
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
+
+def get_state(request):
+    prod_no = request.GET['phone']
+    analysis = MessageLog.objects.values("received_msg").filter(reply_number=prod_no, received_msg__length__lt=15).distinct().annotate(m_count=Count("sender_number", distinct=True))
+    analysis = analysis.order_by('-m_count')
+    message = {}
+    i = 0
+    for d in list(analysis):
+        if i > 15:
+            break
+        if d["received_msg"] == "" or d["received_msg"] == " " or (not d["received_msg"]):
+            continue
+        message[i]= {"m":d['received_msg'], "c": d['m_count']}
+        i+=1
+    return JsonResponse({"data": message})
 
 def outBox(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         id = request.COOKIES['id']
         messages = OutBox.objects.filter(user_id=id).order_by('-id').values()
         # 'provider': providers
         return render(request, 'outbox.html', {'messages': messages})
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def SMS_outbox(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         id = request.COOKIES['id']
         messages = SMS_OutBox.objects.filter(user_id=id).order_by('-id').values()
         # 'provider': providers
         return render(request, 'sms_outbox.html', {'messages': messages})
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def get_random_string(length):
     # With combination of lower and upper case
@@ -2300,7 +2685,7 @@ def get_random_string(length):
 
 
 def updateTokenTemp(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         if request.method == "POST":
             token_id = str(request.POST["token_id"])
             print(token_id)
@@ -2311,11 +2696,12 @@ def updateTokenTemp(request):
             if is_entry:
                 is_entry.update(template=template, lang=lang)
         return redirect("/generateToken/")
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 @csrf_exempt
 def generateToken(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         user = request.COOKIES['id']
         u = User1.objects.get(id=user)
         if request.method == "POST":
@@ -2331,7 +2717,7 @@ def generateToken(request):
             if not Developers_token.objects.filter(message_provider_id=m_id):
                 Developers_token.objects.create(user_id=int(u.id), message_provider_id=int(m_id),
                                                 u_token=get_random_string(36), gen_time=datetime.datetime.now(
-                        pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5),
+                        timezone.utc) + datetime.timedelta(hours=5.5),
                                                 template=template, lang=lang)
 
         print(user)
@@ -2349,11 +2735,12 @@ def generateToken(request):
                 else:
                     data[tp.id].update({'provider': tp.provider_name})
         return render(request, 'generate_token.html', {'temp': temp, 'data': data})
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 @csrf_exempt
 def manageTemplate(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         if request.method == "POST":
             template_id = request.POST['temp_id']
             platform = request.POST['plateform']
@@ -2401,12 +2788,16 @@ def manageTemplate(request):
                     # {"type": "facebook", "med_obj": result['id']}
                     Templates.objects.filter(temp_id=template_id).update(
                         med_id=json.dumps({"type": "facebook", "med_obj": result['id']}))
+                    Chat_Templates.objects.filter(temp_id=template_id).update(
+                        med_id=json.dumps({"type": "facebook", "med_obj": result['id']}))
                 elif platform.lower() == "bonrix":
                     arr = object_path.split("/")
                     obj_id = f"{settings.HOST_URL}/media/" + arr[-2] + "/" + arr[
                         -1] + "/" + file_name_save
                     # {"type": "facebook", "link": obj_id}
                     Templates.objects.filter(temp_id=template_id).update(
+                        med_id=json.dumps({"type": "what", "link": obj_id}))
+                    Chat_Templates.objects.filter(temp_id=template_id).update(
                         med_id=json.dumps({"type": "what", "link": obj_id}))
                 print(platform, file)
 
@@ -2417,11 +2808,12 @@ def manageTemplate(request):
             d.delete()
         prods = WA_MSG_Provider.objects.filter(user_id=user_id)
         return render(request, 'manageTemplates.html', {'data': data, 'prods': prods})
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 @csrf_exempt
 def setAllTemp(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         if request.method == "POST":
             camp_id = request.COOKIES['camp_id']
             provider = request.POST['provider']
@@ -2435,11 +2827,12 @@ def setAllTemp(request):
                 d.lang = lang
                 d.save()
         return JsonResponse({})
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 @csrf_exempt
 def searchTable(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         name = request.GET.get('name')
         print(name)
         final = {}
@@ -2515,18 +2908,20 @@ def searchTable(request):
             # print(data)
         # print(final)
         return JsonResponse(final)
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def customerStat(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         id = request.COOKIES['id']
         data = Conversation_Status.objects.filter(user_id_id=id).order_by('-id').values()
         return render(request, "customerStat.html", {"data": data})
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def advanceCamp(request):
-    uid = User1.objects.get(phone_no=request.COOKIES["mobile"])
-    if uid.is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        uid = User1.objects.get(phone_no=request.COOKIES["mobile"])
         if request.method == 'POST':
             if not Campaign.objects.filter(CampaignName=request.POST['camp-name'], user_key_id=uid):
                 name = str(request.POST['camp-name'])
@@ -2539,12 +2934,14 @@ def advanceCamp(request):
             else:
                 messages.error(request, "Campaign Already exist.")
         return redirect("/dashboard/")
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 
 def advanceTemplate(request):
-    id = request.GET.get('unique')
-    u_id = request.COOKIES["id"]
-    if User1.objects.get(id=u_id).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        id = request.GET.get('unique')
+        u_id = request.COOKIES["id"]
         if request.method == "POST":
             vari = request.POST.getlist('body-variable[]')
             variables = vari
@@ -2683,11 +3080,12 @@ def advanceTemplate(request):
 
         data = WA_MSG_Provider.objects.filter(user_id=u_id)
         return render(request, "advanceTemp.html", {"id": id, "data": data})
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 @csrf_exempt
 def advancePreview(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         if request.method == 'POST':
             vari = request.POST.getlist('body-variable[]')
             variables = vari[0].split(",")
@@ -2862,29 +3260,50 @@ def advancePreview(request):
             response = requests.request("POST", message_API, headers=header, data=payload)
             print(response.text)
             return JsonResponse({"text": response.text})
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def advanceRecord(request):
-    c_id = request.GET.get('unique')
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        c_id = request.GET.get('unique')
         record = Advance_Data.objects.filter(recordID_id=c_id)
         # url_data = Voice_API.objects.filter(u_ID_id=c_id)
         campaign = AdvanceCampaign.objects.filter(id=c_id)[0]
 
         providers = WA_MSG_Provider.objects.filter(user_id=request.COOKIES['id'])
-        response = render(request, "advanceRecord.html",
+        success = Advance_Data.objects.filter(recordID_id=c_id,status="Success").count()
+        sent = Advance_Data.objects.filter(recordID_id=c_id,what_status="Sent").count()
+        delivered = Advance_Data.objects.filter(recordID_id=c_id,what_status="delivered").count()
+        read = Advance_Data.objects.filter(recordID_id=c_id,what_status="read").count()
+        failed = Advance_Data.objects.filter(recordID_id=c_id,what_status="failed").count()
+        try:
+            comp_ratio = (read/record.count())*100
+            response = render(request, "advanceRecord.html",
                           {"Campaign": campaign.CampaignName, "record": record, "url_data": "url_data",
                            "CampStat": campaign.CampaignStatus,
-                           "providers": providers})
+                           "providers": providers,
+                           "success":{"c":success, "p":int((success/record.count())*100)}, 
+                           "sent":sent, 
+                           "delivered":delivered, "read":{"c":read,"p": int((read/record.count())*100)},
+                           "total":record.count(), 
+                           "failed":{"c":failed,"p": int((failed/record.count())*100)}, "comp_ratio":comp_ratio})
+        
+        except ZeroDivisionError:
+            response = render(request, "advanceRecord.html",
+                          {"Campaign": campaign.CampaignName, "record": record, "url_data": "url_data",
+                           "CampStat": campaign.CampaignStatus,"providers": providers})
         response.set_cookie("camp_id", c_id)
         return response
-
+        
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def advanceSend(record, API, mode):
     url = API.message_API
     headers = API.header
     payload = ""
     if mode == "text":
+        msg = record.text
         payload = json.dumps({
             "messaging_product": "whatsapp",
             "recipient_type": "individual",
@@ -2896,8 +3315,10 @@ def advanceSend(record, API, mode):
             }
         })
     elif mode == "temp":
-        p = WA_MSG_Provider.objects.get(provider_name=API.whatsapp_name).id
+        provider = WA_MSG_Provider.objects.get(provider_name=API.whatsapp_name)
+        p = provider.id
         print(p, record.lang, record.template)
+        msg = f"{record.template} [{record.lang}]"
         t = Templates.objects.get(temp_name=record.template, lang_code=record.lang, message_provider_id=p)
 
         if t.is_media:
@@ -2996,13 +3417,15 @@ def advanceSend(record, API, mode):
         id = json.loads(response.text)["messages"][0]["id"]
         record.msg_id = id
         record.save()
+        Message_History.objects.create(message=msg, msg_type="send", customer_number=record.mobile, 
+                                        api_number=provider.phone_no, user_id=provider.user_id, provider_id=p, msg_id=id)
         return f"Message sent Successfully.\nOn Whatsapp Number {record.mobile}\nMessage ID is:" + id, "http://craftizen.org/wp-content/uploads/2019/02/successful_payment_388054.png"
     except KeyError:
         return "Something Went Wrong.", "http://craftizen.org/wp-content/uploads/2019/02/global_hint_failure_595796.png"
 
 
 def advanceStart(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         id = request.GET.get('id')
         mode = request.GET.get('mode')
         record = Advance_Data.objects.get(id=id)
@@ -3014,32 +3437,56 @@ def advanceStart(request):
             return JsonResponse({"url": url, "text": resp, "img": img_link})
         else:
             return JsonResponse({"url": url, "text": "Message already sent.", "img": "img_link"})
-
-
-def delete_oldData():
-    print("Old Data Delete")
-    today = datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5) - datetime.timedelta(days=6)
-    o_data = OutBox.objects.filter(send_time__lte=today)
-    for i in o_data:
-        i.delete()
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
     
 
-def conversation_update():
-    hours = datetime.datetime.now(timezone.utc)+ datetime.timedelta(hours=5.5) - datetime.timedelta(hours=24)
-    days = datetime.datetime.now(timezone.utc)+ datetime.timedelta(hours=5.5) - datetime.timedelta(days=7)
-    c_data = Conversation_Status.objects.filter(received_time__lte=hours).update(conversation_status="Pending")
-    Conversation_Status.objects.filter(inbox_msg="NO").update(conversation_status="Stopped")
-    Conversation_Status.objects.filter(received_time__lte=days).update(conversation_status="Stopped")
+
+def delete_oldData(request):
+    try:
+        print("Old Data Delete")
+        today = datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5) - datetime.timedelta(days=6)
+        o_data = OutBox.objects.filter(send_time__lte=today)
+        for i in o_data:
+            i.delete()
+        return JsonResponse({"status":True})
+    except:
+        return JsonResponse({"status":False})
+    
+def validity_update(request):
+    try:
+        today = datetime.date.today()
+        user = User1.objects.filter(validity__lte=today)
+        user.update(is_active=0)
+        print(user)
+        return JsonResponse({"Status":True})
+    except:
+        return JsonResponse({"Status":False})
+    
+
+def conversation_update(request):
+    try:
+        set_days = int(APP_Setting.objects.get(key="BLOCK_NUMBER_LIMIT").value)
+        hours = datetime.datetime.now(timezone.utc)+ datetime.timedelta(hours=5.5) - datetime.timedelta(hours=24)
+        days = datetime.datetime.now(timezone.utc)+ datetime.timedelta(hours=5.5) - datetime.timedelta(days=set_days)
+        c_data = Conversation_Status.objects.filter(received_time__lte=hours).update(conversation_status="Pending")
+        Conversation_Status.objects.filter(inbox_msg="NO").update(conversation_status="Stopped")
+        Conversation_Status.objects.filter(received_time__lte=days).update(conversation_status="Stopped")
+        return JsonResponse({"status":True})
+    except:
+        return JsonResponse({"status":False})
 
 def customerBotState(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         bot_id = request.GET['bid']
         p_id = request.GET['pid']
         data = CustomerBotStop.objects.filter(provider_id=p_id)
         return render(request, "customerBotState.html", {"data":data})
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def botSettings(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         if request.method == "POST":
             msg_prods = WA_MSG_Provider.objects.get(phone_no=request.POST['provider'])
             if not What_Bot.objects.filter(provider_id=msg_prods.id):
@@ -3052,10 +3499,11 @@ def botSettings(request):
             providers = WA_MSG_Provider.objects.filter(user_id=request.COOKIES['id'])
             bots = What_Bot.objects.filter(user_id=request.COOKIES['id'])
             return render(request, "botSettings.html", {"bots": bots, "providers": providers})
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def button_status(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         msg_prods = WA_MSG_Provider.objects.get(phone_no=request.GET['name'])
         bot = What_Bot.objects.get(bot_name=msg_prods.provider_name + "_bot")
         btn_id = bot.id
@@ -3066,10 +3514,11 @@ def button_status(request):
             btn_cls = "btn btn-success"
             btn_text = "On"
         return JsonResponse({"btn_cls": btn_cls, "btn_text": btn_text, "btn_id":btn_id})
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def addMesPair(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         phone = ""
         if request.method == "POST":
             try:
@@ -3157,10 +3606,11 @@ def addMesPair(request):
             phone = WA_MSG_Provider.objects.get(pk=pid).phone_no
             bot_reply = Bot_Auto_Reply.objects.filter(bot_id=bot_id)
             return render(request, "Bot_Messages.html", {"data": bot_reply, "pid":phone, "bid":bot_id, "bot_state":What_Bot.objects.get(pk=bot_id).is_on})
-    
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def stopBot(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         user_num = request.GET['user']
         provider = request.GET['provider']
         p = WA_MSG_Provider.objects.get(phone_no=provider)
@@ -3168,10 +3618,11 @@ def stopBot(request):
         if not data:
             CustomerBotStop.objects.create(user_number=user_num, provider_name=p.provider_name, provider_id=p.id)
         return redirect("/showMessages")
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def toggle_Bot_Stat(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         if request.GET['type'] == 'bot':
             bot_id = request.GET['bot_id']
             bot = What_Bot.objects.get(pk=bot_id)
@@ -3193,10 +3644,11 @@ def toggle_Bot_Stat(request):
 
         
         return redirect(red_url)
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def editAutoReply(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         if request.method == "POST":
             try:
                 rec = str(request.POST["rec_mes"]).split(",")
@@ -3240,17 +3692,19 @@ def editAutoReply(request):
             my_list = my_list.replace("\'","").replace("[","").replace("]","")
             data = {"mid":res_rep.id,"receive_msg":my_list, "reply_message":res_rep.reply_message, "type":res_rep.msg_type}
             return JsonResponse(data)
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 
 def ShowFiles(request):
-    uid = User1.objects.get(phone_no=request.COOKIES["mobile"])
-    if uid.is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        uid = User1.objects.get(phone_no=request.COOKIES["mobile"])
         rid = request.GET['rid']
         data = Bot_Auto_Reply.objects.get(pk=rid).reply_message
         files = data["catalogue"]
         return JsonResponse(files, safe=False)
     else:
-        JsonResponse({"Message":"Please login first"})
+        return JsonResponse({"Error":"Login required to access this page"})
 
 
 def check_bot_set(user, provider, to, message, msg_id, msg_log):
@@ -3292,7 +3746,7 @@ def check_bot_set(user, provider, to, message, msg_id, msg_log):
         response = requests.post(url=api.message_API, headers=api.header, data=payload)
         msg_log.reply = b.reply_message['text']
         msg_log.request = api.message_API
-        msg_log.send_time = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5)
+        msg_log.send_time = datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5)
         msg_log.response = response.text
         try:
             msg_id = json.loads(response.text)["messages"][0]['id']
@@ -3304,8 +3758,11 @@ def check_bot_set(user, provider, to, message, msg_id, msg_log):
         SubMessageLog.objects.create(parent_msg_id=msg_log.id, reply_number=msg_log.reply_number,
                                     user_id=msg_log.user_id, reply=b.reply_message['text'], request=api.message_API,
                                     send_time=datetime.datetime.now(
-                                        pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5),
+                                        timezone.utc) + datetime.timedelta(hours=5.5),
                                     response=response.text, msg_id=msg_id)
+        pid = WA_MSG_Provider.objects.get(phone_no=msg_log.reply_number).id
+        Message_History.objects.create(message=b.reply_message['text'], msg_type="send", customer_number=msg_log.sender_number, 
+                                        api_number=msg_log.reply_number, user_id=msg_log.user_id, provider_id=pid, msg_id=msg_id)
         return response.text
     if "template" in b.reply_message.keys():
         record = Templates.objects.get(temp_id=b.reply_message["template"])
@@ -3355,7 +3812,7 @@ def check_bot_set(user, provider, to, message, msg_id, msg_log):
         response = requests.post(url=api.message_API, headers=api.header, data=payload)
         msg_log.reply = f"{record.temp_name} [{record.lang_code}]"
         msg_log.request = api.message_API
-        msg_log.send_time = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5)
+        msg_log.send_time = datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5)
         msg_log.response = response.text
         try:
             msg_id = json.loads(response.text)["messages"][0]['id']
@@ -3367,8 +3824,11 @@ def check_bot_set(user, provider, to, message, msg_id, msg_log):
         SubMessageLog.objects.create(parent_msg_id=msg_log.id, reply_number=msg_log.reply_number,
                                     user_id=msg_log.user_id, reply=f"{record.temp_name} [{record.lang_code}]", request=api.message_API,
                                     send_time=datetime.datetime.now(
-                                        pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5),
+                                        timezone.utc) + datetime.timedelta(hours=5.5),
                                     response=response.text, msg_id=msg_id)
+        pid = WA_MSG_Provider.objects.get(phone_no=msg_log.reply_number).id
+        Message_History.objects.create(message=f"{record.temp_name} [{record.lang_code}]", msg_type="send", customer_number=msg_log.sender_number, 
+                                        api_number=msg_log.reply_number, user_id=msg_log.user_id, provider_id=pid, msg_id=msg_id)
         return response.text
     if "catalogue" in b.reply_message.keys():
         files = b.reply_message["catalogue"]
@@ -3403,7 +3863,7 @@ def check_bot_set(user, provider, to, message, msg_id, msg_log):
             reply = f["link"].split("/")[-1]
             msg_log.reply = reply
             msg_log.request = api.message_API
-            msg_log.send_time = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5)
+            msg_log.send_time = datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5)
             msg_log.response = response.text
             try:
                 msg_id = json.loads(response.text)["messages"][0]['id']
@@ -3415,8 +3875,11 @@ def check_bot_set(user, provider, to, message, msg_id, msg_log):
             SubMessageLog.objects.create(parent_msg_id=msg_log.id, reply_number=msg_log.reply_number,
                                         user_id=msg_log.user_id, reply=reply, request=api.message_API,
                                         send_time=datetime.datetime.now(
-                                            pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5),
+                                            timezone.utc) + datetime.timedelta(hours=5.5),
                                         response=response.text, msg_id=msg_id)
+            pid = WA_MSG_Provider.objects.get(phone_no=msg_log.reply_number).id
+            Message_History.objects.create(message=reply, msg_type="send", customer_number=msg_log.sender_number, 
+                                        api_number=msg_log.reply_number, user_id=msg_log.user_id, provider_id=pid, msg_id=msg_id)
         return response.text
     if "btn-w-text" in b.reply_message.keys():
         btn_data = b.reply_message['btn-w-text']
@@ -3438,7 +3901,7 @@ def check_bot_set(user, provider, to, message, msg_id, msg_log):
         reply = btn_data["btext"] + "(With buttons reply)"
         msg_log.reply = reply
         msg_log.request = api.message_API
-        msg_log.send_time = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5)
+        msg_log.send_time = datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5)
         msg_log.response = response.text
         try:
             msg_id = json.loads(response.text)["messages"][0]['id']
@@ -3450,8 +3913,11 @@ def check_bot_set(user, provider, to, message, msg_id, msg_log):
         SubMessageLog.objects.create(parent_msg_id=msg_log.id, reply_number=msg_log.reply_number,
                                     user_id=msg_log.user_id, reply=reply, request=api.message_API,
                                     send_time=datetime.datetime.now(
-                                        pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5),
+                                        timezone.utc) + datetime.timedelta(hours=5.5),
                                     response=response.text, msg_id=msg_id)
+        pid = WA_MSG_Provider.objects.get(phone_no=msg_log.reply_number).id
+        Message_History.objects.create(message=reply, msg_type="send", customer_number=msg_log.sender_number, 
+                                        api_number=msg_log.reply_number, user_id=msg_log.user_id, provider_id=pid, msg_id=msg_id)
         return response.text
     if "list-btn" in b.reply_message.keys():
         data = b.reply_message["list-btn"]
@@ -3487,7 +3953,7 @@ def check_bot_set(user, provider, to, message, msg_id, msg_log):
         reply = data["body_tex"] + "(With list reply)"
         msg_log.reply = reply
         msg_log.request = api.message_API
-        msg_log.send_time = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5)
+        msg_log.send_time = datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5)
         msg_log.response = response.text
         try:
             msg_id = json.loads(response.text)["messages"][0]['id']
@@ -3499,10 +3965,42 @@ def check_bot_set(user, provider, to, message, msg_id, msg_log):
         SubMessageLog.objects.create(parent_msg_id=msg_log.id, reply_number=msg_log.reply_number,
                                     user_id=msg_log.user_id, reply=reply, request=api.message_API,
                                     send_time=datetime.datetime.now(
-                                        pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5),
+                                        timezone.utc) + datetime.timedelta(hours=5.5),
                                     response=response.text, msg_id=msg_id)
+        pid = WA_MSG_Provider.objects.get(phone_no=msg_log.reply_number).id
+        Message_History.objects.create(message=reply, msg_type="send", customer_number=msg_log.sender_number, 
+                                        api_number=msg_log.reply_number, user_id=msg_log.user_id, provider_id=pid, msg_id=msg_id)
         return response.text
 
+def prepare_TempForChat(pid, tname, tcode):
+    
+    json_data = Chat_Templates.objects.filter(message_provider_id=pid)
+    
+    temp_compo = json_data[0]['components']
+    temp_preview = {}
+    for i in range(len(temp_compo)):
+        if temp_compo[i]['type'].lower() == "header" and temp_compo[i]['format'].lower() == "text":
+            temp_preview[temp_compo[i]["type"]] = temp_compo[i]["text"]
+        elif temp_compo[i]['type'].lower() == "header" and temp_compo[i]['format'].lower() in ["image", "document"]:
+            temp_preview[temp_compo[i]["type"]] = temp_compo[i]["example"]["header_handle"][0]
+            pass
+        elif temp_compo[i]['type'].lower() == "body":
+            temp_preview[temp_compo[i]["type"]] = temp_compo[i]["text"]
+        elif temp_compo[i]['type'].lower() == "buttons":
+            cont = 0
+            for b, d in enumerate(temp_compo[i]["buttons"]):
+                temp_preview[temp_compo[i]["type"] + str(b + 1)] = temp_compo[i]["buttons"][b]["text"]
+                cont += 1
+        elif temp_compo[i]['type'].lower() == "footer":
+            temp_preview[temp_compo[i]["type"]] = temp_compo[i]["text"]
+    
+    temp_look = ""
+    for i in temp_preview:
+        temp_look += f'''
+    {temp_preview[i]}\n
+    
+    '''
+    return temp_preview
 
 def prepare_chat(cus_list, uname):
     time_data  = {}
@@ -3517,18 +4015,34 @@ def prepare_chat(cus_list, uname):
         else:
             sub = SubMessageLog.objects.filter(parent_msg_id=cus_list[i].id, send_time__gte=cus_list[i].received_time)
         for s in sub:
-            if s.reply.split(".")[-1] in ['jpg', 'jpeg']:
-                time_data[cus_list[i]].append({"type":"img","reply":f'http://wotsapp-campaign.bonrix.in:8000/media/UnzippedFiles/{uname}/{s.reply}'})
+            ext = s.reply.split(".")[-1]
+            print(ext)
+            if ext in ['jpg', 'jpeg', 'png']:
+                if "http" in s.reply:
+                    time_data[cus_list[i]].append({"time":s.send_time,"type":"img","reply":s.reply, "status":s.status})
+                else:
+                    time_data[cus_list[i]].append({"time":s.send_time,"type":"img","status":s.status,"reply":f'http://wotsapp-campaign.bonrix.in:8000/media/UnzippedFiles/{uname}/{s.reply}'})
+            elif ext in ['docx', 'pdf']:
+                time_data[cus_list[i]].append({"time":s.send_time,"type":ext,"status":s.status,"name":s.reply.split("/")[-1],"reply":s.reply})
             elif "[" in s.reply or "]" in s.reply:
-                time_data[cus_list[i]].append({"type":"temp", "reply":""})
+                temp_name = s.reply.split(" ")[0]
+                u_id = s.user_id
+                lang_code = s.reply.split(" ")[1].replace("[","").replace("]","")
+                try:
+                    temp = Chat_Templates.objects.get(temp_name=temp_name, lang_code=lang_code, user_id=u_id)
+                    if "HEADER" in temp.temp_preview and "http" in temp.temp_preview['HEADER']:
+                        temp.temp_preview["HEADER"] = s.media_content
+                    time_data[cus_list[i]].append({"type":"temp", "reply":temp.temp_preview, "time":s.send_time, "status":s.status})
+                except:
+                    time_data[cus_list[i]].append({"type":"temp", "reply":temp_name, "time":s.send_time, "status":s.status})
             else:
-                time_data[cus_list[i]].append({"type":"text","reply":s.reply})
+                time_data[cus_list[i]].append({"type":"text","reply":s.reply, "time":s.send_time, "status":s.status})
             
     return time_data
 
 
 def what_gui(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         uid = request.COOKIES["id"]
         try:
             to = request.GET['to']
@@ -3539,37 +4053,127 @@ def what_gui(request):
             to, rnum = customers[len(customers)-1].sender_number, customers[len(customers)-1].reply_number
         
         users = MessageLog.objects.filter(user_id=uid).values("sender_number", "reply_number").distinct()
-        for u in users:
+        act_users = users
+        # .reverse()[:5]
+        # arc_users = users.reverse()[5:]
+        for u in act_users:
             if u['sender_number'] == to:
                 u["active"] = "active"
-        print(users)
-        return render(request, "what_GUI.html", {"from":rnum, "to":to,"provider":WA_MSG_Provider.objects.get(phone_no=rnum).provider_name,"users": users,"time_data":prepare_chat(customers, User1.objects.get(pk=request.COOKIES['id']).user_name)})
+        pname = WA_MSG_Provider.objects.get(phone_no=rnum).provider_name
+        return render(request, "what_GUI.html", {"from":rnum, "to":to,"provider":pname,
+        "act_users": act_users,"time_data":prepare_chat(customers, pname)})
+        # "arc_users":arc_users,
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
-
+@csrf_exempt
 def chat_msg(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
-        to = request.GET['to']
-        fom = request.GET['from']
-        msg = request.GET['msg']
-
-        msg_log = MessageLog.objects.filter(sender_number=to)
-        msg_log = msg_log[len(msg_log) -1]
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        data = json.loads(request.body)
+        to = data['to']
+        fom = data['from']
+        msg = str(data['msg'])
+        mes_type = data['type']
+        
         api = Voice_API.objects.get(whatsapp_name=fom)
-        payload = json.dumps({
+        provider = WA_MSG_Provider.objects.get(provider_name=fom)
+        media_content = ""
+        if mes_type == "text":
+            payload = json.dumps({
+                        "messaging_product": "whatsapp",
+                        "recipient_type": "individual",
+                        "to": f"{to}",
+                        "type": "text",
+                        "text": {
+                            "preview_url": False,
+                            "body": f"{msg}"
+                        }
+                    })
+        
+        elif mes_type == "temp":
+            
+            tname = msg.split("-")[0]
+            tcode = msg.split("-")[1]
+            msg = f"{tname} [{tcode}]"
+            media_content = ""
+            t = Chat_Templates.objects.get(message_provider_id=provider.id, temp_name=tname, lang_code=tcode)
+            if t.is_media:
+                if t.med_id is None:
+                    
+                    return JsonResponse({"message": "Please Upload media content first."})
+                else:
+                    js = json.loads(t.med_id)
+                    media_content = js['link'] if js["type"] == "what" else js['med_obj']
+                    payload = json.dumps({
+                        "messaging_product": "whatsapp",
+                        "recipient_type": "individual",
+                        "to": f"{to}",
+                        "type": "template",
+                        "template": {
+                            "name": f"{tname}",
+                            "language": {
+                                "code": f"{tcode}"
+                            },
+                            "components": [
+                                {
+                                    "type": "header",
+                                    "parameters": [
+                                        {
+                                            "type": "image",
+                                            "image": {"link": f"{js['link']}"} if js["type"] == "what" else {
+                                                "id": f"{js['med_obj']}"}
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    })
+            else:
+                payload = json.dumps({
                     "messaging_product": "whatsapp",
                     "recipient_type": "individual",
-                    "to": f"{msg_log.sender_number}",
-                    "type": "text",
-                    "text": {
-                        "preview_url": False,
-                        "body": f"{msg}"
+                    "to": f"{to}",
+                    "type": "template",
+                    "template": {
+                        "name": f"{tname}",
+                        "language": {
+                            "code": f"{tcode}"
+                        },
+
                     }
                 })
+        elif mes_type == "image":
+            payload = json.dumps({
+                "messaging_product": "whatsapp",
+                "recipient_type": "individual",
+                "to": f"{to}",
+                "type": "image",
+                "image": {
+                    "link": msg,
+                }
+            })
+        elif mes_type == "pdf" or mes_type == "doc":
+            payload = json.dumps({
+                    "messaging_product": "whatsapp",
+                    "recipient_type": "individual",
+                    "to": f"{to}",
+                    "type": "document",
+                    "document": {
+                        "link": msg,
+                    }
+                })
+        
         response = requests.post(url=api.message_API, data=payload, headers=api.header)
+        
+        msg_log = MessageLog.objects.filter(sender_number=to, reply_number=provider.phone_no)
+        
+        msg_log = msg_log[len(msg_log) -1]
+        
         msg_log.reply = msg
+        msg_log.media_content = media_content
         msg_log.request = api.message_API
         msg_log.response = response.text
-        msg_log.send_time = datetime.datetime.now(pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5)
+        msg_log.send_time = datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5)
         try:
             msg_id = json.loads(response.text)["messages"][0]['id']
             msg_log.msg_id = msg_id
@@ -3583,23 +4187,33 @@ def chat_msg(request):
                                         user_id=msg_log.user_id, reply=msg,
                                         request=api.message_API,
                                         send_time=datetime.datetime.now(
-                                            pytz.timezone('Asia/Kolkata')) + datetime.timedelta(hours=5.5),
-                                        response=response.text, msg_id=msg_id)
-        return redirect(f"what_gui?to={to}&from={WA_MSG_Provider.objects.get(provider_name=fom).phone_no}")
+                                            timezone.utc) + datetime.timedelta(hours=5.5),
+                                        response=response.text, msg_id=msg_id, media_content=media_content)
+        pid = WA_MSG_Provider.objects.get(phone_no=msg_log.reply_number).id
+        Message_History.objects.create(message=msg, msg_type="send", customer_number=msg_log.sender_number, 
+                                        api_number=msg_log.reply_number, user_id=msg_log.user_id, provider_id=pid, msg_id=msg_id)
+   
+
+        return JsonResponse({"response":response.text})
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
+
 
 def change_chat(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         uid = request.COOKIES["id"]
         to = request.GET['to']
         customers = MessageLog.objects.filter(user_id=uid, sender_number=to).order_by("received_time")
         return JsonResponse({"chat":  prepare_chat(customers)})
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def testgui(request):
     return render(request, "what_GUI.html")
 
+
 def createTemp(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         if request.method == "POST":
             if request.POST["type"] == "multiple":
                 template_name = str(request.POST['temp-name'])
@@ -3639,9 +4253,9 @@ def createTemp(request):
                             ind = next((index for (index, c) in enumerate(td['components']) if c["type"] == "BODY"), None)
                             if ind and (td['id'] not in table_temp_id_list):
                                 c = td["components"][ind]
-                                excel_text = (temp_b+" Thank you").replace("{#var#}", "(.*)")
+                                excel_text = regexpstring(temp_b, 0).replace("{#var#}", "(.*)")
                                 p = re.compile(excel_text)
-                                variables = p.findall(c['text'])
+                                variables = p.findall(regexpstring(c['text'], 1))
                                 if variables:
                                     print("Matched")
                                     New_Templates.objects.create(user_id=request.COOKIES['id'], message_provider_id=data.id, temp_name=td['name'],
@@ -3716,9 +4330,9 @@ def createTemp(request):
                             ind = next((index for (index, c) in enumerate(td['components']) if c["type"] == "BODY"), None)
                             if ind and (td['id'] not in table_temp_id_list):
                                 c = td["components"][ind]
-                                excel_text = (temp_b+" Thank you").replace("{#var#}", "(.*)")
+                                excel_text = regexpstring(temp_b, 0).replace("{#var#}", "(.*)")
                                 p = re.compile(excel_text)
-                                variables = p.findall(c['text'])
+                                variables = p.findall(regexpstring(c['text'],1))
                                 if variables:
                                     print("Matched")
                                     New_Templates.objects.create(user_id=request.COOKIES['id'], message_provider_id=data.id, temp_name=td['name'],
@@ -3777,9 +4391,12 @@ def createTemp(request):
                     return redirect("/createTemp")
             elif request.POST["type"] == "single":
                 print("Single")
+                
                 template_name = str(request.POST['temp-name']).replace(" ","_").lower()
                 provider = request.POST["wa_provider"]
                 data = WA_MSG_Provider.objects.get(phone_no=provider)
+                database_temps = New_Templates.objects.filter(message_provider_id=data.id).values("temp_id")
+                table_temp_id_list = [x['temp_id'] for x in database_temps]
                 body = request.POST["temp-body"]
                 language = request.POST["language"]
                 category = request.POST['category']
@@ -3794,7 +4411,6 @@ def createTemp(request):
                     return JsonResponse({"response":response})
 
                 for td in res_dt:
-                    print("checking")
                     ind = next((index for (index, c) in enumerate(td['components']) if c["type"] == "BODY"), None)
                     if ind and (td['id'] not in table_temp_id_list):
                         c = td["components"][ind]
@@ -3804,7 +4420,7 @@ def createTemp(request):
                         if variables:
                             print("Matched")
                             New_Templates.objects.create(user_id=request.COOKIES['id'], message_provider_id=data.id, temp_name=td['name'],
-                                            text_msg=regexpstring(temp_b, 0), text_converted=c['text'], lang_code=td['language'], category=td['category'],
+                                            text_msg=regexpstring(body, 0), text_converted=c['text'], lang_code=td['language'], category=td['category'],
                                             temp_id=td['id'], status=td['status'])
                             break
                 else:
@@ -3871,49 +4487,60 @@ def createTemp(request):
             else:
                 sms_set = ""
             return render(request, "create_temp.html", {"data":data, "templates": templates, "header":data[0].temp_header, "footer":data[0].temp_footer, "sms_set":sms_set})
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
+
 
 def add_SMS_setting(request):
-    if request.method == "POST":
-        mes_set = SMS_Settings.objects.filter(usr_id=request.COOKIES['id'])
-        if not mes_set:
-            SMS_Settings.objects.create(usr_id=request.COOKIES['id'])
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        if request.method == "POST":
+            mes_set = SMS_Settings.objects.filter(usr_id=request.COOKIES['id'])
+            if not mes_set:
+                SMS_Settings.objects.create(usr_id=request.COOKIES['id'])
 
-        if "both" in request.POST:
-            mes_set.update(both=True)
-        else:
-            mes_set.update(both=False)
-
-        if "wa" in request.POST:
-            mes_set.update(whatsapp=True)
-        else:
-            mes_set.update(whatsapp=False)
-
-        if "mes" in request.POST:
-            mes_set.update(sms=True)
-        else:
-            mes_set.update(sms=False)
-        
-        if "seletive" in request.POST:
-            mes_set.update(selective=True)
-            mes_set.update(keywords=request.POST["keywords"])
-            if "sel_wa" in request.POST:
-                mes_set.update(sel_whatsapp=True)
+            if "both" in request.POST:
+                mes_set.update(both=True)
             else:
-                mes_set.update(sel_whatsapp=False)
+                mes_set.update(both=False)
 
-            if "sel_mes" in request.POST:
-                mes_set.update(sel_sms=True)
+            if "wa" in request.POST:
+                mes_set.update(whatsapp=True)
             else:
-                mes_set.update(sel_sms=False)
-        else:
-            mes_set.update(selective=False)
-        
-        mes_set.update(sms_url=request.POST["sms-url"])
-        
-        return redirect("/createTemp")
+                mes_set.update(whatsapp=False)
+
+            if "mes" in request.POST:
+                mes_set.update(sms=True)
+            else:
+                mes_set.update(sms=False)
+            
+            if "seletive" in request.POST:
+                mes_set.update(selective=True)
+                mes_set.update(keywords=request.POST["keywords"])
+                if "sel_wa" in request.POST:
+                    mes_set.update(sel_whatsapp=True)
+                else:
+                    mes_set.update(sel_whatsapp=False)
+
+                if "sel_mes" in request.POST:
+                    mes_set.update(sel_sms=True)
+                else:
+                    mes_set.update(sel_sms=False)
+            else:
+                mes_set.update(selective=False)
+            
+            mes_set.update(sms_url=request.POST["sms-url"])
+            return redirect("/createTemp")
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
+
 
 def regexpstring(text, isGram):
-     try:
+    from cleantext import clean
+    
+    if not isGram:
+        text =  text + " Thank you"
+    text = clean(text, no_emoji=True, lower=False)
+    try:
         text = text.replace("\r\n"," ").replace("\n"," ").replace("\t"," ").replace("*", "").replace("?", "") 
         newString = ""
         previousIsWhitespace = False
@@ -3926,47 +4553,42 @@ def regexpstring(text, isGram):
                 previousIsWhitespace = False
             
             newString += t
-        if isGram:
-            return newString
-        else:
-            return newString + " Thank you"
-           
-     except:
-            text = text.replace("\r\n"," ").replace("\n"," ").replace("\t"," ").replace("*", "").replace("?", "")
-            if isGram:
-                return text
-            else:
-                return text + " Thank you"
+        return newString
+    except:
+        text = text.replace("\r\n"," ").replace("\n"," ").replace("\t"," ").replace("*", "").replace("?", "")
+        return text
 
 @csrf_exempt
 def getMatchTemp(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         if request.method == "POST":
             data = json.loads(request.body)
             # print(data)
             phone = data["prod"]
             text = regexpstring(data["text"], 0)
-            print(text)
 
             to_check_data = New_Templates.objects.filter(message_provider_id=WA_MSG_Provider.objects.get(phone_no=phone))
             temps = []
             for t in to_check_data:
                 
                 data = regexpstring(t.text_msg, 1).replace("{#var#}", "(.*)")
-                print(data)
+                # print(data)
                 
                 p = re.compile(data)
                 
                 variables = p.findall(text)
                 
                 if variables:
+                    print(text)
+                    print(data)
                     temps.append(f"{t.temp_name} [{t.lang_code}]")
                     print("Matched......................................") 
             return JsonResponse({"data":temps})
-
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def ChangeHeaderorFooter(request):
-    if User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
         if request.method == "POST":
             phone = request.POST["wa_provider"]
             WA_MSG_Provider.objects.filter(phone_no=phone).update(temp_header=request.POST["header"], temp_footer=request.POST["footer"])
@@ -3975,6 +4597,8 @@ def ChangeHeaderorFooter(request):
             print(request.GET["phone"])
             h = WA_MSG_Provider.objects.get(phone_no=request.GET["phone"])
             return JsonResponse({"head": h.temp_header,"foot":h.temp_footer})
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
 
 def fetch_New(request):
     print(request.GET.get('pname'))
@@ -4011,3 +4635,404 @@ def fetch_New(request):
         for t_d in to_delete:
             New_Templates.objects.get(temp_id=t_d).delete()
         return JsonResponse({"alert": ""})
+
+def new_dash(request):
+    return render(request, "new_dashboard.html")
+
+def what_token(request):
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        if request.method == "POST":
+            validity = request.POST["validity"]
+            perm = request.POST["permission"]
+            if perm == "user":
+                ctime = datetime.datetime.now(tz=timezone.utc)+datetime.timedelta(hours=5.5)
+                Whatsapp_Token.objects.create(user_id=request.COOKIES['id'], token=get_random_string(36),
+                created_at=ctime, valid_till=int(validity), user_vice=1)
+            
+            elif perm == "provider":
+                pid = WA_MSG_Provider.objects.get(phone_no=request.POST["provider"]).id
+                ctime = datetime.datetime.now(tz=timezone.utc)+datetime.timedelta(hours=5.5)
+                Whatsapp_Token.objects.create(user_id=request.COOKIES['id'], token=get_random_string(36),
+                created_at=ctime, valid_till=int(validity), provider_vice=1, prod_id=pid)
+            
+            elif perm == "pro-cus":
+                pid = WA_MSG_Provider.objects.get(phone_no=request.POST["prod-pair"]).id
+                
+                ctime = datetime.datetime.now(tz=timezone.utc)+datetime.timedelta(hours=5.5)
+                Whatsapp_Token.objects.create(user_id=request.COOKIES['id'], token=get_random_string(36),
+                created_at=ctime, valid_till=int(validity), provider_cus_pair=1, 
+                prod_id=pid, customer_num=request.POST["cus-pair"])
+
+            elif perm == "campaign":
+                ctime = datetime.datetime.now(tz=timezone.utc)+datetime.timedelta(hours=5.5)
+                if request.POST["norm-camp"] != "":
+                    Whatsapp_Token.objects.create(user_id=request.COOKIES['id'], token=get_random_string(36),
+                    created_at=ctime, valid_till=int(validity), campaign_vice=1, campaign_id=request.POST["norm-camp"])
+                    
+                elif request.POST["adv-camp"] != "":
+                    Whatsapp_Token.objects.create(user_id=request.COOKIES['id'], token=get_random_string(36),
+                    created_at=ctime, valid_till=int(validity), campaign_vice=1, adv_campaign_id=request.POST['adv-camp'])
+            return redirect("/what_token")
+        else:
+            prod_data = WA_MSG_Provider.objects.filter(user_id=request.COOKIES['id'])
+            campaigns = Campaign.objects.filter(user_key_id=request.COOKIES['id'])
+            adv_campaigns = AdvanceCampaign.objects.filter(user_key_id=request.COOKIES['id'])
+            data = Whatsapp_Token.objects.filter(user_id=request.COOKIES['id'])
+            main_data = {}
+            for i, m in enumerate(data):
+                if m.user_vice:
+                    detail = f"User - {User1.objects.get(pk=m.user_id).user_name}"
+                elif m.provider_vice:
+                    detail = f"Provider - {WA_MSG_Provider.objects.get(pk=m.prod_id).provider_name}"
+                elif m.provider_cus_pair:
+                    detail = f"{WA_MSG_Provider.objects.get(pk=m.prod_id).provider_name} - {m.customer_num}"
+                elif m.campaign_vice and m.campaign_id:
+                    detail = f"{Campaign.objects.get(pk=m.campaign_id).CampaignName} - Campaign"
+                elif m.campaign_vice and m.adv_campaign_id:
+                    detail = f"{AdvanceCampaign.objects.get(pk=m.adv_campaign_id).CampaignName} - Campaign"
+                main_data[i] = {"token":m.token, "detail":detail, "created_at":m.created_at, "validity":m.valid_till}
+            return render(request, "whatsappToken.html", {"main_data":main_data,"prod_data":prod_data, "camp":campaigns, "Advcamp":adv_campaigns})
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
+
+def customer_list(request):
+    phone = request.GET['phone']
+    data = Message_History.objects.filter(api_number=phone)
+    final = {}
+    for i, d in enumerate(data):
+        final[i] = d.customer_number
+    return JsonResponse({"data":final})
+
+
+def download_sample(request):
+    table_name = request.GET['table']
+    response = HttpResponse(content_type='application/ms-excel')
+    # decide file name
+    response['Content-Disposition'] = f'attachment; filename="{table_name}.xls"'
+
+    # creating workbook
+    wb = xlwt.Workbook(encoding='utf-8')
+
+    # adding sheet
+    ws = wb.add_sheet("sheet1")
+
+    # Sheet header, first row
+    row_num = 0
+
+    font_style = xlwt.XFStyle()
+    # headers are bold
+    font_style.font.bold = True
+
+    # get your data, from database or from a text file...
+    if table_name == "AddReminderUser":
+        # column header names, you can use your own headers here
+        columns = ['User Name', 'User Mobile', 'Birthdate', 'Anniversary Date', 'Remark']
+        # write column headers in sheet
+        for col_num in range(len(columns)):
+            ws.write(row_num, col_num, columns[col_num], font_style)
+    wb.save(response)
+    return response
+
+
+def reminders(request):
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        if request.method == "POST":
+            if request.POST["type"] == "single": 
+                if "ru_id" in request.POST and request.POST["ru_id"] != "":
+                    uname = request.POST["update-user"]
+                    mobile = request.POST["update-mobile"]
+                    remark = request.POST['update-remark']
+                    adate = datetime.datetime.strptime(request.POST["update-a-date"], "%Y-%m-%d").date()
+                    bdate = datetime.datetime.strptime(request.POST["update-b-date"], "%Y-%m-%d").date()
+                    
+                    wap = WA_MSG_Provider.objects.get(pk=request.POST['u_provider']).id
+                    try:
+                        sid = Reminder_Setting.objects.get(wap_id=wap).id
+                    except:
+                        return JsonResponse({"message":"Please configure reminder settings"})
+                    Reminder_User.objects.filter(pk=request.POST["ru_id"]).update(user_name=uname, birthdate=bdate, anniversary=adate, remark=remark)
+                else:
+                    uname = request.POST["remind-user"]
+                    mobile = request.POST["remind-mobile"]
+                    remark = request.POST["remind-remark"]
+                    adate = datetime.datetime.strptime(request.POST["remind-a-date"], "%Y-%m-%d").date()
+                    bdate = datetime.datetime.strptime(request.POST["remind-b-date"], "%Y-%m-%d").date()
+                    
+                    wap = WA_MSG_Provider.objects.get(pk=request.POST['u_provider']).id
+                    try:
+                        sid = Reminder_Setting.objects.get(wap_id=wap).id
+                    except:
+                        return JsonResponse({"message":"Please configure reminder settings"})
+                    Reminder_User.objects.create(user_name=uname, birthdate=bdate, anniversary=adate, user_mobile=mobile, setting_id=sid, remark=remark)
+            else:
+                file = request.FILES.get('myfile')
+                rows, ftype, headers_char = prepare(file, request.COOKIES['id'])
+                if ftype == "":
+                    for cols in range(1, len(rows) - 1):
+                        i = rows[cols].split(",")
+                        bdate = datetime.datetime.strptime(i[2], '%d-%m-%Y')
+                        adate = datetime.datetime.strptime(i[3], '%d-%m-%Y')
+                        is_exist = Reminder_User.objects.filter(user_mobile=i[1])
+                        if is_exist:
+                            is_exist.update(user_name=i[0], birthdate=bdate, anniversary=adate, remark=i[4])
+                        else:
+                            wap = WA_MSG_Provider.objects.get(phone_no=request.POST['mul-provider']).id
+                            try:
+                                sid = Reminder_Setting.objects.get(wap_id=wap).id
+                            except:
+                                return JsonResponse({"message":"Please configure reminder settings"})
+                            Reminder_User.objects.create(user_name=i[0], birthdate=bdate, anniversary=adate, user_mobile=i[1], setting_id=sid, remark=i[4])
+
+                elif ftype == "tup":
+                    for i in rows:
+                        print(i, type(i))
+                        is_exist = Reminder_User.objects.filter(user_mobile=i[1])
+                        if is_exist:
+                            is_exist.update(user_name=i[0], birthdate=i[2], anniversary=i[3], remark=i[4])
+                        else:
+                            wap = WA_MSG_Provider.objects.get(phone_no=request.POST['mul-provider']).id
+                            try:
+                                sid = Reminder_Setting.objects.get(wap_id=wap).id
+                            except:
+                                return JsonResponse({"message":"Please configure reminder settings"})
+                            Reminder_User.objects.create(user_name=i[0], birthdate=i[2], anniversary=i[3], user_mobile=i[1], setting_id=sid, remark=i[4])
+            return redirect("/reminders")
+        else:
+            iml2 = "https://www.kindpng.com/picc/m/294-2944583_birthday-party-clipart-celebration-happy-birthday-whatsapp-sticker.png"
+            iml = "https://img.freepik.com/free-vector/detailed-birthday-lettering_52683-58875.jpg?w=150"
+            providers = WA_MSG_Provider.objects.filter(user_id=request.COOKIES['id'])
+            try:
+                data = Reminder_User.objects.filter(setting_id=Reminder_Setting.objects.get(wap_id=providers[0].id))
+            except:
+                data = []
+            return render(request, "reminders.html", {"data":data,"im_link":iml,"im_link2":iml2, "providers":providers})
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
+
+def get_remindU(request):
+    ruid = request.GET["rid"]
+    data = Reminder_User.objects.get(pk=ruid)
+    pid = Reminder_Setting.objects.get(pk=data.setting_id).wap_id
+    ret_data = {"uname":data.user_name, "mob":data.user_mobile, "bdate":data.birthdate, "adate":data.anniversary, 'pid':pid}
+    return JsonResponse({"data":ret_data})
+
+def createReminderTemp(request):
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        if request.method == "POST":
+            provider = request.POST["provider"]
+            if provider:
+                template_name = str(request.POST['temp-name']).replace(" ","_").lower()
+                data = WA_MSG_Provider.objects.get(phone_no=provider)
+                theader = request.POST["header"]
+                body = request.POST["temp-body"]
+                language = request.POST["language"]
+                category = request.POST['category']
+                print(category)
+                body = body.replace("{client_name}", "{{1}}")                
+
+                url = f"https://graph.facebook.com/v15.0/{data.business_id}/message_templates?access_token={data.token}"
+                header = {"Content-Type": "application/json", "Authorization": f"{data.token}"}
+
+                payload = {
+                            "name": template_name,
+                            "components":[
+                                {
+                                    "type":"HEADER",
+                                    "format":"IMAGE",
+                                    "example": {
+                                            "header_handle": [theader]
+                                        }
+                                },
+                                {
+                                    "type":"BODY",
+                                    "text":body,
+                                    "example": {
+                                        "body_text":["Hello JN"]
+                                    }
+                                }
+                            ],
+                            "language":language,
+                            "category":category
+                        }
+                print(payload)
+                if "isbutton" in request.POST:
+                    payload["components"].append({"type": "BUTTONS","buttons": [{"type": "QUICK_REPLY","text": request.POST['button-text']}]})
+                payload = json.dumps(payload)
+                response = requests.post(url=url, data=payload,headers=header)
+
+                print(response.text)
+                try:
+                    id = json.loads(response.text)["id"]
+                    return redirect("/reminders")
+                except KeyError:
+                    return JsonResponse(json.loads(response.text))
+
+            else:
+                return JsonResponse({"response":"Select provider first"})
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
+
+def reminderSettings(request):
+    if "id" in request.COOKIES and User1.objects.get(id=request.COOKIES['id']).is_authenticated():
+        provider_number = request.POST['provider']
+        b_template = request.POST['b_template']
+        a_template = request.POST['a_template']
+        schedule_time = request.POST['s_time']
+        schedule_time = datetime.datetime.strptime(schedule_time, "%H:%M")
+        
+        pid = WA_MSG_Provider.objects.get(phone_no=provider_number).id
+
+        bd_temp = Templates.objects.get(temp_name=b_template.split('-')[0], lang_code=b_template.split('-')[1], 
+                                        message_provider_id=pid).temp_id
+        an_temp = Templates.objects.get(temp_name=a_template.split('-')[0], lang_code=a_template.split('-')[1], 
+                                        message_provider_id=pid).temp_id
+        print(b_template, bd_temp)
+        print(a_template, an_temp)
+        is_set = Reminder_Setting.objects.filter(wap_id=pid)
+        if is_set:
+            is_set.update(birthday_temp=bd_temp, anyversary_temp=an_temp, scheduled_time=schedule_time)
+        else:
+            Reminder_Setting.objects.create(user_id=request.COOKIES['id'], wap_id=pid,
+                birthday_temp=bd_temp, anyversary_temp=an_temp, scheduled_time=schedule_time)
+        return redirect("/reminders")
+    else:
+        return JsonResponse({"Error":"Login required to access this page"})
+
+def hit_reminder(requets, key):
+    print(settings.PRIVATE_TOKEN)
+    if key == settings.PRIVATE_TOKEN:
+        print("Hit Reminder")
+        today = datetime.date.today()
+        bday = Reminder_User.objects.filter(birthdate=today)
+        aday = Reminder_User.objects.filter(anniversary=today)
+        for b in bday:
+            sets = Reminder_Setting.objects.get(pk=b.setting_id)
+            b_temp = Templates.objects.get(temp_id=sets.birthday_temp)
+            at = datetime.datetime.now().time()
+            check_at = sets.scheduled_time
+            if f"{check_at.hour}:{check_at.minute}" == f"{at.hour}:{at.minute}" and (b.b_sent != datetime.date.today()):
+                p = WA_MSG_Provider.objects.get(pk=sets.wap_id)
+                api_setting = Voice_API.objects.get(whatsapp_name=p.provider_name)
+                if b_temp.is_media:
+                    if b_temp.med_id is None:
+                        return JsonResponse({"message": "Please Upload media content first."})
+                    else:
+                        js = json.loads(b_temp.med_id)
+                        payload = json.dumps({
+                            "messaging_product": "whatsapp",
+                            "recipient_type": "individual",
+                            "to": f"{b.user_mobile}",
+                            "type": "template",
+                            "template": {
+                                "name": f"{b_temp.temp_name}",
+                                "language": {
+                                    "code": f"{b_temp.lang_codeg}"
+                                },
+                                "components": [
+                                    {
+                                        "type": "header",
+                                        "parameters": [
+                                            {
+                                                "type": "image",
+                                                "image": {"link": f"{js['link']}"} if js["type"] == "what" else {
+                                                    "id": f"{js['med_obj']}"}
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        })
+                else:
+                    payload = json.dumps({
+                        "messaging_product": "whatsapp",
+                        "recipient_type": "individual",
+                        "to": f"{a.user_mobile}",
+                        "type": "template",
+                        "template": {
+                            "name": f"{b_temp.temp_name}",
+                            "language": {
+                                "code": f"{b_temp.lang_code}"
+                            },
+
+                        }
+                    })
+                
+                response = requests.post(url=api_setting.message_API, data=payload,headers=api_setting.header)
+                print(response.text)
+                try:
+                    id = json.loads(response.text)["messages"][0]["id"]
+                    print("here")
+                    b.b_sent = datetime.date.today()
+                    b.b_msg_id = id
+                    b.save() 
+                except KeyError:
+                    print("here")
+                    continue
+        
+        for a in aday:
+            sets = Reminder_Setting.objects.get(pk=a.setting_id)
+            a_temp = Templates.objects.get(temp_id=sets.anyversary_temp)
+            at = datetime.datetime.now().time()
+            check_at = sets.scheduled_time
+            
+            if f"{check_at.hour}:{check_at.minute}" == f"{at.hour}:{at.minute}" and (a.a_sent != datetime.date.today()):
+                p = WA_MSG_Provider.objects.get(pk=sets.wap_id)
+                api_setting = Voice_API.objects.get(whatsapp_name=p.provider_name)
+                if a_temp.is_media:
+                    if a_temp.med_id is None:
+                        return JsonResponse({"message": "Please Upload media content first."})
+                    else:
+                        js = json.loads(a_temp.med_id)
+                        payload = json.dumps({
+                            "messaging_product": "whatsapp",
+                            "recipient_type": "individual",
+                            "to": f"{a.user_mobile}",
+                            "type": "template",
+                            "template": {
+                                "name": f"{a_temp.temp_name}",
+                                "language": {
+                                    "code": f"{a_temp.lang_codeg}"
+                                },
+                                "components": [
+                                    {
+                                        "type": "header",
+                                        "parameters": [
+                                            {
+                                                "type": "image",
+                                                "image": {"link": f"{js['link']}"} if js["type"] == "what" else {
+                                                    "id": f"{js['med_obj']}"}
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        })
+                else:
+                    payload = json.dumps({
+                        "messaging_product": "whatsapp",
+                        "recipient_type": "individual",
+                        "to": f"{a.user_mobile}",
+                        "type": "template",
+                        "template": {
+                            "name": f"{a_temp.temp_name}",
+                            "language": {
+                                "code": f"{a_temp.lang_code}"
+                            },
+
+                        }
+                    })
+
+                response = requests.post(url=api_setting.message_API, data=payload,headers=api_setting.header)
+                print(response.text)
+                try:
+                    id = json.loads(response.text)["messages"][0]["id"]
+                    a.a_sent = datetime.date.today()
+                    a.a_msg_id = id
+                    a.save() 
+                except KeyError:
+                    continue
+        return JsonResponse({"Status":True})
+    else:
+        return JsonResponse({"Status":False})
+            
+

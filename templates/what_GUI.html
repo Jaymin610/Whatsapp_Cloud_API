@@ -7,8 +7,12 @@
   <link rel="shortcut icon" href="{% static 'assets/img/whatsapp.png' %}">
   <title>Whatsapp Chat</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
   <link rel="stylesheet" href="{% static 'style.css' %} ">
-
+   
 </head>
 
 <body>
@@ -54,7 +58,7 @@
         </div>
       </div>
       <div class="chat-list-wrapper">
-        <div class="chat-list-header">Active Conversations <span class="c-number">4</span>
+        <div class="chat-list-header">Active Conversations <span class="c-number"></span>
           <svg class="list-header-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none"
             stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
             class="feather feather-chevron-up" viewBox="0 0 24 24">
@@ -63,19 +67,20 @@
           </svg>
         </div>
         <ul class="chat-list active">
-          {% for n in users %}
-          <li class="chat-list-item {{n.active}}">
+          {% for n in act_users %}
+          <a href="/what_gui?to={{ n.sender_number }}&from={{n.reply_number}}"><li class="chat-list-item {{n.active}}">
             <img
               src="https://images.unsplash.com/photo-1566465559199-50c6d9c81631?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=934&q=80"
               alt="chat">
-            <a href="/what_gui?to={{ n.sender_number }}&from={{n.reply_number}}"><span class="chat-list-name">
-                {{ n.sender_number }}</span></a>
-          </li>
+            <span class="chat-list-name">
+                {{ n.sender_number }}</span>
+            </li>
+          </a>
           {% endfor %}
         </ul>
       </div>
       <div class="chat-list-wrapper">
-        <div class="chat-list-header active">Achived Conversations <span class="c-number">3</span>
+        <div class="chat-list-header active">Achived Conversations <span class="c-number"></span>
           <svg class="list-header-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none"
             stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
             class="feather feather-chevron-up" viewBox="0 0 24 24">
@@ -84,24 +89,17 @@
           </svg>
         </div>
         <ul class="chat-list">
-          <li class="chat-list-item">
+          {% for aru in arc_users %}
+          <a href="/what_gui?to={{ aru.sender_number }}&from={{aru.reply_number}}">
+            <li class="chat-list-item">
             <img
               src="https://images.unsplash.com/photo-1542042457485-a4c7afd74cd5?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1270&q=80"
               alt="chat">
-            <span class="chat-list-name">Toby Flenderson</span>
-          </li>
-          <li class="chat-list-item">
-            <img
-              src="https://images.unsplash.com/photo-1477118476589-bff2c5c4cfbb?ixid=MXwxMjA3fDB8MHxzZWFyY2h8MjV8fHdvbWFufGVufDB8fDB8&ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60"
-              alt="chat">
-            <span class="chat-list-name">Kelly Kapoor</span>
-          </li>
-          <li class="chat-list-item">
-            <img
-              src="https://images.unsplash.com/photo-1528763380143-65b3ac89a3ff?ixlib=rb-1.2.1&ixid=MXwxMjA3fDB8MHxwaG90by1yZWxhdGVkfDExfHx8ZW58MHx8fA%3D%3D&auto=format&fit=crop&w=900&q=60"
-              alt="chat">
-            <span class="chat-list-name">Roy Andersson</span>
-          </li>
+            <span class="chat-list-name">
+              {{ aru.sender_number }}</span>
+            </li>
+          </a>
+          {% endfor %}
         </ul>
       </div>
     </div>
@@ -112,7 +110,7 @@
           <img class="message-pp"
             src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=2550&q=80"
             alt="profile-pic">
-          <div class="message-box-wrapper">
+          <div class="message-box-wrapper" style="min-width: 100px; max-width: 350px; overflow-y: hidden;">
             <div class="message-box">
               {{t.received_msg}}
             </div>
@@ -125,24 +123,46 @@
             src="https://images.unsplash.com/photo-1587080266227-677cc2a4e76e?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&amp;ixlib=rb-1.2.1&amp;auto=format&amp;fit=crop&amp;w=934&amp;q=80"
             alt="profile-pic">
           <div class="message-box-wrapper">
-            <div class="message-box">
+            <div class="message-box" style="min-width: 100px; max-width: 250px;">
               {% if s1.type == "img" %}
-              <img src="{{s1.reply}}" alt="" srcset="">
+                <img width="200px" src="{{s1.reply}}" alt="" srcset=""> 
+              {% elif s1.type == "temp" %}
+              <div class="message" align="center">
+                  <span class="arrow"></span> <span class="datetime"></span> 
+                  <span class="body" id="toup-temp-look" style="opacity: 1;">
+                      {% if s1.reply.HEADER %}
+                        {% if "http" in s1.reply.HEADER %}
+                          <div id="toup-header"><img width="230px" src="{{s1.reply.HEADER}}"> </div>
+                          {% else %}
+                          <div id="toup-header" style=" font-weight: 900;color: rgba(255,255,255,1); font-size:0.8rem; text-align: left;">{{s1.reply.HEADER}}</div>
+                          {% endif %}
+                      {% endif %}
+                      <div id="toup-body" style="color: rgba(255,255,255,1); text-align: justify; font-size:0.8rem">{{s1.reply.BODY}}</div>
+                      <div id="toup-footer" style="font-weight: light; text-align: left;" >{{s1.reply.FOOTER}}</div>
+                      <div id="toup-butttons">
+                          {% if s1.reply.BUTTONS1 %}
+                          <span id="toup-buttton1" style="color: black;" class="btn btn-light">{{s1.reply.BUTTONS1}}</span>
+                          {% endif %}{% if s1.reply.BUTTONS1 %}
+                          <span id="toup-buttton2" style="color: black;" class="btn btn-light">{{s1.reply.BUTTONS2}}</span>
+                          {% endif %}
+                        </div>
+                  </span>
+              </div>
+              {% elif s1.type == "pdf" %}
+              <a href="{{s1.reply}}" style="color: white; text-decoration: none;" target="_blank">{{s1.name}}</a>
               {% else %}
               {{s1.reply}}
               {% endif %}
-              
-              
             </div>
-            <span>{{s1.send_time}}</span>
+            <span style="max-width: 130px;">{{s1.time}} <img src="../static/assets/img/{{s1.status}}.png" width="10%" height="10%" alt=""></span>
           </div>
         </div>
         {% endfor %}
         {% endfor %}
       </div>
       
-      <form action="/chat_msg" method="get" class="chat-input-wrapper">
-        <button type="button" class="chat-attachment-btn">
+      <form action="" method="get" class="chat-input-wrapper">
+        <button type="button" class="chat-attachment-btn options" data-toggle="modal" data-target="#exampleModal">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor"
             stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="feather feather-paperclip"
             viewBox="0 0 24 24">
@@ -153,8 +173,6 @@
         </button>
         <div class="input-wrapper">
           <input type="text" class="chat-input" name="msg" placeholder="Enter your message here">
-          <input style="display: none;" type="text" class="chat-input" name="from" value="{{provider}}" placeholder="Enter your message here">
-          <input style="display: none;" type="text" class="chat-input" name="to" value="{{to}}" placeholder="Enter your message here">
           <button type="button" class="emoji-btn">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor"
               stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="feather feather-smile"
@@ -165,11 +183,11 @@
             </svg>
           </button>
         </div>
-        <button type="submit" class="chat-send-btn">Send</button>
+        <button type="button" class="chat-send-btn" id="send-btn">Send</button>
       </form>
       
     </div>
-
+    
     <div class="app-right-bottom">
       <div class="app-theme-selector">
         <button class="theme-color indigo" data-color="indigo">
@@ -203,13 +221,221 @@
       </div>
     </div>
   </div>
+  <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+  aria-hidden="true" >
+  <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 825px;">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="exampleModalLongTitle">Message Type</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+              </button>
+          </div>
+          <div class="modal-body" >
+              <div class="col-md-12 col-sm-12">
+                  <div class="card card-box">
+                      <div class="card-head">
+                      </div>
+                      <div class="card-body" id="bar-parent">
+                          <form action="#" method="POST" id="attachment-form" class="form-horizontal"> {% csrf_token %}
+                              <div class="form-group row">
+                                <label class="control-label col-md-3">Attach
+                                </label>
+                                <div class="col-md-5">
+                                    <div class="form-check">
+                                        <label class="form-check-label">
+                                          <input type="radio" class="form-check-input" name="attachment" value="temp" >
+                                          Template
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                      <label class="form-check-label">
+                                          <input type="radio" class="form-check-input" name="attachment" value="image">
+                                          Image
+                                        </label>
+                                    </div>    
+                                    <div class="form-check">
+                                      <label class="form-check-label">
+                                        <input type="radio" class="form-check-input" name="attachment" value='doc'>
+                                          Doc
+                                        </label>
+                                    </div>    
+                                    <div class="form-check">
+                                      <label class="form-check-label">
+                                        <input type="radio" class="form-check-input" name="attachment" value="pdf">
+                                        PDF
+                                        </label>
+                                    </div>    
+                                </div>
+                              </div>
+                              <div class="form-group row" style="display: none;">
+                                <label class="control-label col-md-3">Template Name
+                                </label>
+                                <div class="col-md-5">
+                                    <select name="template" class="form-control input-height" id="template">
+                                    </select>
+                                </div>
+                              </div>
+                              <div class="form-group row" style="display: none;">
+                                <label class="control-label col-md-3">Link
+                                </label>
+                                <div class="col-md-5">
+                                    <input name="link" class="form-control input-height" id="link">
+                                </div>
+                              </div>
+                              
+                              <div class="form-actions">
+                                  <div class="row">
+                                      <div class="offset-md-3 col-md-9">
+                                          <button type="button" class="btn btn-primary" id="send-attc">Send</button>
+                                          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                      </div>
+                                  </div>
+                              </div>
+                          </form>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </div>
+</div>
   <!-- partial -->
+  <script src="{% static 'assets/plugins/jquery/jquery.min.js' %}"></script>
   <script src="{% static './script.js' %} "></script>
   <script>
     function printsome() {
       let sw = document.getElementById("switchStatus")
       sw.checked
     }
+    $(document).ready(function(){
+      $(".chat-wrapper").scrollTop($(".chat-wrapper")[0].scrollHeight)
+      let url = "/fetch_Temp?phone={{from}}";
+        $.ajax({
+            "async": true,
+            "crossDomain": true,
+            url: url,
+            type: 'GET',
+            success: function(res) {
+                $.each(res["data"], function(k, v){
+                    $("#template").append(`<option value='${v[0]}-${v[1]}'>${v[0]} 
+                        [${v[1]}]</option>`);
+                })
+            }
+        });
+
+      $(".form-check-input").on('click', function(){
+        let attach = $(this).val();
+        var temp = $("#attachment-form").children(".form-group")[1];
+        var any_doc = $("#attachment-form").children(".form-group")[2];
+
+        if (attach == "temp") {
+            temp.style.display = "";
+            any_doc.style.display = "none";  
+        }
+        else if (attach == "image") {
+          temp.style.display = "none";
+          any_doc.style.display = "";
+          $("#link").attr("placeholder", "Enter Image link here")
+        }
+        else if (attach == "doc") {
+          temp.style.display = "none";
+          any_doc.style.display = "";
+          $("#link").attr("placeholder", "Enter Document link here")
+        }
+        else if (attach == "pdf") {
+          temp.style.display = "none";
+          any_doc.style.display = "";
+          $("#link").attr("placeholder", "Enter PDF link here")
+            
+        }
+      })
+
+      
+
+
+      $("#send-attc").on("click", function(){
+        let mes_type = $("input[name='attachment']:checked").val();
+        let message;
+        if (mes_type == "temp"){
+          message = $("#template").val();
+        }
+        else{
+          message = $("#link").val();
+        }
+        $.ajax({
+          type: 'POST',
+          url: "/chat_msg",
+          processData: false,
+          contentType: false,
+          csrfmiddlewaretoken: $("input[name=csrfmiddlewaretoken]").val(),
+          mimeType: 'multipart/form-data',
+          data: JSON.stringify({"msg":message, "type":mes_type, "from":'{{provider}}', "to":"{{to}}"}),
+          success: function (response) {
+              console.log(response['response'])
+              location.reload();
+          }
+      })})
+
+      $("#send-btn").on("click", function(){
+        var message = $("input[name='msg']")
+        $.ajax({
+          type: 'POST',
+          url: "/chat_msg",
+          processData: false,
+          contentType: false,
+          csrfmiddlewaretoken: $("input[name=csrfmiddlewaretoken]").val(),
+          mimeType: 'multipart/form-data',
+          data: JSON.stringify({"msg":message.val(), "type":"text", "from":'{{provider}}', "to":"{{to}}"}),
+          success: function (response) {
+              console.log(response['response'])
+              location.reload();
+          }
+      })
+      })
+      $("#buttton1").hide();
+                    $("#buttton2").hide();
+                    console.log(res["temp_look"]);
+                    $("#temp-look #header").text("");
+                    $("#temp-look #body").text("");
+                    $("#temp-look #footer").text("");
+                    $("#toup-temp-look #toup-header").text("");
+                    $("#toup-temp-look #toup-body").text("");
+                    $("#toup-temp-look #toup-footer").text("");
+                    $(".datetime").text(res['date_time']);
+                    $("#temp-look #butttons #buttton1").text("");
+                    $("#temp-look #butttons #buttton2").text("");
+                    $("#toup-temp-look #toup-butttons #toup-buttton1").text("");
+                    $("#toup-temp-look #toup-butttons #toup-buttton2").text("");
+                    $.each(res["temp_look"], function(k, v) {
+                        if (k == "HEADER"){
+                            $("#header").append(v);
+                            $("#toup-header").append(v);
+                        }
+                        if (k == "BODY"){
+                            
+                            $("#body").append(v);
+                            $("#toup-body").append(v);
+                        }
+                        if (k == "FOOTER"){
+                            $("#footer").append(v);
+                            $("#toup-footer").append(v);
+                        }
+                        if (k == "BUTTONS1"){
+                            $("#buttton1").show();
+                            $("#toup-buttton1").show();
+                            $("#buttton1").text(v);
+                            $("#toup-buttton1").text(v);
+                        }
+                        if (k == "BUTTONS2"){
+                            $("#buttton2").show();
+                            $("#toup-buttton2").show();
+                            $("#buttton2").append(v);
+                            $("#toup-buttton2").append(v);
+                        }
+
+                    });
+    })
   </script>
 </body>
 

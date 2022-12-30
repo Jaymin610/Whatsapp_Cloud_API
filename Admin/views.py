@@ -128,12 +128,15 @@ def get_tempJson(request):
 
 def get_CheckJSOn(request):
     temp_id = request.GET.get("id")
+    
     temps = Templates.objects.get(temp_id=temp_id)
     print(temps.temp_name, temps.lang_code)
     prods = WA_MSG_Provider.objects.get(id=temps.message_provider_id)
+    print(prods)
     url = f"https://graph.facebook.com/v15.0/{prods.business_id}/message_templates?limit=1&access_token={prods.token}&name_or_content" \
           f"={temps.temp_name}&language={temps.lang_code}"
     response = requests.get(url)
+    print(response.text)
     json_data = json.loads(response.text)
 
     temp_compo = json_data['data'][0]['components']
@@ -315,7 +318,7 @@ def updateuser(request):
         if request.method == "POST":
             user_id = request.POST['id']
             date = request.POST['update-user']
-            User1.objects.filter(pk=user_id).update(validity=date)
+            User1.objects.filter(pk=user_id).update(validity=date, is_active=1)
             messages.success(request,"User validity updated successfully")
             print(date)
     return redirect("/admin/dashboard")
@@ -352,6 +355,24 @@ def delete_setting(request):
             Voice_API.objects.get(u_ID_id=data.user_id, whatsapp_name=data.provider_name).delete()
         data.delete()
         return redirect("/admin/settings")
+
+def appSettings(request):
+    if request.user.is_authenticated:
+        if request.method == "POST":
+            APP_Setting.objects.create(key=str(request.POST["key"]).upper(), value=request.POST["value"], description=request.POST["description"])
+            return redirect("/admin/appSettings")
+        else:
+            data = APP_Setting.objects.all()
+            return render(request, "AppSettings.html", {"data":data})
+
+@csrf_exempt
+def updateAppsetting(request):
+    if request.user.is_authenticated:
+        if request.method == "POST":
+            id, val, desc = request.POST["id"], request.POST['up-val'], request.POST['description']
+            APP_Setting.objects.filter(pk=id).update(value=val, description=desc)
+            print(id, val)
+            return redirect("/admin/appSettings")
 
 
 

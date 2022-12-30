@@ -1,0 +1,364 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="page-content" style="min-height:NaNpx">
+    {% comment %} <div class="page-bar">
+        <div class="page-title-breadcrumb">
+            <div class=" pull-left">
+                <div class="page-title"></div>
+                <script>
+                    $('.page-title').text(sessionStorage.getItem('uname'));
+                </script>
+            </div>
+            <ol class="breadcrumb page-breadcrumb pull-right">
+                <li><i class="fa fa-home"></i>&nbsp;<a class="parent-item" href="/dashboard">Home</a>&nbsp;<i
+                        class="fa fa-angle-right"></i>
+                </li>
+            </ol>
+        </div>
+    </div> {% endcomment %}
+    <div class="row">
+        <div class="col-sm-12 col-md-12 col-xl-12">
+            <div class="card-box">
+                <div class="card-head">
+                    <header>Developers API</header>
+                    <button id="sdntmenu" class="mdl-button mdl-js-button mdl-button--icon pull-right"
+                        data-upgraded=",MaterialButton">
+                        <i class="material-icons">more_vert</i>
+                    </button>
+                    <div class="mdl-menu__container is-upgraded">
+                        <div class="mdl-menu__outline mdl-menu--bottom-right"></div>
+                        <ul class="mdl-menu mdl-menu--bottom-right mdl-js-menu mdl-js-ripple-effect mdl-js-ripple-effect--ignore-events"
+                            data-mdl-for="sdntmenu" data-upgraded=",MaterialMenu,MaterialRipple">
+                            <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
+                                data-upgraded=",MaterialRipple"><i class="material-icons">assistant_photo</i>Action<span
+                                    class="mdl-menu__item-ripple-container"><span class="mdl-ripple"></span></span></li>
+                            <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
+                                data-upgraded=",MaterialRipple"><i class="material-icons">print</i>Another action<span
+                                    class="mdl-menu__item-ripple-container"><span class="mdl-ripple"></span></span></li>
+                            <li class="mdl-menu__item mdl-js-ripple-effect" tabindex="-1"
+                                data-upgraded=",MaterialRipple"><i class="material-icons">favorite</i>Something else
+                                here<span class="mdl-menu__item-ripple-container"><span
+                                        class="mdl-ripple"></span></span></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card-body ">
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="panel">
+                                        <header class="panel-heading panel-heading-blue">
+                                            Generate Token </header>
+                                        <div class="panel-body">
+                                            <form action="/what_token" method="post" id="myForm" enctype="multipart/form-data">{% csrf_token %}
+                                                <div class="form-group row">
+                                                    <label class="control-label col-md-3">Token Validity
+                                                        <span class="required" aria-required="true"> * </span>
+                                                    </label>
+                                                
+                                                    <div class="col-md-5">
+                                                        <select name="validity" class="form-control input-height" required>
+                                                            <option value="">Select...</option>
+                                                            <option value="8">8 hours</option>
+                                                            <option value="24">24 hours</option>
+                                                            <option value="-1">Permenant</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group row">
+                                                    <label class="control-label col-md-3">Access Permissions
+                                                        <span class="required" aria-required="true"> * </span>
+                                                    </label>
+                                                    <div class="col-md-5">
+                                                        <div class="form-check">
+                                                            <label class="form-check-label">
+                                                              <input type="radio" class="form-check-input" name="permission" id="user" value="user" >
+                                                              User - All Customer
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                          <label class="form-check-label">
+                                                              <input type="radio" class="form-check-input" name="permission" id="provider" value="provider">
+                                                              Provider - All Customer
+                                                            </label>
+                                                        </div>    
+                                                        <div class="form-check">
+                                                          <label class="form-check-label">
+                                                            <input type="radio" class="form-check-input" name="permission" id="pro-cus" value='pro-cus'>
+                                                              Provider - Customer
+                                                            </label>
+                                                        </div>    
+                                                        <div class="form-check">
+                                                          <label class="form-check-label">
+                                                            <input type="radio" class="form-check-input" name="permission" id="campaign" value="campaign">
+                                                            Campaign
+                                                            </label>
+                                                        </div>    
+                                                    </div>
+                                                </div>
+                                                <div class="form-group row" style="display: none;">
+                                                    <label class="control-label col-md-3">Whatsapp Provider
+                                                        <span class="required" aria-required="true"> * </span>
+                                                    </label>
+                                                
+                                                    <div class="col-md-5">
+                                                        <select name="provider" class="form-control input-height provider" id="provider">
+                                                            <option value="">Select...</option>
+                                                            {% for d in prod_data %}
+                                                            <option value='{{d.phone_no}}'>{{ d.provider_name }} [{{d.phone_no}}]</option>
+                                                            {% endfor %}
+                                                            
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group row" style="display: none;">
+                                                    <label class="control-label col-md-3">Provider - Customer
+                                                        <span class="required" aria-required="true"> * </span>
+                                                    </label>
+                                                
+                                                    <div class="col-md-5">
+                                                        <select name="prod-pair" class="form-control input-height provider" id="prod-update">
+                                                            <option value="">Provider...</option>
+                                                            {% for d in prod_data %}
+                                                            <option value='{{d.phone_no}}'>{{ d.provider_name }} [{{d.phone_no}}]</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                        <select name="cus-pair" class="form-control input-height" id="cus-update">
+                                                            <option value="">Customer...</option>
+                                                            
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group row" style="display: none;">
+                                                    <label class="control-label col-md-3">Campaigns
+                                                        <span class="required" aria-required="true"> * </span>
+                                                    </label>
+                                                
+                                                    <div class="col-md-5">
+                                                        <select name="norm-camp" class="form-control input-height">
+                                                            <option value="">Campaigns...</option>
+                                                            {% for c in camp %}
+                                                            <option value='{{c.id}}'>{{ c.CampaignName }} [{{c.record_count}}]</option>
+                                                            {% endfor %}
+                                                            
+                                                        </select>
+                                                        <br>
+                                                        <select name="adv-camp" class="form-control input-height">
+                                                            <option value="">Advance Campaigns...</option>
+                                                            {% for c in Advcamp %}
+                                                            <option value='{{c.id}}'>{{ c.CampaignName }} [{{c.record_count}}]</option>
+                                                            {% endfor %}
+                                                            
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="form-footer" align="center">
+                                                    <button type="submit" class="btn btn-warning btn-flat">Generate new token</button>
+                                                </div>
+                                            </form>
+                                            <div class="row">
+                                                <div class="col-md-6 col-sm-6">
+                                                    <h3>Chat API:</h3>
+                                                    <div class="input-group input-group-sm">
+                                                        <p> http://wotsapp-campaign.bonrix.in:8000/whatsapp?token=</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <br>
+                                            <div class="row">
+                                                <div class="col-sm-12">
+                                                    <table
+                                                        class="table table-striped table-bordered table-hover table-checkable order-column valign-middle dataTable no-footer"
+                                                        id="example4" role="grid" aria-describedby="example4_info">
+                                                        <thead>
+                                                            <tr role="row" align="center">
+                                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                                    style="width: 180.863px;"></th>
+                                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                                    style="width: 180.863px;">Token</th>
+                                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                                    style="width: 180.863px;">Permission</th>
+                                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                                    style="width: 180.863px;">Created At</th>
+                                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                                    style="width: 180.863px;">Validity</th>
+                                                                <th class="sorting" tabindex="0" aria-controls="example4" rowspan="1"
+                                                                    colspan="1" aria-label="Title: activate to sort column ascending"
+                                                                    style="width: 180.863px;"></th>
+                                                                
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% for k, md in main_data.items %}
+                                                            <tr class="odd" role="row" align="center">
+                                                                <td><input type="checkbox" name="" id=""></td>
+                                                                <td><button onclick="copyToken(this)" class="btn btn-primary"><p id="token" style="display: none;">{{ md.token }}</p>Copy Token</button> </td>
+                                                                <td>{{md.detail}}</td>
+                                                                <td>{{ md.created_at }} </td>
+                                                                <td>{{ md.validity }} Hours</td>
+                                                                <td>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+                                                                    &nbsp; <a href="#" class="{{val.token}}" id="editToken"><button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModalCenter">Edit </button></a>
+                                                                    &nbsp; <a href="#" name="{{c}}" class="deleteTok"><button type="button" class="btn btn-danger"><i class="fa fa-minus"></i> Delete </button></a>
+                                                                </td>
+                                                            </tr>
+                                                            {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLongTitle">Set all Templates</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            <form action="/updateTokenTemp/" method="post" id="form_sample_modal" class="form-horizontal"
+                            novalidate="novalidate" enctype="multipart/form-data">{% csrf_token %}
+                <input type="text" name="token_id" id="token_id" style="display: none;">
+                <div class="form-group row">
+                    <label class="control-label col-md-3">Whatsapp user
+                        <span class="required" aria-required="true"> * </span>
+                    </label>
+                    
+                    <div class="col-md-5">
+                        <select name="p" class="form-control input-height provider" id="p2">
+                            <option value="">Select...</option>
+                            {% for d in temp %}
+                            <option value='{{d.phone_no}}'>{{ d.provider_name }} [{{d.phone_no}}]</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="control-label col-md-3">Template Name
+                        <span class="required" aria-required="true"> * </span>
+                    </label>
+                    <div class="col-md-5">
+                        <select name="template" class="form-control input-height template">
+                            <option value="">Select...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                  </div>
+            </form>
+        </div>
+        
+      </div>
+    </div>
+</div>
+<script>
+    const unsecuredCopyToClipboard = (text) => { const textArea = document.createElement("textarea"); textArea.value=text; document.body.appendChild(textArea); textArea.focus();textArea.select(); try{document.execCommand('copy')}catch(err){console.error('Unable to copy to clipboard',err)}document.body.removeChild(textArea)};
+
+    function copyToken(t){
+        var tex = $(t).children("p").text();
+        unsecuredCopyToClipboard(tex);
+    }
+    $(document).ready(function () {
+
+        $('.form-check-label').on("change", function () {
+            console.log($("#myForm").children(".form-group"))
+            var value = $(this).children('input').val();
+            console.log(value)
+            var provider = $("#myForm").children(".form-group")[2];
+            var prod_cus = $("#myForm").children(".form-group")[3];
+            var campaign = $("#myForm").children(".form-group")[4];
+
+            if (value == "user") {
+                prod_cus.style.display = "none";
+                campaign.style.display = "none";
+                provider.style.display = "none";
+                
+            }
+            else if (value == "provider") {
+                prod_cus.style.display = "none";
+                campaign.style.display = "none";
+                provider.style.display = "";
+                
+            }
+            else if (value == "pro-cus") {
+                prod_cus.style.display = "";
+                campaign.style.display = "none";
+                provider.style.display = "none";
+            }
+            else if (value == "campaign") {
+                prod_cus.style.display = "none";
+                campaign.style.display = "";
+                provider.style.display = "none";
+                
+            }
+        });
+
+        $('#call-url').on('keyup', function(){
+            $('#send_msg').attr("href", $('#call-url').val());
+            $('#send_msg').attr("target", "_blank");
+        });
+        $('#call-temp-url').on('keyup', function(){
+            $('#send_temp').attr("href", $('#call-temp-url').val());
+            $('#send_temp').attr("target", "_blank");
+        });
+        $("#prod-update").on("change", function(){
+            console.log($(this))
+            var p_name = $(`#${$(this).attr("id")} option:selected`).val();
+            p_name = p_name.trim()
+            let url = "/customer_list?phone="+p_name;
+            $.ajax({
+                "async": true,
+                "crossDomain": true,
+                url: url,
+                type: 'GET',
+                success: function(res) {
+                    console.log(res["data"])
+                    $.each(res["data"], function(k, v){
+                        $("#cus-update").append(`<option value='${v}'>${v}</option>`);
+                    })
+                }
+            });
+            console.log(p_name);
+        });
+        $("#editToken").on("click", function(){
+            $("#token_id").attr("value", $(this).attr("class"))
+        });
+        $(".deleteTok").on("click", function(){
+            if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true){
+                $.ajax({
+                "async": true,
+                "crossDomain": true,
+                url: "/delete?name=Tok&tid="+ $(this).attr("name"),
+                type: 'GET',
+                success: function(res) {
+                    console.log(res);
+                    window.location.reload();
+                }
+            });
+            }
+        })
+    });
+</script>
+{% endblock %}

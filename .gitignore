@@ -101,6 +101,9 @@ celerybeat-schedule.*
 # SageMath parsed files 
 *.sage.py 
 
+# Media
+.media_objects
+ 
 # Environments 
 .tts_env 
 .venv 

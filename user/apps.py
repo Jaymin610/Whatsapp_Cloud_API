@@ -5,6 +5,6 @@ class UserConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'user'
 
-    def ready(self):
-        from user import watch
-        watch.start()
+    # def ready(self):
+    #     from user import watch
+    #     watch.start()
