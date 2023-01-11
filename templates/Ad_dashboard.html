@@ -436,7 +436,8 @@
                         selected.push(t.attr('id'));
                     }
                 });
-                var json = { name: "mark-for-delete", data: selected }
+                const pass = prompt("Enter your password: ")
+                var json = { name: "mark-for-delete", password: pass,data: selected }
                 console.log(json);
                 var token = $('input[name="csrfmiddlewaretoken"]').attr('value');
                 console.log(token)

@@ -77,6 +77,8 @@ def deleteUser(request):
             User1.objects.filter(pk__in=data).delete()
             return JsonResponse({"msg":"User deleted successfully"})
         if name == "mark-for-delete":
+            if result['password'] != "Admin@MFD":
+                return JsonResponse({"msg": "Incorrect password provided"})
             if data == []:
                 return JsonResponse({"msg":"User delete failed."})
             User1.objects.filter(pk__in=data).update(is_mark_for_delete=True)
