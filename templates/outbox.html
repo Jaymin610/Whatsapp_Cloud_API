@@ -49,6 +49,10 @@
                             <form class="mb-15" id="advance-srch">
                                 <div class="row mb-6">
                                     <div class="col-lg-3 mb-lg-0 mb-6">
+                                        <label>To:</label>
+                                        <input type="text" class="form-control datatable-input" data-col-index="0" name="from">
+                                    </div>
+                                    <div class="col-lg-3 mb-lg-0 mb-6">
                                         <label>Message:</label>
                                         <input type="text" class="form-control datatable-input" data-col-index="0" name="message">
                                     </div>
@@ -60,7 +64,9 @@
                                         <label>Status:</label>
                                         <select class="form-control datatable-input" data-col-index="6" name="status">
                                             <option value="">Select</option>
-                                        <option value="Sent">Sent</option><option value="read">Read</option>
+                                        <option value="Sent">Sent</option>
+                                        <option value="read">Read</option>
+                                        <option value="None">Unsent</option>
                                         </select>
                                     </div>
                                     <!-- <div class="col-lg-3 mb-lg-0 mb-6">
@@ -335,6 +341,7 @@
                                                 <td class="sorting_1"><input type="checkbox" name="row-check" id="${ i }"></td>
                                                 <td class="sorting_1"><p>${ c.To }<p></td>
                                                 <td class="sorting_1">${ c.message }</td>
+                                                <td class="sorting_1">${ c.variables }</td>
                                                 <td class="sorting_1">${ c.send_time }</td>
                                                 <td class="sorting_1">${ c.Sender }</td>
                                                 <td class="sorting_1"> <img src='../static/assets/img/${c.status}.png' width="20%" height="20%" alt=""> </td>

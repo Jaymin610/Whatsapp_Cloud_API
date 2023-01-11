@@ -7,6 +7,7 @@ urlpatterns = [
     path('', views.loginUser, name='login'),
     path('logout', views.logoutUser, name='logout'),
     path('dashboard', views.index, name='index'),
+    path('staff', views.staff, name='staff'),
     path('copyTemp', views.copyTemp, name='copyTemp'),
     path('fetch_Temp', views.fetch_Temp, name='fetch_Temp'),
     path('get_tempJson', views.get_tempJson, name='get_tempJson'),
@@ -20,4 +21,6 @@ urlpatterns = [
     path('updateuser', views.updateuser, name='updateuser'),
     path('appSettings', views.appSettings, name='appSettings'),
     path('updateAppsetting', views.updateAppsetting, name='updateAppsetting'),
+    path('dlUser', views.deleteUser, name='dlUser'),
+    path('userRemark', views.userRemark, name='userRemark'),
 ]

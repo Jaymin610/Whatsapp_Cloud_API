@@ -434,7 +434,7 @@
   
 <script>
     $(document).ready(function () {
-        $("#example4").Datatable();
+        {% comment %} $("#example4").Datatable(); {% endcomment %}
         $("#deleteAll").on("click", function(){
             if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true) {
                 $.ajax({
@@ -553,7 +553,7 @@
                 $('#example4 tbody tr').each(function () {
                     var t = $(this).children("td").children("input");
                     if (t.is(":checked")) {
-                        selected.push(t.attr('name'));
+                        selected.push(t.attr('id'));
                     }
                 });
                 var json = { name: "advanceRec", data: selected }

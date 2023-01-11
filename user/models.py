@@ -3,6 +3,13 @@ from django.db import models
 
 # Create your models here.
 
+class Staff(models.Model):
+    s_name = models.CharField(max_length=32, blank=True, null=True)
+    mobile = models.CharField(max_length=15, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    password = models.CharField(max_length=25, blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+
 class User1(models.Model):
 
     def __str__(self):
@@ -12,7 +19,7 @@ class User1(models.Model):
     
     @staticmethod
     def authenticate(email, passw):
-        return User1.objects.filter(email=email.lower(), password=passw)
+        return User1.objects.filter(email=email, password=passw)
 
     def login(self):
         if self.is_active:
@@ -31,6 +38,8 @@ class User1(models.Model):
         return self.is_auth
 
     user_name = models.CharField(max_length=32, blank=True, null=True)
+    staff = models.ForeignKey(Staff, on_delete=models.DO_NOTHING, null=True)
+    staff_name = models.CharField(max_length=32, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     password = models.CharField(max_length=25, blank=True, null=True)
     phone_no = models.CharField(max_length=15, blank=True, null=True)
@@ -39,6 +48,8 @@ class User1(models.Model):
     updated_at = models.DateTimeField(auto_now=True, blank=False)
     validity = models.DateField(null=True, db_index=True)
     is_auth = models.BooleanField(default=False)
+    is_mark_for_delete = models.BooleanField(default=False)
+    remark = models.CharField(max_length=1000, blank=True, null=True)
 
 
 class Voice_API(models.Model):
@@ -231,8 +242,8 @@ class New_Templates(models.Model):
     category = models.CharField(max_length=255, null=True, blank=True)
     temp_id = models.CharField(max_length=200, blank=True)
     status = models.CharField(max_length=100, blank=True)
+    has_button = models.BooleanField(default=0)
     
-
 
 class Conversation_Status(models.Model):
     to = models.CharField(max_length=15, null=True)

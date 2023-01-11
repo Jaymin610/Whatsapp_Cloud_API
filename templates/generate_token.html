@@ -108,12 +108,21 @@
                                                 </div>
                                             </div>
                                             <div class="row">
-                                                <div class="col-md-6 col-sm-6">
+                                                <div class="col-md-5 col-sm-5">
                                                     <h3>Dynamic Template API:</h3>
                                                     <div class="input-group input-group-sm">
-                                                        <input type="text" class="form-control" id="call-temp-url" value="http://wotsapp-campaign.bonrix.in:8000/dynamicTemplate?to=&msg=&token=">
+                                                        <input type="text" class="form-control" id="d-temp-url" value="http://wotsapp-campaign.bonrix.in:8000/dynamicTemplate?to=&msg=&token=">
                                                         &nbsp;
-                                                        <a href="" id="send_temp"><button type="button" class="btn btn-danger btn-flat" >Send Template</button></a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-6 col-sm-6">
+                                                    <h3>Send Media API:</h3>
+                                                    <div class="input-group input-group-sm">
+                                                        <input type="text" class="form-control" id="m-temp-url" value="http://wotsapp-campaign.bonrix.in:8000/send_media_SMS?to=&text=&token=&media_file">
+                                                        &nbsp;
+                                                        <a href="" id="send_media"><button type="button" class="btn btn-warning btn-flat" >Send Template</button></a>
                                                     </div>
                                                 </div>
                                             </div>
@@ -225,6 +234,11 @@
             $('#send_temp').attr("href", $('#call-temp-url').val());
             $('#send_temp').attr("target", "_blank");
         });
+        $('#m-temp-url').on('keyup', function(){
+            $('#send_media').attr("href", $('#m-temp-url').val());
+            $('#send_media').attr("target", "_blank");
+        });
+
         $(".provider").on("change", function(){
             console.log($(this))
             var p_name = $(`#${$(this).attr("id")} option:selected`).val();

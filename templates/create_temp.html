@@ -76,6 +76,13 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="col-md-2 col-sm-12">
+                                        <div class="btn-group" id="dltBtn">
+                                            <div class="btn-group btn btn-danger" class="">
+                                                Delete Templates
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-sm-12">
@@ -765,7 +772,31 @@
                 }
             })
 
-        })
+        });
+        $('#dltBtn').on('click', function () {
+            if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true) {
+                var selected = [];
+                $('#example4 tbody tr').each(function () {
+                    var t = $(this).children("td").children("input");
+                    if (t.is(":checked")) {
+                        selected.push(t.attr('name'));
+                    }
+                });
+                
+                var json = { name: "dytemplate", data: selected }
+                console.log(json);
+                $.ajax({
+                    type: 'POST',
+                    url: "/deleteRec/",
+                    data: JSON.stringify(json),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: 'json',
+                    success: function (result) {
+                        window.location.reload();
+                    },
+                })
+            }
+        });
     })
 </script>
 {% endblock %}

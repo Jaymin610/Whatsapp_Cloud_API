@@ -12,6 +12,7 @@ from django.shortcuts import render, redirect
 from user.models import *
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
+from django.views.decorators.csrf import csrf_exempt
 
 
 # Create your views here.
@@ -30,7 +31,8 @@ def loginUser(request):
 def index(request):
     if request.user.is_authenticated:
         data = User1.objects.all()
-        return render(request, "Ad_dashboard.html", {"Data": data})
+        sdata = Staff.objects.all()
+        return render(request, "Ad_dashboard.html", {"Data": data, "sdata":sdata})
     else:
         return redirect("/admin")
 
@@ -39,6 +41,52 @@ def logoutUser(request):
     logout(request)
     return redirect("/admin")
 
+def staff(request):
+    if request.user.is_authenticated:
+        if request.method=="POST":
+            sid = request.POST['sid']
+            
+            if sid == "":
+                is_staff = Staff.objects.filter(email=request.POST['email'], mobile=request.POST['mobile'])
+                if is_staff:
+                    messages.info(request, "Staff entry already exist")
+                else:
+                    Staff.objects.create(s_name=request.POST['sname'], mobile=request.POST['mobile'], email=request.POST['email'], password=request.POST['password']
+                                    , is_active=1)
+            elif sid != "":
+                Staff.objects.filter(pk=sid).update(s_name=request.POST['sname'], mobile=request.POST['mobile'], email=request.POST['email'])
+                
+            return redirect("/admin/staff")
+        else:
+            s_data = Staff.objects.all()
+            return render(request, "Adm_staff.html", {'sdata':s_data})
+    else:
+        return redirect("/admin")
+
+@csrf_exempt
+def deleteUser(request):
+    if request.user.is_authenticated:
+        result = json.load(request)
+        data = result['data']
+        name = result['name']
+        print(data)
+
+        if name == "user":
+            if data == []:
+                return JsonResponse({"msg":"User delete failed."})
+            User1.objects.filter(pk__in=data).delete()
+            return JsonResponse({"msg":"User deleted successfully"})
+        if name == "mark-for-delete":
+            if data == []:
+                return JsonResponse({"msg":"User delete failed."})
+            User1.objects.filter(pk__in=data).update(is_mark_for_delete=True)
+            return JsonResponse({"msg":"User marked for delete"})
+        if name == "staff":
+            if data == []:
+                return JsonResponse({"msg":"User delete failed."})
+            User1.objects.filter(staff_id__in=data).update(staff_name=None, staff_id=None)
+            Staff.objects.filter(pk__in=data).delete()
+            return JsonResponse({"msg":"User deleted successfully"})
 
 def copyTemp(request):
     if request.user.is_authenticated:
@@ -311,17 +359,44 @@ def addSettings(request):
                 messages.error("API setting already exist")
         return render(request, "Admin_AddSettings.html", {"action": "/admin/addSettings",
                                                     "set": "/admin/settings?uid=" + request.COOKIES['id']})
-from django.views.decorators.csrf import csrf_exempt
+
 @csrf_exempt
 def updateuser(request):
     if request.user.is_authenticated:
         if request.method == "POST":
-            user_id = request.POST['id']
-            date = request.POST['update-user']
-            User1.objects.filter(pk=user_id).update(validity=date, is_active=1)
-            messages.success(request,"User validity updated successfully")
-            print(date)
+            user_id = request.POST['update_id']
+            print(user_id)
+            if not User1.objects.get(pk=user_id).is_mark_for_delete:
+                
+                if request.POST['u-type'] == "val":
+                    date = request.POST['update-user-val']
+                    User1.objects.filter(pk=user_id).update(validity=date, is_active=1)
+                    messages.success(request,"User validity updated successfully")
+                
+                elif request.POST['u-type'] == "staff":
+                    staff = request.POST['update-user-staff']
+                    s_name = Staff.objects.get(pk=staff).s_name
+                    mobile = request.POST['update-user-mobile']
+                    email = request.POST['update-user-email']
+                    User1.objects.filter(pk=user_id).update(phone_no=mobile, staff_id=staff, email=email, staff_name=s_name)
+                    messages.success(request,"User data updated successfully")
+            else:
+                messages.error(request, "User has been marked for delete.")
     return redirect("/admin/dashboard")
+
+
+@csrf_exempt
+def userRemark(request):
+    if request.user.is_authenticated:
+        if request.method == "POST":
+            user = User1.objects.filter(pk=request.POST['update_id'])
+            if not user[0].is_mark_for_delete:
+                user.update(remark=request.POST['remark'])
+                messages.success(request, "Remark Updated Successfully.")
+            else:
+                messages.error(request, "User is marked for delete")
+    return redirect("/admin/dashboard")
+
 
 def editSettings(request):
     if request.user.is_authenticated:

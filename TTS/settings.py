@@ -88,12 +88,28 @@ WSGI_APPLICATION = 'TTS.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'dj_db_conn_pool.backends.mysql',
+#         'NAME': 'WA_API_Server',
+#         'USER': 'root',
+#         'PASSWORD': 'd&8ioNHaYe8^zm$U53VSnf^XowpeUcRP',
+#         'HOST': 'localhost',
+#         'PORT': '3306',
+#         'POOL_OPTIONS' : {
+#             'POOL_SIZE': 2000,
+#             'MAX_OVERFLOW': 4000,
+#             'RECYCLE': 4 * 60 * 60
+#         }
+#     }
+# }
+
 DATABASES = {
-    'default': {
+     'default': {
         'ENGINE': 'dj_db_conn_pool.backends.mysql',
         'NAME': 'WA_API_Server',
         'USER': 'root',
-        'PASSWORD': '',
+        'PASSWORD': 'd&8ioNHaYe8^zm$U53VSnf^XowpeUcRP',
         'HOST': 'localhost',
         'PORT': '3306',
         'POOL_OPTIONS' : {
@@ -101,8 +117,8 @@ DATABASES = {
             'MAX_OVERFLOW': 4000,
             'RECYCLE': 4 * 60 * 60
         }
+        }
     }
-}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators

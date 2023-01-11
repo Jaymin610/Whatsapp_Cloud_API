@@ -573,7 +573,7 @@
                 $('#example4 tbody tr').each(function () {
                     var t = $(this).children("td").children("input");
                     if (t.is(":checked")) {
-                        selected.push(t.attr('name'));
+                        selected.push(t.attr('id'));
                     }
                 });
                 var json = { name: "record", data: selected }

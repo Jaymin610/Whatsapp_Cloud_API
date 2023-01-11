@@ -1,0 +1,94 @@
+<html>
+{% load static %}
+<!-- Mirrored from radixtouch.in/templates/admin/smart/source/light/login.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 09 Apr 2018 06:05:12 GMT -->
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <meta name="description" content="Responsive Admin Template" />
+    <meta name="author" content="SmartUniversity" />
+    <title>Bonrix Software System</title>
+    <!-- google font -->
+    <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" rel="stylesheet" type="text/css" />
+	<!-- icons -->
+    <link href="{% static 'fonts/font-awesome/css/font-awesome.min.css' %}" rel="stylesheet" type="text/css"/>
+	<link href="{% static 'fonts/material-design-icons/material-icon.css' %}" rel="stylesheet" type="text/css" />
+    <!-- bootstrap -->
+	<link href="{% static 'assets/plugins/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- style -->
+    <link rel="stylesheet" href="{% static 'assets/css/pages/extra_pages.css' %}">
+	<!-- favicon -->
+    <link rel="shortcut icon" href="{% static 'assets/img/whatsapp.png' %}">
+</head>
+<body>
+    <div class="form-title">
+    <h1>Registration Pannel</h1>
+</div>
+<!-- Login Form-->
+<div class="login-form text-center">
+    <div class="form formLogin">
+        <h2>Staff Register</h2>
+        <form action="/staff" method="post"> {% csrf_token %}
+            <input name="sname" type="text" placeholder="Contact Name" required/>
+            <input name="email" type="email" placeholder="Email Address" required/>
+            <input name="mobile" type="tel" placeholder="Phone Number" required/>
+            <input name="password" type="password" placeholder="Password" id="pass" required style="position: relative;"/>
+            <label for="pass" style="position: absolute; top: 157px; right: 14px;"><i onclick="changetype(this)" class="fa fa-eye-slash"></i></label>
+            
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+    
+</div>
+    <!-- start js include path -->
+    <script src="{% static 'assets/plugins/jquery/jquery.min.js' %}" ></script>
+
+    <script src="{% static 'assets/js/pages/extra-pages/pages.js' %}" ></script>
+    <!-- end js include path -->
+</body>
+{% if messages %}
+
+<script>
+    {% for message in messages %}
+    alert('{{message}}')
+    {% endfor %}
+</script>
+
+{% endif %}
+
+<script>
+    function changetype(t){
+        if (t.classList.contains("fa-eye")){
+            
+            $("#pass").attr("type", "password");
+            t.classList.remove("fa-eye")
+            t.classList.add("fa-eye-slash")
+        }
+        else if (t.classList.contains("fa-eye-slash")){
+            
+            $("#pass").attr("type", "text");
+            t.classList.remove("fa-eye-slash")
+            t.classList.add("fa-eye")
+        }
+    }
+    $(document).ready(function(){
+        $("#register").on("click", function(){
+            console.log("CLicked")
+            $.ajax({
+                "async": true,
+                "crossDomain": true,
+                url: '/register/',
+                type: 'POST',
+                data: $("#regi_form").serialize(),
+                success: function(response) {
+                    if (response['msg']){alert(response['msg']);}
+                    else{window.location.reload()}
+                    
+                }
+            });
+        })
+        
+    })
+</script>
+
+</html>

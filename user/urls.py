@@ -7,7 +7,8 @@ urlpatterns = [
     path('', views.login, name='login'),
     path('send_SMS', views.send_SMS, name='send_SMS'),
     path('send_Template', views.send_Template, name='send_Template'),
-    path('dynamicTemplate', views.send_dynamic_template, name='send_dynamic_template'),
+    path('dynamicTemplate', views.send_check, name='dynamicTemplate'),
+    path('send_check', views.send_check, name='send_check'),
     path('register/', views.register, name='register'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('addCamp/', views.addCamp, name='addCamp'),
@@ -73,7 +74,7 @@ urlpatterns = [
     path('changeHorF', views.ChangeHeaderorFooter, name='ChangeHeaderorFooter'),
     path('smsurl', views.add_SMS_setting, name='smsurl'),
     path('missmatched', views.getMisMatchedData, name='missmatched'),
-    path('send_check', views.send_check, name='send_check'),
+    
     path('new_dash', views.new_dash, name='new_dash'),
     path('get_state', views.get_state, name='get_state'),
     path('what_token', views.what_token, name='what_token'),
@@ -87,6 +88,7 @@ urlpatterns = [
     path('delete_old', views.delete_oldData, name='delete_old'),
     path('validity_update', views.validity_update, name='validity_update'),
     path('hit_reminder/<key>', views.hit_reminder, name='hit_reminder'),
+    path('PdfTemplate', views.PdfTemplate, name='PdfTemplate'),
     
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

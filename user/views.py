@@ -506,101 +506,258 @@ def check_matched(token_data, to, msg):
     MissMatched_Temps.objects.create(text_msg=msg, provider_id=token_data.message_provider_id, usr_id=token_data.user_id)
     return {"message":"Data not found"}
 
+@csrf_exempt
 def send_check(request):
-    to = request.GET.get('to')
-    msg = request.GET.get('msg')
-    token = request.GET.get('token')
-    try:
-        tk = Developers_token.objects.get(u_token=token)
-    except Exception as e:
-        return JsonResponse({"status":"error", "message": "Please create a valid token"})
-    if User1.objects.get(pk=tk.user_id).is_active:
-        if to != "" and msg != "" and token != "":
-            if len(to) == 10:
-                to = "91" + to
-            
-            token_data = Developers_token.objects.get(u_token=token)
-            msg_state = SMS_Settings.objects.get(usr_id=token_data.user_id)
-            if msg_state.selective:
-                if "," not in msg_state.keywords:
-                    to_check = msg_state.keywords.replace("['","").replace("']","").split(",")
+    if request.method == "GET":
+        to = request.GET.get('to')
+        msg = request.GET.get('msg')
+        token = request.GET.get('token')
+        try:
+            tk = Developers_token.objects.get(u_token=token)
+        except Exception as e:
+            return JsonResponse({"status":"error", "message": "Please create a valid token"})
+        if User1.objects.get(pk=tk.user_id).is_active:
+            if to != "" and msg != "" and token != "":
+                if len(to) == 10:
+                    to = "91" + to
                 
-                else:
-                    ar = msg_state.keywords.split(",")
-                    to_check = [x.replace("[","").replace("]","").replace("'","").strip() for x in ar]
-                print(to_check)
+                token_data = Developers_token.objects.get(u_token=token)
+                msg_state = SMS_Settings.objects.get(usr_id=token_data.user_id)
+                if msg_state.selective:
+                    if "," not in msg_state.keywords:
+                        to_check = msg_state.keywords.replace("['","").replace("']","").split(",")
+                    
+                    else:
+                        ar = msg_state.keywords.split(",")
+                        to_check = [x.replace("[","").replace("]","").replace("'","").strip() for x in ar]
+                    print(to_check)
 
-                for i in to_check:
-                    if i in msg:
-                        print("Matched")
-                        if msg_state.sel_whatsapp and msg_state.sel_sms:
-                            response2 = check_matched(token_data, to=to, msg=msg)
-                            url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
-                            s_response = requests.get(url).text
-                            SMS_OutBox.objects.create(message=msg,
-                            send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5),
-                            status="sent", request=url,response=s_response, user_id=token_data.user_id, to_number=to)
-                            return JsonResponse({"SMS":s_response, "whatsapp":response2}, safe=False)
-                        if msg_state.sel_whatsapp:
-                            response2 = check_matched(token_data, to=to, msg=msg)
-                            s_response= ""
-                            if (msg_state.sms or (("error" in response2) and response2["error"]["message"] == "(#100) Invalid parameter")) and msg_state.sms_url:
-                                    url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
-                                    s_response = requests.get(url).text
-                                    SMS_OutBox.objects.create(message=msg,
-                                    send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5),
-                                    status="sent", request=url,response=s_response, user_id=token_data.user_id, to_number=to)
-                            return JsonResponse({"whatsapp":response2, "SMS":s_response}, safe=False)
-                            
-                        if msg_state.sel_sms:
-
-                            url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
-                            s_response = requests.get(url).text
-                            response2 = ""
-                            SMS_OutBox.objects.create(message=msg,
+                    for i in to_check:
+                        if i in msg:
+                            print("Matched")
+                            if msg_state.sel_whatsapp and msg_state.sel_sms:
+                                response2 = check_matched(token_data, to=to, msg=msg)
+                                url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
+                                s_response = requests.get(url).text
+                                SMS_OutBox.objects.create(message=msg,
                                 send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5),
                                 status="sent", request=url,response=s_response, user_id=token_data.user_id, to_number=to)
-                            if msg_state.whatsapp:
+                                return JsonResponse({"SMS":s_response, "whatsapp":response2}, safe=False)
+                            if msg_state.sel_whatsapp:
                                 response2 = check_matched(token_data, to=to, msg=msg)
-                            return JsonResponse({"SMS":s_response, "whatsapp":response2}, safe=False)
-                else:
-                    pass
-            if msg_state.both or (msg_state.sms and msg_state.whatsapp):
-                url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
-                s_response = requests.get(url).text
-                OutBox.objects.create(message=msg,
-                            send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(
-                                hours=5.5),
-                            reply_number="SMS_url", status="sent", request=url,
-                            response=s_response, user_id=token_data.user_id, to_number=to)
-                w_response = check_matched(token_data, to=to, msg=msg)
-                return JsonResponse({"sms":s_response, "whatsapp":w_response}, safe=False)
+                                s_response= ""
+                                if (msg_state.sms or (("error" in response2) and response2["error"]["message"] == "(#100) Invalid parameter")) and msg_state.sms_url:
+                                        url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
+                                        s_response = requests.get(url).text
+                                        SMS_OutBox.objects.create(message=msg,
+                                        send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5),
+                                        status="sent", request=url,response=s_response, user_id=token_data.user_id, to_number=to)
+                                return JsonResponse({"whatsapp":response2, "SMS":s_response}, safe=False)
+                                
+                            if msg_state.sel_sms:
 
-            elif msg_state.sms:
-                url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
-                s_response = requests.get(url).text
-                SMS_OutBox.objects.create(message=msg,
-                            send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5),
-                            status="sent", request=url,response=s_response, user_id=token_data.user_id, to_number=to)
-                return JsonResponse(s_response, safe=False)
-
-            elif msg_state.whatsapp:
-                response = check_matched(token_data, to=to, msg=msg)
-                if ("error" in response) and response["error"]["message"] == "(#100) Invalid parameter" and msg_state.sms_url:
+                                url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
+                                s_response = requests.get(url).text
+                                response2 = ""
+                                SMS_OutBox.objects.create(message=msg,
+                                    send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5),
+                                    status="sent", request=url,response=s_response, user_id=token_data.user_id, to_number=to)
+                                if msg_state.whatsapp:
+                                    response2 = check_matched(token_data, to=to, msg=msg)
+                                return JsonResponse({"SMS":s_response, "whatsapp":response2}, safe=False)
+                    else:
+                        pass
+                if msg_state.both or (msg_state.sms and msg_state.whatsapp):
                     url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
                     s_response = requests.get(url).text
-                s_response = ""
-                return JsonResponse({"whatsapp":response, "SMS":s_response})
+                    OutBox.objects.create(message=msg,
+                                send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(
+                                    hours=5.5),
+                                reply_number="SMS_url", status="sent", request=url,
+                                response=s_response, user_id=token_data.user_id, to_number=to)
+                    w_response = check_matched(token_data, to=to, msg=msg)
+                    return JsonResponse({"sms":s_response, "whatsapp":w_response}, safe=False)
 
-            if (not msg_state.both) and (not msg_state.sms) and (not msg_state.whatsapp) and (not msg_state.selective):
-                response = check_matched(token_data, to=to, msg=msg)
-                s_response = ""
-                if ("error" in response) and response["error"]["message"] == "(#100) Invalid parameter" and msg_state.sms_url: 
+                elif msg_state.sms:
                     url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
                     s_response = requests.get(url).text
-                return JsonResponse({"whatsapp":response, "SMS":s_response})
+                    SMS_OutBox.objects.create(message=msg,
+                                send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5),
+                                status="sent", request=url,response=s_response, user_id=token_data.user_id, to_number=to)
+                    return JsonResponse(s_response, safe=False)
+
+                elif msg_state.whatsapp:
+                    response = check_matched(token_data, to=to, msg=msg)
+                    if ("error" in response) and response["error"]["message"] == "(#100) Invalid parameter" and msg_state.sms_url:
+                        url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
+                        s_response = requests.get(url).text
+                    s_response = ""
+                    return JsonResponse({"whatsapp":response, "SMS":s_response})
+
+                if (not msg_state.both) and (not msg_state.sms) and (not msg_state.whatsapp) and (not msg_state.selective):
+                    response = check_matched(token_data, to=to, msg=msg)
+                    s_response = ""
+                    if ("error" in response) and response["error"]["message"] == "(#100) Invalid parameter" and msg_state.sms_url: 
+                        url = msg_state.sms_url.replace("<mobile>", to).replace("<message>", msg)
+                        s_response = requests.get(url).text
+                    return JsonResponse({"whatsapp":response, "SMS":s_response})
+        else:
+            return JsonResponse({"message":"User validity has been expired. Please recharge"})
+
     else:
-        return JsonResponse({"message":"User validity has been expired. Please recharge"})
+        to = request.POST['to']
+        token = request.POST['token']
+        pdf = request.FILES['pdf']
+        msg = request.POST['message']
+        print(token)
+        print(msg)
+        temp_type = request.POST['temptype']
+
+        token_obj = Developers_token.objects.get(u_token=token)
+        user_id = token_obj.user_id
+
+        user_obj = User1.objects.get(pk=user_id)
+        wa_obj = WA_MSG_Provider.objects.get(pk=token_obj.message_provider_id)
+
+        object_path = settings.MEDIA_ROOT+ "/media_msg/" + user_obj.user_name + "/" + wa_obj.provider_name
+        if not os.path.exists(object_path):
+            os.mkdir(settings.MEDIA_ROOT+ "/media_msg/" + user_obj.user_name)
+            os.mkdir(settings.MEDIA_ROOT+ "/media_msg/" + user_obj.user_name + "/" + wa_obj.provider_name)
+
+        if pdf:
+            fss = FileSystemStorage()
+            file_s = fss.save(object_path+"/"+pdf.name, pdf)
+            furl = fss.url(file_s)
+            vname = fss.get_valid_name(file_s)
+            furl = "http://wotsapp-campaign.bonrix.in:8000" + furl
+        token_data = Developers_token.objects.get(u_token=token)
+        provider = WA_MSG_Provider.objects.get(id=token_data.message_provider_id)
+        msg = regexpstring(msg, 0).replace("  "," ")
+        api = Voice_API.objects.get(whatsapp_name=provider.provider_name)
+        all_temp = New_Templates.objects.filter(message_provider_id=token_data.message_provider_id)
+        for a in all_temp:
+            if temp_type == "dynamic":
+                data = regexpstring(a.text_msg, 1).replace("{#var#}", "(.*)")
+                p = re.compile(data)
+                variables = p.findall(msg)
+                print("dynamic", msg)
+                # print(a.id, a.text_msg)
+                
+                if variables:
+                    print(variables)
+                    print(a.temp_name, a.lang_code)
+                    payload = {
+                    "messaging_product": "whatsapp",
+                    "recipient_type": "individual",
+                    "to": f"{to}",
+                    "type": "template",
+                    "template": {
+                        "name": f"{a.temp_name}",
+                        "language": {
+                            "code": f"{a.lang_code}"
+                        },
+                        "components": [
+                                            {
+                                    "type": "header",
+                                    "parameters": [
+                                        {
+                                            "type": "document",
+                                            "document": {
+                                                "link": f"{furl}"
+                                            }
+                                        }
+                                    ]
+                                },
+
+                            ]
+                        }
+                    }
+                    
+                    payload["template"]["components"].append({
+                        "type": "body",
+                        "parameters": []
+                    })
+                    if a.has_button:
+                        payload["template"]["components"].append({
+                            "type": "button",
+                            "sub_type": "URL",
+                            "index": "0",
+                            "parameters": [{"type": "payload","payload": f"{vname}"}]
+                        })
+
+                    to_save  = {}
+                    i = 1
+                    if type(variables[0]) is str:
+                        to_roam = variables
+                    elif type(variables[0]) is tuple:
+                        to_roam = variables[0]
+                    print(to_roam)
+                    for v in to_roam:
+                        payload["template"]["components"][1]["parameters"].append({"type": "text", "text": f"{v}"})
+                        to_save[i] = v
+                        i += 1
+                    payload = json.dumps(payload)
+                    response = requests.request("POST", api.message_API, headers=api.header, data=payload)
+                    print(response.text)
+                    try:
+                        msgid = json.loads(response.text)['messages'][0]['id']
+                    except KeyError:
+                        msgid = None
+                    OutBox.objects.create(message=a.temp_name, send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5),
+                            reply_number=provider.provider_name, request=api.message_API,
+                            response=response.text, user_id=provider.user_id, to_number=to, msg_id=msgid, variables=to_save, media_url=furl)
+                    Message_History.objects.create(message=a.temp_name, msg_type="send", customer_number=to, 
+                                                api_number=provider.phone_no, user_id=provider.user_id,
+                                                provider_id=provider.id, msg_id=msgid, media_url=furl)
+                    return JsonResponse(json.loads(response.text))
+
+            elif temp_type == "static":
+                print(a.temp_name)
+                if regexpstring(a.text_msg, 1) == msg:
+                    
+                    payload = {
+                    "messaging_product": "whatsapp",
+                    "recipient_type": "individual",
+                    "to": f"{to}",
+                    "type": "template",
+                    "template": {
+                        "name": f"{a.temp_name}",
+                        "language": {
+                            "code": f"{a.lang_code}"
+                        },
+                        "components": [
+                                            {
+                                    "type": "header",
+                                    "parameters": [
+                                        {
+                                            "type": "document",
+                                            "document": {
+                                                "link": f"{furl}"
+                                            }
+                                        }
+                                    ]
+                                },
+
+                            ]
+                        }
+                    }
+                    
+                    payload = json.dumps(payload)
+                    response = requests.request("POST", api.message_API, headers=api.header, data=payload)
+                    print(response.text)
+                    try:
+                        msgid = json.loads(response.text)['messages'][0]['id']
+                    except KeyError:
+                        msgid = None
+                    OutBox.objects.create(message=a.temp_name, send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5),
+                            reply_number=provider.provider_name, request=api.message_API,
+                            response=response.text, user_id=provider.user_id, to_number=to, msg_id=msgid, media_url=furl)
+                    Message_History.objects.create(message=a.temp_name, msg_type="send", customer_number=to, 
+                                                api_number=provider.phone_no, user_id=provider.user_id,
+                                                provider_id=provider.id, msg_id=msgid, media_url=furl)
+                    return JsonResponse(json.loads(response.text))
+        else:
+            return JsonResponse({"message":"Template not found"})  
 
 @csrf_exempt
 def send_dynamic_template(request):
@@ -696,6 +853,7 @@ def send_dynamic_template(request):
         token = request.POST['token']
         pdf = request.FILES['pdf']
         msg = request.POST['message']
+        temp_type = request.POST['temptype']
 
         token_obj = Developers_token.objects.get(u_token=token)
         user_id = token_obj.user_id
@@ -720,84 +878,130 @@ def send_dynamic_template(request):
         api = Voice_API.objects.get(whatsapp_name=provider.provider_name)
         all_temp = New_Templates.objects.filter(message_provider_id=token_data.message_provider_id)
         for a in all_temp:
-            
-            data = regexpstring(a.text_msg, 1).replace("{#var#}", "(.*)")
-            p = re.compile(data)
-            variables = p.findall(msg)
-            
-            if variables:
-                print(variables)
-                print(a.temp_name, a.lang_code)
-                payload = {
-                "messaging_product": "whatsapp",
-                "recipient_type": "individual",
-                "to": f"{to}",
-                "type": "template",
-                "template": {
-                    "name": f"{a.temp_name}",
-                    "language": {
-                        "code": f"{a.lang_code}"
-                    },
-                    "components": [
-                                        {
-                                "type": "header",
-                                "parameters": [
-                                    {
-                                        "type": "document",
-                                        "document": {
-                                            "link": f"{furl}"
-                                        }
-                                    }
-                                ]
-                            },
-
-                        ]
-                    }
-                }
+            if temp_type == "dynamic":
+                data = regexpstring(a.text_msg, 1).replace("{#var#}", "(.*)")
+                p = re.compile(data)
+                variables = p.findall(msg)
                 
-                payload["template"]["components"].append({
-                    "type": "body",
-                    "parameters": []
-                })
-                payload["template"]["components"].append({
-                    "type": "button",
-                    "sub_type": "URL",
-                    "index": "0",
-                    "parameters": [
-                        {
-                            "type": "payload",
-                            "payload": f"{vname}"
+                if variables:
+                    print(variables)
+                    print(a.temp_name, a.lang_code)
+                    payload = {
+                    "messaging_product": "whatsapp",
+                    "recipient_type": "individual",
+                    "to": f"{to}",
+                    "type": "template",
+                    "template": {
+                        "name": f"{a.temp_name}",
+                        "language": {
+                            "code": f"{a.lang_code}"
+                        },
+                        "components": [
+                                            {
+                                    "type": "header",
+                                    "parameters": [
+                                        {
+                                            "type": "document",
+                                            "document": {
+                                                "link": f"{furl}"
+                                            }
+                                        }
+                                    ]
+                                },
+
+                            ]
                         }
-                    ]
-                })
+                    }
+                    
+                    payload["template"]["components"].append({
+                        "type": "body",
+                        "parameters": []
+                    })
+                    payload["template"]["components"].append({
+                        "type": "button",
+                        "sub_type": "URL",
+                        "index": "0",
+                        "parameters": [
+                            {
+                                "type": "payload",
+                                "payload": f"{vname}"
+                            }
+                        ]
+                    })
 
-                to_save  = {}
-                i = 1
-                if type(variables[0]) is str:
-                    to_roam = variables
-                elif type(variables[0]) is tuple:
-                    to_roam = variables[0]
-                print(to_roam)
-                for v in to_roam:
-                    payload["template"]["components"][1]["parameters"].append({"type": "text", "text": f"{v}"})
-                    to_save[i] = v
-                    i += 1
-                payload = json.dumps(payload)
-                response = requests.request("POST", api.message_API, headers=api.header, data=payload)
-                print(response.text)
-                try:
-                    msgid = json.loads(response.text)['messages'][0]['id']
-                except KeyError:
-                    msgid = None
-                OutBox.objects.create(message=a.temp_name, send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5),
-                        reply_number=provider.provider_name, request=api.message_API,
-                        response=response.text, user_id=provider.user_id, to_number=to, msg_id=msgid, variables=to_save, media_url=furl)
-                Message_History.objects.create(message=a.temp_name, msg_type="send", customer_number=to, 
-                                            api_number=provider.phone_no, user_id=provider.user_id,
-                                            provider_id=provider.id, msg_id=msgid, media_url=furl)
-                return JsonResponse(json.loads(response.text))
+                    to_save  = {}
+                    i = 1
+                    if type(variables[0]) is str:
+                        to_roam = variables
+                    elif type(variables[0]) is tuple:
+                        to_roam = variables[0]
+                    print(to_roam)
+                    for v in to_roam:
+                        payload["template"]["components"][1]["parameters"].append({"type": "text", "text": f"{v}"})
+                        to_save[i] = v
+                        i += 1
+                    payload = json.dumps(payload)
+                    response = requests.request("POST", api.message_API, headers=api.header, data=payload)
+                    print(response.text)
+                    try:
+                        msgid = json.loads(response.text)['messages'][0]['id']
+                    except KeyError:
+                        msgid = None
+                    OutBox.objects.create(message=a.temp_name, send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5),
+                            reply_number=provider.provider_name, request=api.message_API,
+                            response=response.text, user_id=provider.user_id, to_number=to, msg_id=msgid, variables=to_save, media_url=furl)
+                    Message_History.objects.create(message=a.temp_name, msg_type="send", customer_number=to, 
+                                                api_number=provider.phone_no, user_id=provider.user_id,
+                                                provider_id=provider.id, msg_id=msgid, media_url=furl)
+                    return JsonResponse(json.loads(response.text))
 
+            elif temp_type == "static":
+                print(a.temp_name)
+                if regexpstring(a.text_msg, 1) == msg:
+                    
+                    payload = {
+                    "messaging_product": "whatsapp",
+                    "recipient_type": "individual",
+                    "to": f"{to}",
+                    "type": "template",
+                    "template": {
+                        "name": f"{a.temp_name}",
+                        "language": {
+                            "code": f"{a.lang_code}"
+                        },
+                        "components": [
+                                            {
+                                    "type": "header",
+                                    "parameters": [
+                                        {
+                                            "type": "document",
+                                            "document": {
+                                                "link": f"{furl}"
+                                            }
+                                        }
+                                    ]
+                                },
 
+                            ]
+                        }
+                    }
+                    
+                    payload = json.dumps(payload)
+                    response = requests.request("POST", api.message_API, headers=api.header, data=payload)
+                    print(response.text)
+                    try:
+                        msgid = json.loads(response.text)['messages'][0]['id']
+                    except KeyError:
+                        msgid = None
+                    OutBox.objects.create(message=a.temp_name, send_time=datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=5.5),
+                            reply_number=provider.provider_name, request=api.message_API,
+                            response=response.text, user_id=provider.user_id, to_number=to, msg_id=msgid, media_url=furl)
+                    Message_History.objects.create(message=a.temp_name, msg_type="send", customer_number=to, 
+                                                api_number=provider.phone_no, user_id=provider.user_id,
+                                                provider_id=provider.id, msg_id=msgid, media_url=furl)
+                    return JsonResponse(json.loads(response.text))
+        else:
+            return JsonResponse({"message":"Template not found"})            
 
 @csrf_exempt
 def send_media_SMS(request):
@@ -1053,6 +1257,7 @@ def dashboard(request):
         return redirect('/')
 
 
+
 def register(request):
     if request.method == 'POST':
         is_user = User1.objects.filter(email=request.POST['email'], phone_no=request.POST['phoneno'])
@@ -1078,6 +1283,7 @@ def login(request):
     if request.method == 'POST':
         email = request.POST['email']
         password = request.POST['password']
+        print(email,password)
         user = User1.authenticate(email, password)
         if user:
             if user[0].is_active:
@@ -1298,7 +1504,24 @@ def deleteRec(request):
         result = json.load(request)
         data = result['data']
         name = result['name']
+        print(data)
 
+        if name == "template":
+            for i in data:
+                template = Templates.objects.get(pk=i)
+                prod = WA_MSG_Provider.objects.get(pk=template.message_provider_id)
+                resp = requests.delete(f"https://graph.facebook.com/v15.0/{prod.business_id}/message_templates?name={template.temp_name}&access_token={prod.token}")
+                status_check = json.loads(resp.text)
+                print(status_check)
+                template.delete()
+        if name == "dytemplate":
+            for i in data:
+                template = New_Templates.objects.get(pk=i)
+                prod = WA_MSG_Provider.objects.get(pk=template.message_provider_id)
+                resp = requests.delete(f"https://graph.facebook.com/v15.0/{prod.business_id}/message_templates?name={template.temp_name}&access_token={prod.token}")
+                status_check = json.loads(resp.text)
+                print(status_check)
+                template.delete()
         if name == "record":
             camp_id = request.COOKIES['camp_id']
             count = Campaign.objects.get(id=camp_id)
@@ -1565,27 +1788,24 @@ def check(request):
         #     print(u.id)
         #     SMS_Settings.objects.create(whatsapp=True, usr_id=u.id)
     # data = Conversation_Status.objects.all()
-    # prds = WA_MSG_Provider.objects.all()
-    # data = []
-    # for p in prds:
-    #     response = requests.get(
-    #         f"https://graph.facebook.com/v15.0/{p.business_id}/message_templates?access_token={p.token}")
-    #     try:
-    #         response = json.loads(response.text)
-    #         data = response['data']
-    #     except KeyError:
-    #         pass
-    #     for i in data:
-    #         tmps = Templates.objects.filter(temp_id=i['id'])
-    #         if tmps:
-    #             tmps.temp_json = i
-    #         else:
-    #             if i['components'][0]['type'].lower() == 'header' and i['components'][0]['format'].lower() != "text":
-    #                 Templates.objects.create(user_id=p.user_id, message_provider_id=p.id, temp_name=i['name'],
-    #                                          lang_code=i['language'], is_media=1, temp_id=i['id'], status=i['status'])
-    #             else:
-    #                 Templates.objects.create(user_id=p.user_id, message_provider_id=p.id, temp_name=i['name'],
-    #                                          lang_code=i['language'], is_media=0, temp_id=i['id'], status=i['status'])
+    prds = WA_MSG_Provider.objects.all()
+    data = []
+    for p in prds:
+        response = requests.get(
+            f"https://graph.facebook.com/v15.0/{p.business_id}/message_templates?access_token={p.token}")
+        try:
+            response = json.loads(response.text)
+            data = response['data']
+        except KeyError:
+            continue
+        # print(data)
+        for i in data:
+            print(i['components'][-1])
+    
+            if i['components'][-1]['type'] == 'BUTTONS':
+                for b in i['components'][-1]['buttons']:
+                    if b['type'] == "URL":
+                        New_Templates.objects.filter(temp_id=i['id']).update(has_button=1)
     # for d in data:
     #     try:
     #         try:
@@ -2866,10 +3086,13 @@ def searchTable(request):
                             "req": d.request, "res": d.response}
         elif name == "outbox":
             sender = request.POST['sender']
+            from_no = request.POST['from']
             msg = request.POST['message']
             stat = request.POST['status']
 
             data = OutBox.objects.filter(user_id=request.COOKIES['id'])
+            if from_no != "":
+                data = data & OutBox.objects.filter(to_number=from_no)
             if sender != "":
                 data = data & OutBox.objects.filter(reply_number=sender)
             if msg != "":
@@ -4301,6 +4524,9 @@ def createTemp(request):
                             }
                             if "isbutton" in request.POST:
                                 payload["components"].append({"type": "BUTTONS","buttons": [{"type": "QUICK_REPLY","text": request.POST['button-text']}]})
+                                has_b = True
+                            else:
+                                has_b = False
                             payload = json.dumps(payload)
                             url = f"https://graph.facebook.com/v15.0/{data.business_id}/message_templates?access_token={data.token}"
                             header = {"Content-Type": "application/json", "Authorization": f"{data.token}"}
@@ -4311,7 +4537,7 @@ def createTemp(request):
                             try:
                                 New_Templates.objects.create(user_id=request.COOKIES['id'], message_provider_id=data.id, temp_name=temp_n,
                                                             text_msg=regexpstring(temp_b, 0), text_converted=final, lang_code=language, category=category,
-                                                            temp_id=json.loads(response.text)['id'], status="PENDING")         
+                                                            temp_id=json.loads(response.text)['id'], status="PENDING", has_button=has_b)         
                             except:
                                 return JsonResponse({"Response":json.loads(response.text)})
                     return redirect("/createTemp")
@@ -4465,6 +4691,9 @@ def createTemp(request):
 
                     if "isbutton" in request.POST:
                         payload["components"].append({"type": "BUTTONS","buttons": [{"type": "QUICK_REPLY","text": request.POST['button-text']}]})
+                        has_b = True
+                    else:
+                        has_b = False
                     payload = json.dumps(payload)
                     response = requests.post(url=url, data=payload,headers=header)
 
@@ -4472,7 +4701,7 @@ def createTemp(request):
                     try:
                         New_Templates.objects.create(user_id=request.COOKIES['id'], message_provider_id=data.id, temp_name=template_name,
                                                     text_msg=regexpstring(body, 0), text_converted=final, lang_code=language, category=category,
-                                                    temp_id=json.loads(response.text)['id'], status="PENDING")
+                                                    temp_id=json.loads(response.text)['id'], status="PENDING", has_button=has_b)
                     except:
                         return JsonResponse({"response":json.loads(response.text)})
                 return redirect("/createTemp")
@@ -4847,12 +5076,12 @@ def createReminderTemp(request):
                                     "type":"BODY",
                                     "text":body,
                                     "example": {
-                                        "body_text":["Hello JN"]
+                                        "body_text":[["Mr. Bonrix"]]
                                     }
                                 }
                             ],
                             "language":language,
-                            "category":category
+                            "category":str(category).upper()
                         }
                 print(payload)
                 if "isbutton" in request.POST:
@@ -4899,7 +5128,6 @@ def reminderSettings(request):
         return JsonResponse({"Error":"Login required to access this page"})
 
 def hit_reminder(requets, key):
-    print(settings.PRIVATE_TOKEN)
     if key == settings.PRIVATE_TOKEN:
         print("Hit Reminder")
         today = datetime.date.today()
@@ -5034,5 +5262,8 @@ def hit_reminder(requets, key):
         return JsonResponse({"Status":True})
     else:
         return JsonResponse({"Status":False})
-            
+
+
+def PdfTemplate(request):
+    return render(request, "pdfTemplate.html")
 

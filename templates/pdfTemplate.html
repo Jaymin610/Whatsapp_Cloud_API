@@ -1,0 +1,677 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+{% if messages %}
+        {% for message in messages %}
+        <div class="container-fluid p-0">
+            <div class="alert {{ message.tags }} alert-dismissible" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="">&times;close</span>
+                    <i class="fa fa-close"></i>
+                </button>
+                {{ message }}
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+<div class="page-content" style="min-height:1579px">
+    <div class="page-bar">
+        <div class="page-title-breadcrumb">
+            <div class=" pull-left">
+                <div class="page-title">PDF Template</div>
+            </div>
+        </div>
+    </div>
+    <div class="page-content" style="min-height:1539px; width:1450px; margin-left: auto; margin-right: auto;">
+        
+        <div class="row">
+            <div class="col-sm-12 col-md-12 col-xl-12">
+                <div class="card-box">
+                    <div class="card-head">
+                        {% comment %} <div class="btn-group">
+                            <div class="btn-group btn btn-warning" data-toggle="modal" data-target="#exampleModalCenter7">
+                                Reminder settings
+                            </div>
+                        </div>
+                        <div class="btn-group">
+                            <div class="btn-group btn btn-primary" data-toggle="modal" data-target="#adduser">
+                                Add user
+                            </div>
+                        </div>
+                        <div class="btn-group">
+                            <div class="btn-group btn btn-danger" data-toggle="modal" data-target="#createMul">
+                                Add Multiple user
+                            </div>
+                        </div>
+                        <div class="btn-group pull-right">
+                            <a href="/download_sample?table=AddReminderUser">
+                            <div class="btn-group btn btn-success">
+                                Download Excel Sample
+                            </div>
+                        </a>
+                        </div> {% endcomment %}
+                    </div>
+                    <div class="card-body ">
+                        {% comment %} <div class="table-scrollable">
+                            <div id="example4_wrapper"
+                                class="dataTables_wrapper container-fluid dt-bootstrap4 no-footer">
+                                <div class="row" style="margin-bottom: 10px;">
+                                    <div class="col-md-3 col-sm-12">
+                                        <select class="form-control input-height" id="sel-provider">
+                                            <option value="">Select...</option>
+                                            {% for d in providers %}
+                                            <option value='{{d.phone_no}}'>{{d.provider_name }} [{{d.phone_no}}]
+                                            </option>
+                                            {% endfor %}
+
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-12">
+                                        <table
+                                            class="table table-striped table-bordered table-hover table-checkable order-column valign-middle dataTable no-footer"
+                                            id="example4" role="grid" aria-describedby="example4_info">
+                                            <thead>
+                                                <tr role="row" style="text-align:center">
+                                                    <th class="sorting_asc" tabindex="0" aria-controls="example4"
+                                                        rowspan="1" colspan="1" aria-sort="ascending"
+                                                        aria-label="#: activate to sort column descending"
+                                                        style="width: 63.6px;"></th>
+                                                    <th class="sorting" tabindex="0" aria-controls="example4"
+                                                        rowspan="1" colspan="1"
+                                                        aria-label="Title: activate to sort column ascending"
+                                                        style="width: 180.863px;">User Name</th>
+                                                    <th class="sorting" tabindex="0" aria-controls="example4"
+                                                        rowspan="1" colspan="1"
+                                                        aria-label="Title: activate to sort column ascending"
+                                                        style="width: 180.863px;">Mobile Number</th>
+                                                    <th class="sorting" tabindex="0" aria-controls="example4"
+                                                        rowspan="1" colspan="1"
+                                                        aria-label="Title: activate to sort column ascending"
+                                                        style="width: 180.863px;">Birth Date</th>
+                                                    <th class="sorting" tabindex="0" aria-controls="example4"
+                                                        rowspan="1" colspan="1"
+                                                        aria-label="Title: activate to sort column ascending"
+                                                        style="width: 180.863px;">Anyversary Date</th>
+                                                    <th class="sorting" tabindex="0" aria-controls="example4"
+                                                        rowspan="1" colspan="1"
+                                                        aria-label="Title: activate to sort column ascending"
+                                                        style="width: 180.863px;">Remarks</th>
+                                                    <th class="sorting" tabindex="0" aria-controls="example4"
+                                                        rowspan="1" colspan="1"
+                                                        aria-label="Title: activate to sort column ascending"
+                                                        style="width: 180.863px;"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for d in data %}
+                                                <tr style="text-align:center" class="odd" role="row">
+                                                    <td class="sorting_1"><input type="checkbox" name="{{ d.id }}" id="{{ d.id }}"></td>
+                                                    <td class="sorting_1">{{ d.user_name }}</td>
+                                                    <td class="sorting_1">{{ d.user_mobile }}</td>
+                                                    <td class="sorting_1">{{ d.birthdate }}</td>
+                                                    <td class="sorting_1">{{ d.anniversary }}</td>
+                                                    <td class="sorting_1">{{ d.remark }}</td>
+                                                    <td class="sorting_1"><button class="btn btn-success edit-btn" name="{{ d.id }}">Edit</button></td>
+
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div> {% endcomment %}
+                        <div class="row">
+                            <div class="col-md-6 col-sm-6">
+                                <div class="card card-box">
+                                    <div class="card-head">
+                                        <header> Sample 1 </header>
+                                    </div>
+                                    <div class="card-body" id="bar-parent">
+                                        <form action="/createReminderTemp" method="POST" class="form-horizontal"> {% csrf_token %}
+                                            <input type="text" name="provider" style="display: none;" id='form-provider'>
+                                            <div class="form-group row">
+                                                <label class="control-label col-md-3">Template Name
+                                                    <span class="required" aria-required="true"> * </span>
+                                                </label>
+                                                <div class="col-md-6">
+                                                    <input type="text" name="temp-name" class="form-control" value="PDF">
+                                                </div>
+                                            </div>
+                    
+                                            <div class="form-group row">
+                                                <label class="control-label col-md-3">Header
+                                                    <span class="required" aria-required="true"> * </span>
+                                                </label>
+                                                <div class="col-md-6">
+                                                    {% comment %} <embed src="{% static 'sample.pdf' %}" width="800px" height="2100px" /> {% endcomment %}
+                                                    <input name="header" id="had-link1" class="form-control" value="{{im_link}}">
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label class="control-label col-md-3">Body
+                                                    <span class="required" aria-required="true"> * </span>
+                                                </label>
+                                                <div class="col-md-6">
+                                                    <textarea name="temp-body" id="" cols="30" rows="5" class="form-control">Whishing you many many happy returns of the day {client_name}</textarea>
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label class="control-label col-md-3">Language
+                                                    <span class="required" aria-required="true"> * </span>
+                                                </label>
+                                                <div class="col-md-6" id="mob-select">
+                                                    <input class="form-control" name="language" value="en">
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label class="control-label col-md-3">Category
+                                                    <span class="required" aria-required="true"> * </span>
+                                                </label>
+                                                <div class="col-md-6" id="">
+                                                    <select class="form-control" name="category">
+                                                        <option value="">Select...</option>
+                                                        <option value="transactional">Transactional</option>
+                                                        <option value="otp">OTP</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label class="control-label col-md-3">Button</label>
+                                                <div class="col-md-6" id="">
+                                                    <input type="checkbox" name="isbutton" checked>
+                                                    <input type="text" name="button-text" class="form-control" value="Thank you">
+                                                </div>
+                                            </div>
+                                            <div class="form-actions">
+                                                <div class="row">
+                                                    <div class="offset-md-3 col-md-9">
+                                                        <button type="submit" class="btn btn-danger">Create</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-sm-6">
+                                <div class="card card-box">
+                                    <div class="card-head">
+                                        <header> Sample 2 </header>
+                                    </div>
+                                    <div class="card-body" id="bar-parent">
+                                        <form action="/createReminderTemp" method="POST" class="form-horizontal"> {% csrf_token %}
+                                            <input type="text" name="type" value="single" style="display: none;">
+                                            <div class="form-group row">
+                                                <label class="control-label col-md-3">Template Name
+                                                    <span class="required" aria-required="true"> * </span>
+                                                </label>
+                                                <div class="col-md-6">
+                                                    <input type="text" name="temp-name" class="form-control" value="Aniversary_Template">
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label class="control-label col-md-3">Header
+                                                    <span class="required" aria-required="true"> * </span>
+                                                </label>
+                                                <div class="col-md-6">
+                                                    <img width="150px" id="head-img2" src="{{im_link2}}">
+                                                    <input name="header" id="had-link2" class="form-control" value="{{im_link2}}">
+                                                </div>
+                                            </div>
+                    
+                                            <div class="form-group row">
+                                                <label class="control-label col-md-3">Body
+                                                    <span class="required" aria-required="true"> * </span>
+                                                </label>
+                                                <div class="col-md-6">
+                                                    <textarea name="temp-body" id="" cols="30" rows="5" class="form-control">Happy Merriage Anyversary</textarea>
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label class="control-label col-md-3">Language
+                                                    <span class="required" aria-required="true"> * </span>
+                                                </label>
+                                                <div class="col-md-6" id="mob-select">
+                                                    <input class="form-control" name="language" value="en">
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label class="control-label col-md-3">Category
+                                                    <span class="required" aria-required="true"> * </span>
+                                                </label>
+                                                <div class="col-md-6" id="">
+                                                    <select class="form-control" name="category">
+                                                        <option value="">Select...</option>
+                                                        <option value="marketing">Marketing</option>
+                                                        <option value="transactional">Transactional</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label class="control-label col-md-3">Button</label>
+                                                <div class="col-md-6" id="">
+                                                    <input type="checkbox" name="isbutton" checked>
+                                                    <input type="text" name="button-text" class="form-control" value="Thank you">
+                                                </div>
+                                            </div>
+                                            <div class="form-actions">
+                                                <div class="row">
+                                                    <div class="offset-md-3 col-md-9">
+                                                        <button type="submit" class="btn btn-danger">Create</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="createMul" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true" >
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 825px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle">Add Template</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" >
+                <div class="col-md-12 col-sm-12">
+                    <div class="card card-box">
+                        <div class="card-head">
+                            
+                        </div>
+                        <div class="card-body" id="bar-parent">
+                            <form action="/reminders" method="post" id="form_sample_1" class="form-horizontal"
+                                novalidate="novalidate" enctype="multipart/form-data">{% csrf_token %}
+                                <input type="text" name="type" value="multiple" style="display: none;">
+                                <div class="form-group row">
+                                    <label class="control-label col-md-3">Excel Data
+                                        <span class="required" aria-required="true"> * </span>
+                                    </label>
+                                    <div class="col-md-5">
+                                        <input class="form-control" type="file" id="formFile" name="myfile">
+                                    </div>
+                                </div>
+        
+                                <div class="form-group row">
+                                    <label class="control-label col-md-3">Whatsapp user
+                                        <span class="required" aria-required="true"> * </span>
+                                    </label>
+        
+                                    <div class="col-md-5">
+                                        <select name="mul-provider" class="form-control input-height">
+                                            <option value="">Select...</option>
+                                            {% for d in providers %}
+                                            <option value="{{d.phone_no}}"> {{ d.provider_name }} [{{ d.phone_no }}] </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <div class="row">
+                                        <div class="offset-md-3 col-md-9">
+                                            <button type="submit" class="btn btn-danger">Create</button>
+                                            <button type="button" data-dismiss="modal" class="btn btn-secondary">Cancel</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="exampleModalCenter7" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true" >
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 825px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" >
+                <div class="col-md-12 col-sm-12">
+                    <div class="card card-box">
+                        <div class="card-head">
+                            <header> Reminder Settings </header>
+                        </div>
+                        <div class="card-body" id="bar-parent">
+                            <form action="/rSettings" method="POST" class="form-horizontal"> {% csrf_token %}
+                                <input type="text" name="type" value="single" style="display: none;">
+                                <div class="form-group">
+                                    <label for="">Provider</label>
+                                    <select class="form-control input-height" id="provider" name='provider'>
+                                        <option value="">Select...</option>
+                                        {% for d in providers %}
+                                        <option value='{{d.phone_no}}'>{{d.provider_name }} [{{d.phone_no}}]
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="">Birthday Template</label>
+                                    <select class="form-control input-height" id="b_template" name='b_template'>
+                                        <option value="">Select...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="">Anniversary Template</label>
+                                    <select class="form-control input-height" id="a_template" name='a_template'>
+                                        <option value="">Select...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="">Message Schedule Time</label>
+                                    <input type="time" class="form-control input-height" name="s_time" id="">
+                                </div>
+                                
+                                
+                                <div class="form-actions">
+                                    <div class="row">
+                                        <div class="offset-md-3 col-md-9">
+                                            <button type="submit" class="btn btn-primary">Save</button>
+                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="adduser" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true" >
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 825px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" >
+                <div class="col-md-12 col-sm-12">
+                    <div class="card card-box">
+                        <div class="card-head">
+                            <header> Add User </header>
+                        </div>
+                        <div class="card-body" id="bar-parent">
+                            <form action="/reminders" method="POST" class="form-horizontal set_form"> {% csrf_token %}
+                                <input type="text" name="type" value="single" style="display: none;">
+                                <div class="form-group">
+                                    <label for="">Provider</label>
+                                    <select class="form-control input-height" name='u_provider' >
+                                        <option value="">Select...</option>
+                                        {% for d in providers %}
+                                        <option value='{{d.id}}'>{{d.provider_name }} [{{d.phone_no}}]
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="">User Name</label>
+                                    <input type="text" name="remind-user" class="form-control input-height">
+                                </div>
+                                <div class="form-group">
+                                    <label for="">Mobile</label>
+                                    <input type="text" name="remind-mobile" class="form-control input-height">
+                                </div>
+                                <div class="form-group">
+                                    <label for="">Anniversary Date</label>
+                                    <input type="date" name="remind-a-date" class="form-control input-height">
+                                </div>
+                                <div class="form-group">
+                                    <label for="">Birth Date</label>
+                                    <input type="date" name="remind-b-date" class="form-control input-height">
+                                </div>
+                                <div class="form-group">
+                                    <label for="">Remark</label>
+                                    <input type="text" name="remind-remark" class="form-control input-height">
+                                </div>
+                                <div class="form-actions">
+                                    <div class="row">
+                                        <div class="offset-md-3 col-md-9">
+                                            <button type="submit" class="btn btn-primary">Save</button>
+                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="updateuser" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true" >
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 825px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" >
+                <div class="col-md-12 col-sm-12">
+                    <div class="card card-box">
+                        <div class="card-head">
+                            <header> Update User </header>
+                        </div>
+                        <div class="card-body" id="bar-parent">
+                            <form action="/reminders" method="POST" class="form-horizontal set_form"> {% csrf_token %}
+                                <input type="text" name="type" value="single" style="display: none;">
+                                <input type="text" name="ru_id" id="ru_id" style="display: none;">
+                                <div class="form-group">
+                                    <label for="">Provider</label>
+                                    <select class="form-control input-height" name='u_provider' id='update-prod'>
+                                        <option value="">Select...</option>
+                                        {% for d in providers %}
+                                        <option value='{{d.id}}'>{{d.provider_name }} [{{d.phone_no}}]
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="">User Name</label>
+                                    <input type="text" name="update-user" class="form-control input-height">
+                                </div>
+                                <div class="form-group">
+                                    <label for="">Mobile</label>
+                                    <input type="text" name="update-mobile" class="form-control input-height">
+                                </div>
+                                <div class="form-group">
+                                    <label for="">Anniversary Date</label>
+                                    <input type="date" name="update-a-date" class="form-control input-height">
+                                </div>
+                                <div class="form-group">
+                                    <label for="">Birth Date</label>
+                                    <input type="date" name="update-b-date" class="form-control input-height">
+                                </div>
+                                <div class="form-group">
+                                    <label for="">Remark</label>
+                                    <input type="text" name="update-remark" class="form-control input-height">
+                                </div>
+                                <div class="form-actions">
+                                    <div class="row">
+                                        <div class="offset-md-3 col-md-9">
+                                            <button type="submit" class="btn btn-primary update-sub">Update</button>
+                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function () {
+
+        $("#had-link1").keyup(function(){
+            console.log($("#head-img1").attr("src"))
+            $("#head-img1").attr("src", $(this).val())
+        });
+        $("#had-link2").keyup(function(){
+            console.log($("#head-img2").attr("src"))
+            $("#head-img2").attr("src", $(this).val())
+        });
+
+        $("#sel-provider").on("change", function(){
+            $("#form-provider").val($(this).val())
+        })
+
+        $("#temp-json").val()
+
+        if ($("#checkbox-1").is(":checked")){
+            $(".sele").css("display", "") 
+        }
+        else{
+            console.log("False")
+            $(".sele").css("display", "none") 
+        }
+
+        $("#checkbox-1").on("click", function(){
+            if ($(this).is(":checked")){
+                $(".sele").css("display", "") 
+            }
+            else{
+                console.log("False")
+                $(".sele").css("display", "none") 
+            }
+        })
+
+        $("#provider").on("change", function(){
+            var p_name = $("#provider option:selected").val();
+            p_name = p_name.trim()
+            console.log(p_name)
+            let url = "/fetch_Temp?phone="+p_name;
+            $.ajax({
+                "async": true,
+                "crossDomain": true,
+                url: url,
+                type: 'GET',
+                success: function(res) {
+                    $.each(res["data"], function(k, v){
+                        console.log(k, v)
+                        $("#b_template").append(`<option value='${v[0]}-${v[1]}'>${v[0]} 
+                            [${v[1]}]</option>`);
+                        $("#a_template").append(`<option value='${v[0]}-${v[1]}'>${v[0]} 
+                            [${v[1]}]</option>`);
+                    })
+                }
+            });
+            console.log(p_name);
+        });
+
+        $("#formFile").on("change", function () {
+            var fileSelect = document.getElementById('formFile');
+            var file = fileSelect.files[0];
+            var data = new FormData();
+            data.append("myfile", file);
+            $.ajax({
+                type: 'POST',
+                url: "/getHeaderExcel",
+                processData: false,
+                contentType: false,
+                mimeType: 'multipart/form-data',
+                data: data,
+                success: function (response) {
+                    response = JSON.parse(response);
+                    csv_header = response['data'];
+                    csv_header.forEach(element => {
+                        options += `<option value="${element}">${element}</option>`
+                    })
+                    $(".header-to-inject").append(options)
+                }
+            })
+
+        })
+
+        $(".edit-btn").on("click", function(){
+            let uid = $(this).attr("name");
+            $("#ru_id").val(uid);
+            
+            $.ajax({
+                "async": true,
+                "crossDomain": true,
+                url: "/get_remindU?rid="+uid,
+                type: 'GET',
+                success: function(res) {
+                    console.log(res['data'])
+                    $(`#update-prod option[value=${res['data'].pid}]`).attr('selected','selected');
+                    $("input[name='update-user']").val(res['data'].uname)
+                    $("input[name='update-mobile']").val(res['data'].mob)
+                    $("input[name='update-a-date']").val(res['data'].adate)
+                    $("input[name='update-b-date']").val(res['data'].bdate)
+                    }
+            });
+            $("#updateuser").modal("show")
+        });
+
+        $("#deleteAll").on("click", function(){
+            if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true) {
+                $.ajax({
+                    "async": true,
+                    "crossDomain": true,
+                    url: "/deleteAll?name=reminderuser",
+                    type: 'GET',
+                    success: function(res) {
+                        console.log(res);
+                        window.location.reload();
+                    }
+                });
+            }
+        })
+        $('#dltBtn').on('click', function () {
+            if (confirm("Your devices and data will be removed Permenantly. \n You want to go ahead ?") == true) {
+                var selected = [];
+                $('#example4 tbody tr').each(function () {
+                    var t = $(this).children("td").children("input");
+                    if (t.is(":checked")) {
+                        selected.push(t.attr('id'));
+                    }
+                });
+                var json = { name: "reminderuser", data: selected }
+                console.log(json);
+                $.ajax({
+                    type: 'POST',
+                    url: "/deleteRec/",
+                    data: JSON.stringify(json),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: 'json',
+                    success: function (result) {
+                        window.location.reload();
+                    },
+                })
+            }
+        });
+    })
+</script>
+{% endblock %}
